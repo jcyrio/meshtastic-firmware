@@ -18,8 +18,10 @@
 #ifndef HAS_WIRE
 #define HAS_WIRE 1
 #endif
+#ifndef SIMPLE_TDECK
 #ifndef HAS_GPS
 #define HAS_GPS 1
+#endif
 #endif
 #ifndef HAS_BUTTON
 #define HAS_BUTTON 1

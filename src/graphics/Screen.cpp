@@ -386,14 +386,23 @@ static void drawFrameFirmware(OLEDDisplay *display, OLEDDisplayUiState *state, i
 static void drawCriticalFaultFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
     display->setTextAlignment(TEXT_ALIGN_LEFT);
+#ifdef SIMPLE_TDECK
+    display->setFont(FONT_LARGE);
+#else
     display->setFont(FONT_MEDIUM);
+#endif
 
     char tempBuf[24];
     snprintf(tempBuf, sizeof(tempBuf), "Critical fault #%d", error_code);
     display->drawString(0 + x, 0 + y, tempBuf);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
+#ifdef SIMPLE_TDECK
+    display->setFont(FONT_MEDIUM);
+    display->drawString(0 + x, FONT_HEIGHT_LARGE + y, "For help, please visit \nmeshtastic.org");
+#else
     display->setFont(FONT_SMALL);
     display->drawString(0 + x, FONT_HEIGHT_MEDIUM + y, "For help, please visit \nmeshtastic.org");
+#endif
 }
 
 // Ignore messages originating from phone (from the current node 0x0) unless range test or store and forward module are enabled
@@ -417,11 +426,19 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // with the third parameter you can define the width after which words will
     // be wrapped. Currently only spaces and "-" are allowed for wrapping
     display->setTextAlignment(TEXT_ALIGN_LEFT);
+#ifdef SIMPLE_TDECK
+    display->setFont(FONT_LARGE);
+    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+        display->setColor(BLACK);
+    }
+#else
     display->setFont(FONT_SMALL);
     if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
         display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
         display->setColor(BLACK);
     }
+#endif
 
     uint32_t seconds = sinceReceived(&mp);
     uint32_t minutes = seconds / 60;
@@ -438,7 +455,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
     display->setColor(WHITE);
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+#ifdef SIMPLE_TDECK
+    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+#else
+		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+#endif
 }
 
 /// Draw the last waypoint we received
@@ -621,6 +642,7 @@ static void drawGPSAltitude(OLEDDisplay *display, int16_t x, int16_t y, const GP
 }
 
 // Draw GPS status coordinates
+#ifndef SIMPLE_TDECK
 static void drawGPScoordinates(OLEDDisplay *display, int16_t x, int16_t y, const GPSStatus *gps)
 {
     auto gpsFormat = config.display.gps_format;
@@ -680,6 +702,7 @@ static void drawGPScoordinates(OLEDDisplay *display, int16_t x, int16_t y, const
         }
     }
 }
+#endif
 #endif
 namespace
 {
@@ -1142,8 +1165,10 @@ void Screen::setup()
 
     // Subscribe to status updates
     powerStatusObserver.observe(&powerStatus->onNewStatus);
+#ifndef SIMPLE_TDECK
     gpsStatusObserver.observe(&gpsStatus->onNewStatus);
     nodeStatusObserver.observe(&nodeStatus->onNewStatus);
+#endif
     if (textMessageModule)
         textMessageObserver.observe(textMessageModule);
     if (inputBroker)
@@ -1465,7 +1490,11 @@ void Screen::setFrames()
 
     // then all the nodes
     // We only show a few nodes in our scrolling list - because meshes with many nodes would have too many screens
+#ifdef SIMPLE_TDECK
+    size_t numToShow = 0;
+#else
     size_t numToShow = min(numMeshNodes, 4U);
+#endif
     for (size_t i = 0; i < numToShow; i++)
         normalFrames[numframes++] = drawNodeInfo;
 
@@ -1653,7 +1682,11 @@ void Screen::setFastFramerate()
 
 void DebugInfo::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
+#ifdef SIMPLE_TDECK
+    display->setFont(FONT_LARGE);
+#else
     display->setFont(FONT_SMALL);
+#endif
 
     // The coordinates define the left starting point of the text
     display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -1928,7 +1961,9 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
             drawGPSAltitude(display, x, y + FONT_HEIGHT_SMALL * 2, gpsStatus);
 
         // Line 4
+#ifndef SIMPLE_TDECK
         drawGPScoordinates(display, x, y + FONT_HEIGHT_SMALL * 3, gpsStatus);
+#endif
     } else {
         drawGPSpowerstat(display, x, y + FONT_HEIGHT_SMALL * 2, gpsStatus);
     }

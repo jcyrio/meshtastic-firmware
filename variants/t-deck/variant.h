@@ -1,3 +1,4 @@
+#define SIMPLE_TDECK 1
 // ST7789 TFT LCD
 #define ST7789_CS 12
 #define ST7789_RS 11  // DC
@@ -19,7 +20,12 @@
 #define SCREEN_ROTATE
 #define SCREEN_TRANSITION_FRAMERATE 5
 
+#ifdef SIMPLE_TDECK
+#define HAS_TOUCHSCREEN 0
+#else
 #define HAS_TOUCHSCREEN 1
+#endif
+
 #define SCREEN_TOUCH_INT 16
 #define TOUCH_I2C_PORT 0
 #define TOUCH_SLAVE_ADDRESS 0x5D // GT911

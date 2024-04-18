@@ -10,7 +10,7 @@
 #endif
 
 #ifndef TFT_MESH
-#define TFT_MESH COLOR565(0x67, 0xEA, 0x94)
+#define TFT_MESH COLOR565(0xFF, 0xFF, 0xFF)
 #endif
 
 #if defined(ST7735S)
