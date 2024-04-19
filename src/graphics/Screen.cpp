@@ -1502,7 +1502,9 @@ void Screen::setFrames()
     //
     // Since frames are basic function pointers, we have to use a helper to
     // call a method on debugInfo object.
+#ifndef SIMPLE_TDECK
     normalFrames[numframes++] = &Screen::drawDebugInfoTrampoline;
+#endif
 
     // call a method on debugInfoScreen object (for more details)
     normalFrames[numframes++] = &Screen::drawDebugInfoSettingsTrampoline;
