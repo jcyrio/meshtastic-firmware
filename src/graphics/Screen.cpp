@@ -1880,13 +1880,21 @@ void DebugInfo::drawFrameWiFi(OLEDDisplay *display, OLEDDisplayUiState *state, i
 
 void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
+#ifdef SIMPLE_TDECK
+    display->setFont(FONT_MEDIUM);
+#else
     display->setFont(FONT_SMALL);
+#endif
 
     // The coordinates define the left starting point of the text
     display->setTextAlignment(TEXT_ALIGN_LEFT);
 
     if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+#ifdef SIMPLE_TDECK
+        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_MEDIUM);
+#else
         display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
+#endif
         display->setColor(BLACK);
     }
 
@@ -1949,18 +1957,30 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
         uptime += timebuf;
     }
 
+#ifdef SIMPLE_TDECK
+    display->drawString(x, y + FONT_HEIGHT_MEDIUM * 1, uptime.c_str());
+#else
     display->drawString(x, y + FONT_HEIGHT_SMALL * 1, uptime.c_str());
+#endif
 
     // Display Channel Utilization
     char chUtil[13];
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
+#ifdef SIMPLE_TDECK
+    display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
+#else
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_SMALL * 1, chUtil);
+#endif
 #if HAS_GPS
     if (config.position.gps_mode == meshtastic_Config_PositionConfig_GpsMode_ENABLED) {
         // Line 3
         if (config.display.gps_format !=
             meshtastic_Config_DisplayConfig_GpsCoordinateFormat_DMS) // if DMS then don't draw altitude
+#ifndef SIMPLE_TDECK
+            drawGPSAltitude(display, x, y + FONT_HEIGHT_MEDIUM * 2, gpsStatus);
+#else
             drawGPSAltitude(display, x, y + FONT_HEIGHT_SMALL * 2, gpsStatus);
+#endif
 
         // Line 4
 #ifndef SIMPLE_TDECK

@@ -118,15 +118,17 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     }
     bool validEvent = false;
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+            LOG_DEBUG("Canned message event UP\n");
         if (this->messagesCount > 0) {
-            // LOG_DEBUG("Canned message event UP\n");
+            LOG_DEBUG("Canned message event UP\n");
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_UP;
             validEvent = true;
         }
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+            LOG_DEBUG("Canned message event DOWN\n");
         if (this->messagesCount > 0) {
-            // LOG_DEBUG("Canned message event DOWN\n");
+            LOG_DEBUG("Canned message event DOWN\n");
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_DOWN;
             validEvent = true;
         }
