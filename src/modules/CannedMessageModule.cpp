@@ -118,7 +118,16 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     }
     bool validEvent = false;
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+#ifdef SIMPLE_TDECK
             LOG_DEBUG("Canned message event UP\n");
+						this->previousMessageIndex++;
+						LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
+						char message[100];
+						sprintf(message, "%d", this->previousMessageIndex);
+						//remember the '1' means channel 1, which is StA's channel
+						sendText(NODENUM_BROADCAST, 1, message, false);
+						delay(200);
+#endif
         if (this->messagesCount > 0) {
             LOG_DEBUG("Canned message event UP\n");
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_UP;
@@ -126,7 +135,12 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         }
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+#ifdef SIMPLE_TDECK
             LOG_DEBUG("Canned message event DOWN\n");
+						if (this->previousMessageIndex > 0) this->previousMessageIndex--;
+						LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
+						delay(200);
+#endif
         if (this->messagesCount > 0) {
             LOG_DEBUG("Canned message event DOWN\n");
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_DOWN;

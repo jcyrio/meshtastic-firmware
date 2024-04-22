@@ -111,6 +111,9 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     char messageStore[CANNED_MESSAGE_MODULE_MESSAGES_SIZE + 1];
     char *messages[CANNED_MESSAGE_MODULE_MESSAGE_MAX_COUNT];
     int messagesCount = 0;
+#ifdef SIMPLE_TDECK
+		int previousMessageIndex = 0;
+#endif
     unsigned long lastTouchMillis = 0;
 };
 
