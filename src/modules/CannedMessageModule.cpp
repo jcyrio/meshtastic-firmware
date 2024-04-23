@@ -117,16 +117,31 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         return 0; // Ignore input while sending
     }
     bool validEvent = false;
+#ifdef SIMPLE_TDECK
+		if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN))) {
+			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP) this->previousMessageIndex++;
+			else this->previousMessageIndex--;
+			LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
+			this->runState = CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG;
+        UIFrameEvent e = {false, true};
+        e.frameChanged = true;
+        this->currentMessageIndex = -1;
+        this->freetext = ""; // clear freetext
+        this->cursor = 0;
+        this->notifyObservers(&e);
+			validEvent = true;
+}
+#endif
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 #ifdef SIMPLE_TDECK
-            LOG_DEBUG("Canned message event UP\n");
-						this->previousMessageIndex++;
-						LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
-						char message[100];
-						sprintf(message, "%d", this->previousMessageIndex);
-						//remember the '1' means channel 1, which is StA's channel
-						sendText(NODENUM_BROADCAST, 1, message, false);
-						delay(200);
+            // LOG_DEBUG("HERERE Canned message event UP\n");
+						// this->previousMessageIndex++;
+						// LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
+						// char message[100];
+						// sprintf(message, "%d", this->previousMessageIndex);
+						// //remember the '1' means channel 1, which is StA's channel
+						// sendText(NODENUM_BROADCAST, 1, message, false);
+						// delay(200);
 #endif
         if (this->messagesCount > 0) {
             LOG_DEBUG("Canned message event UP\n");
@@ -136,10 +151,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 #ifdef SIMPLE_TDECK
-            LOG_DEBUG("Canned message event DOWN\n");
-						if (this->previousMessageIndex > 0) this->previousMessageIndex--;
-						LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
-						delay(200);
+      //       LOG_DEBUG("Canned message event DOWN\n");
+						// if (this->previousMessageIndex > 0) this->previousMessageIndex--;
+						// LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
+						// delay(200);
 #endif
         if (this->messagesCount > 0) {
             LOG_DEBUG("Canned message event DOWN\n");
@@ -220,6 +235,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         // Let runOnce to be called immediately.
         if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTION_SELECT) {
             setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
+#ifdef SIMPLE_TDECK
+				} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
+					setIntervalFromNow(1800);
+#endif
         } else {
             runOnce();
         }
@@ -267,6 +286,20 @@ int32_t CannedMessageModule::runOnce()
         this->cursor = 0;
         this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
         this->notifyObservers(&e);
+#ifdef SIMPLE_TDECK
+		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
+	// sendText(NODENUM_BROADCAST, 1, this->messages[this->previousMessageIndex], false);
+	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
+	LOG_DEBUG("** processing message\n");
+	this->previousMessageIndex = 0;
+        e.frameChanged = true;
+        this->currentMessageIndex = -1;
+        this->freetext = ""; // clear freetext
+        this->cursor = 0;
+        this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+        this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+        this->notifyObservers(&e);
+#endif
     } else if (((this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT)) &&
                ((millis() - this->lastTouchMillis) > INACTIVATE_AFTER_MS)) {
         // Reset module
@@ -590,7 +623,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         }
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12, buffer, displayString,
                              cannedMessageModule->getNodeName(this->incoming));
-    } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
+    }
+		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
         display->setTextAlignment(TEXT_ALIGN_CENTER);
 #ifdef SIMPLE_TDECK
         display->setFont(FONT_LARGE);
@@ -598,7 +632,23 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setFont(FONT_MEDIUM);
 #endif
         display->drawString(display->getWidth() / 2 + x, 0 + y + 12, "Sending...");
-    } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
+    }
+
+#ifdef SIMPLE_TDECK
+		//TODO: should this be else if below? compare with orig
+		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
+		display->setTextAlignment(TEXT_ALIGN_CENTER);
+		display->setFont(FONT_LARGE);
+		char msgBuffer[64];
+		LOG_DEBUG("HERE View previous message #%d", this->previousMessageIndex);
+		snprintf(msgBuffer, sizeof(msgBuffer), "View previous message #%d", this->previousMessageIndex);
+		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y, msgBuffer);
+}
+#endif
+
+
+
+		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
         display->setTextAlignment(TEXT_ALIGN_LEFT);
         display->setFont(FONT_SMALL);
         display->drawString(10 + x, 0 + y + FONT_HEIGHT_SMALL, "Canned Message\nModule disabled.");
