@@ -14,6 +14,7 @@ enum cannedMessageModuleRunState {
     CANNED_MESSAGE_RUN_STATE_ACTION_UP,
     CANNED_MESSAGE_RUN_STATE_ACTION_DOWN,
 		CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG,
+		CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE,
 };
 
 enum cannedMessageDestinationType {
@@ -114,6 +115,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     int messagesCount = 0;
 #ifdef SIMPLE_TDECK
 		int previousMessageIndex = 0;
+		bool dontACK = false;
 #endif
     unsigned long lastTouchMillis = 0;
 };

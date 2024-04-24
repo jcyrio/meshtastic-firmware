@@ -452,11 +452,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     }
     display->drawStringf(0 + x, 0 + y, tempBuf, "%s ago from %s", screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
                          (node && node->has_user) ? node->user.short_name : "???");
-
     display->setColor(WHITE);
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 #ifdef SIMPLE_TDECK
-    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+		display->drawString(0 + x, 0 + y, "");
+    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
 #else
 		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif

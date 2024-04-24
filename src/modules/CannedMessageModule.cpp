@@ -116,11 +116,19 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     if (this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
         return 0; // Ignore input while sending
     }
+#ifdef SIMPLE_TDECK
+    if ((this->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) && (this->previousMessageIndex > 0)) {
+        return 0; // Ignore input while sending
+    }
+#endif
     bool validEvent = false;
 #ifdef SIMPLE_TDECK
-		if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN))) {
-			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP) this->previousMessageIndex++;
-			else this->previousMessageIndex--;
+		// if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN) && (this->previousMessageIndex > 0)))) {
+		if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0))) {
+			//NOTE: above is the check that stops down scroll from showing 'prev message 0' when already at 0
+			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+				this->previousMessageIndex++;
+			} else this->previousMessageIndex--;
 			LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
 			this->runState = CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG;
         UIFrameEvent e = {false, true};
@@ -133,16 +141,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 }
 #endif
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-#ifdef SIMPLE_TDECK
-            // LOG_DEBUG("HERERE Canned message event UP\n");
-						// this->previousMessageIndex++;
-						// LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
-						// char message[100];
-						// sprintf(message, "%d", this->previousMessageIndex);
-						// //remember the '1' means channel 1, which is StA's channel
-						// sendText(NODENUM_BROADCAST, 1, message, false);
-						// delay(200);
-#endif
         if (this->messagesCount > 0) {
             LOG_DEBUG("Canned message event UP\n");
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_UP;
@@ -150,12 +148,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         }
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-#ifdef SIMPLE_TDECK
-      //       LOG_DEBUG("Canned message event DOWN\n");
-						// if (this->previousMessageIndex > 0) this->previousMessageIndex--;
-						// LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
-						// delay(200);
-#endif
         if (this->messagesCount > 0) {
             LOG_DEBUG("Canned message event DOWN\n");
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_DOWN;
@@ -237,7 +229,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
 #ifdef SIMPLE_TDECK
 				} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
-					setIntervalFromNow(1800);
+					setIntervalFromNow(1300);
 #endif
         } else {
             runOnce();
@@ -276,10 +268,11 @@ int32_t CannedMessageModule::runOnce()
     }
     // LOG_DEBUG("Check status\n");
     UIFrameEvent e = {false, true};
-    if ((this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) ||
-        (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED)) {
-        // TODO: might have some feedback of sendig state
+// TODO: try removing ACTIVE below
+    // if ((this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED) || (this->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE)) { // TODO: might have some feedback of sendig state
+    if ((this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED)) { // TODO: might have some feedback of sendig state
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+				this->dontACK = false;
         e.frameChanged = true;
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
@@ -288,17 +281,22 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 #ifdef SIMPLE_TDECK
 		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
-	// sendText(NODENUM_BROADCAST, 1, this->messages[this->previousMessageIndex], false);
+		this->dontACK = true;
 	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
 	LOG_DEBUG("** processing message\n");
-	this->previousMessageIndex = 0;
-        e.frameChanged = true;
-        this->currentMessageIndex = -1;
-        this->freetext = ""; // clear freetext
-        this->cursor = 0;
-        this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-        this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
-        this->notifyObservers(&e);
+	e.frameChanged = true;
+	this->currentMessageIndex = -1;
+	this->freetext = ""; // clear freetext
+	this->cursor = 0;
+	this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+	this->runState = CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE;
+	this->notifyObservers(&e);
+	char str[6];
+	sprintf(str, "%d", this->previousMessageIndex);
+	if (this->previousMessageIndex > 0) {
+		sendText(NODENUM_BROADCAST, 1, str, false);
+		this->previousMessageIndex = 0;
+	}
 #endif
     } else if (((this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT)) &&
                ((millis() - this->lastTouchMillis) > INACTIVATE_AFTER_MS)) {
@@ -617,12 +615,19 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #endif
         String displayString;
         if (this->ack) {
+#ifdef SIMPLE_TDECK
+            displayString = "Delivered\n";
+#else
             displayString = "Delivered to\n%s";
+#endif
         } else {
             displayString = "Delivery failed\nto %s";
         }
-        display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12, buffer, displayString,
+// TODO: might want to allow the Delivery Failed msg if dontACK = true
+				if (!this->dontACK) {
+        display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), buffer, displayString,
                              cannedMessageModule->getNodeName(this->incoming));
+				}
     }
 		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
         display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -631,18 +636,27 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #else
         display->setFont(FONT_MEDIUM);
 #endif
-        display->drawString(display->getWidth() / 2 + x, 0 + y + 12, "Sending...");
+        display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Sending...");
     }
 
 #ifdef SIMPLE_TDECK
+		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
+				this->dontACK = true;
+        display->setTextAlignment(TEXT_ALIGN_CENTER);
+        display->setFont(FONT_LARGE);
+        display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
+    }
 		//TODO: should this be else if below? compare with orig
-		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
+		//new 4-24-24 2:25
+		else if ((cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex != 0)) {
+		this->dontACK = true;
 		display->setTextAlignment(TEXT_ALIGN_CENTER);
 		display->setFont(FONT_LARGE);
-		char msgBuffer[64];
-		LOG_DEBUG("HERE View previous message #%d", this->previousMessageIndex);
-		snprintf(msgBuffer, sizeof(msgBuffer), "View previous message #%d", this->previousMessageIndex);
-		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y, msgBuffer);
+		char msgBuffer1[32]; char msgBuffer2[32];
+		snprintf(msgBuffer1, sizeof(msgBuffer1), "View previous");
+		snprintf(msgBuffer2, sizeof(msgBuffer2), "message #%d", this->previousMessageIndex);
+		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y - FONT_HEIGHT_LARGE, msgBuffer1);
+		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y, msgBuffer2);
 }
 #endif
 
