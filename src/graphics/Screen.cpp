@@ -80,6 +80,7 @@ static char btPIN[16] = "888888";
 uint32_t logo_timeout = 5000; // 4 seconds for EACH logo
 
 uint32_t hours_in_month = 730;
+int totalReceivedMessagesSinceBoot = 0;
 
 // This image definition is here instead of images.h because it's modified dynamically by the drawBattery function
 uint8_t imgBattery[16] = {0xFF, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xE7, 0x3C};
@@ -1968,6 +1969,9 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
 #ifdef SIMPLE_TDECK
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
+		char totalMsgs[35];
+		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
+		display->drawString(x + SCREEN_WIDTH - display->getStringWidth(totalMsgs), y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
 #else
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_SMALL * 1, chUtil);
 #endif
@@ -2015,6 +2019,9 @@ int Screen::handleStatusUpdate(const meshtastic::Status *arg)
 
 int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 {
+	LOG_DEBUG("Screen got text message\n");
+	LOG_DEBUG("Increasing totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
+		totalReceivedMessagesSinceBoot++;
     if (showingNormalScreen) {
         setFrames(); // Regen the list of screens (will show new text message)
     }
