@@ -60,6 +60,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 using namespace meshtastic; /** @todo remove */
+int totalReceivedMessagesSinceBoot;
 
 namespace graphics
 {
@@ -80,7 +81,6 @@ static char btPIN[16] = "888888";
 uint32_t logo_timeout = 5000; // 4 seconds for EACH logo
 
 uint32_t hours_in_month = 730;
-int totalReceivedMessagesSinceBoot = 0;
 
 // This image definition is here instead of images.h because it's modified dynamically by the drawBattery function
 uint8_t imgBattery[16] = {0xFF, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xE7, 0x3C};
@@ -128,7 +128,8 @@ static void drawIconScreen(const char *upperMsg, OLEDDisplay *display, OLEDDispl
 
     display->setFont(FONT_MEDIUM);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
-    const char *title = "meshtastic.org";
+    // const char *title = "meshtastic.org";
+    const char *title = "Monastery Messenger";
     display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM, title);
     display->setFont(FONT_SMALL);
 
@@ -456,8 +457,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     display->setColor(WHITE);
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 #ifdef SIMPLE_TDECK
-		display->drawString(0 + x, 0 + y, "");
-    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 3, x + display->getWidth(), tempBuf);
 #else
 		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
@@ -1918,11 +1918,12 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
             display->drawString(x + 1, y, String("USB"));
     }
 
+#ifndef SIMPLE_TDECK
     auto mode = DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, true);
-
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode), y, mode);
     if (config.display.heading_bold)
         display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode) - 1, y, mode);
+#endif
 
     // Line 2
     uint32_t currentMillis = millis();
@@ -1971,7 +1972,11 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
 		char totalMsgs[35];
 		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
-		display->drawString(x + SCREEN_WIDTH - display->getStringWidth(totalMsgs), y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
+		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
+    const char *title = "Monastery Messenger  v4.24a";
+    display->setFont(FONT_SMALL);
+    display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);
+    display->setFont(FONT_MEDIUM);
 #else
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_SMALL * 1, chUtil);
 #endif

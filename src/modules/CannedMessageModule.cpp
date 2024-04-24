@@ -125,7 +125,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #ifdef SIMPLE_TDECK
 		// if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN) && (this->previousMessageIndex > 0)))) {
 		if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0))) {
-			//NOTE: above is the check that stops down scroll from showing 'prev message 0' when already at 0
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 				this->previousMessageIndex++;
 			} else this->previousMessageIndex--;
@@ -228,7 +227,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTION_SELECT) {
             setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
 #ifdef SIMPLE_TDECK
-				} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
+				} else if ((this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex > 0)) {
 					setIntervalFromNow(1300);
 #endif
         } else {
@@ -281,6 +280,16 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 #ifdef SIMPLE_TDECK
 		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
+		if (this->previousMessageIndex == 0) {
+        UIFrameEvent e = {false, true};
+        e.frameChanged = true;
+        this->currentMessageIndex = -1;
+        this->freetext = ""; // clear freetext
+        this->cursor = 0;
+        this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+        this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+        this->notifyObservers(&e);
+		} else {
 		this->dontACK = true;
 	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
 	LOG_DEBUG("** processing message\n");
@@ -293,10 +302,9 @@ int32_t CannedMessageModule::runOnce()
 	this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-	if (this->previousMessageIndex > 0) {
 		sendText(NODENUM_BROADCAST, 1, str, false);
 		this->previousMessageIndex = 0;
-	}
+		}
 #endif
     } else if (((this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT)) &&
                ((millis() - this->lastTouchMillis) > INACTIVATE_AFTER_MS)) {
@@ -721,8 +729,9 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         }
         display->setColor(WHITE);
 #ifdef SIMPLE_TDECK
+				display->setFont(FONT_LARGE);
         display->drawStringMaxWidth(
-            0 + x, 0 + y + FONT_HEIGHT_MEDIUM, x + display->getWidth(),
+            0 + x, 0 + y + FONT_HEIGHT_LARGE * 3, x + display->getWidth(),
             cannedMessageModule->drawWithCursor(cannedMessageModule->freetext, cannedMessageModule->cursor));
 #else
         display->drawStringMaxWidth(

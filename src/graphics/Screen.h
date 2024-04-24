@@ -129,8 +129,6 @@ class Screen : public concurrency::OSThread
         CallbackObserver<Screen, const UIFrameEvent *>(this, &Screen::handleUIFrameEvent);
     CallbackObserver<Screen, const InputEvent *> inputObserver =
         CallbackObserver<Screen, const InputEvent *>(this, &Screen::handleInputEvent);
-	private:
-		int totalReceivedMessagesSinceBoot;
 
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
@@ -341,7 +339,6 @@ class Screen : public concurrency::OSThread
     //
     // Called periodically from the main loop.
     int32_t runOnce() final;
-
     bool isAUTOOled = false;
 
   private:
