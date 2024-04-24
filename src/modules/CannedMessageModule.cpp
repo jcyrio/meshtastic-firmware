@@ -268,9 +268,9 @@ int32_t CannedMessageModule::runOnce()
     }
     // LOG_DEBUG("Check status\n");
     UIFrameEvent e = {false, true};
-// TODO: try removing ACTIVE below
-    // if ((this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED) || (this->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE)) { // TODO: might have some feedback of sendig state
-    if ((this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED)) { // TODO: might have some feedback of sendig state
+		if ((this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) ||
+        (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED)) {
+        // TODO: might have some feedback of sendig state
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 				this->dontACK = false;
         e.frameChanged = true;
