@@ -279,6 +279,11 @@ void printPacket(const char *prefix, const meshtastic_MeshPacket *p)
     if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
         auto &s = p->decoded;
 
+
+        std::string decodedPayload = DEBUG_PORT.mt_sprintf("** Decoded Payload: Portnum=%d, WantResp=%d, Source=0x%08x, Dest=0x%08x, RequestId=%0x",
+                                                           s.portnum, s.want_response, s.source, s.dest, s.request_id);
+        LOG_DEBUG("*** %s\n", decodedPayload.c_str());
+
         out += DEBUG_PORT.mt_sprintf(" Portnum=%d", s.portnum);
 
         if (s.want_response)
@@ -550,6 +555,7 @@ void RadioInterface::deliverToReceiver(meshtastic_MeshPacket *p)
 {
     if (router)
         router->enqueueReceivedMessage(p);
+
 }
 
 /***

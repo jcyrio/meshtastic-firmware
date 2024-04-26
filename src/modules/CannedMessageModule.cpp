@@ -27,6 +27,11 @@
 // Remove Canned message screen if no action is taken for some milliseconds
 #define INACTIVATE_AFTER_MS 20000
 
+#define NODENUM_HYTEC 808611244
+#define NODENUM_RPI5 3719082304
+#define NODENUM_MONTDECK 4184738532
+#define NODENUM_FRTH_TDECK 207089188
+
 extern ScanI2C::DeviceAddress cardkb_found;
 
 static const char *cannedMessagesConfigFile = "/prefs/cannedConf.proto";
@@ -271,7 +276,9 @@ int32_t CannedMessageModule::runOnce()
         (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED)) {
         // TODO: might have some feedback of sendig state
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+#ifdef SIMPLE_TDECK
 				this->dontACK = false;
+#endif
         e.frameChanged = true;
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
@@ -302,7 +309,8 @@ int32_t CannedMessageModule::runOnce()
 	this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-		sendText(NODENUM_BROADCAST, 1, str, false);
+		// sendText(NODENUM_BROADCAST, 1, str, false);
+		sendText(NODENUM_RPI5, 1, str, false);
 		this->previousMessageIndex = 0;
 		}
 #endif
@@ -339,7 +347,7 @@ int32_t CannedMessageModule::runOnce()
 #ifndef SIMPLE_TDECK
                     sendText(NODENUM_BROADCAST, channels.getPrimaryIndex(), this->messages[this->currentMessageIndex], true);
 #else
-                    sendText(NODENUM_BROADCAST, 1, this->messages[this->currentMessageIndex], true); // this always pubs to channal 1, which is St Anthony
+                    sendText(NODENUM_RPI5, 1, this->messages[this->currentMessageIndex], true); // this always pubs to channal 1, which is St Anthony
 #endif
                 }
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
@@ -632,10 +640,15 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             displayString = "Delivery failed\nto %s";
         }
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
+				display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), displayString);
+#ifdef SIMPLE_TDECK
 				if (!this->dontACK) {
+#endif
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), buffer, displayString,
                              cannedMessageModule->getNodeName(this->incoming));
+#ifdef SIMPLE_TDECK
 				}
+#endif
     }
 		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
         display->setTextAlignment(TEXT_ALIGN_CENTER);
