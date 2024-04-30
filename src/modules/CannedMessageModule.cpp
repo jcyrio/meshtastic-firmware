@@ -308,7 +308,7 @@ int32_t CannedMessageModule::runOnce()
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
 		// sendText(NODENUM_BROADCAST, 1, str, false);
-		sendText(NODENUM_RPI5, 1, str, false);
+		sendText(NODENUM_HYTEC, 1, str, false);
 		this->previousMessageIndex = 0;
 		}
 #endif
@@ -327,7 +327,7 @@ int32_t CannedMessageModule::runOnce()
         if (this->payload == CANNED_MESSAGE_RUN_STATE_FREETEXT) {
             if (this->freetext.length() > 0) {
 #ifdef SIMPLE_TDECK
-                sendText(this->dest, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
+                sendText(NODENUM_HYTEC, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
 #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
 #endif
@@ -345,7 +345,7 @@ int32_t CannedMessageModule::runOnce()
 #ifndef SIMPLE_TDECK
                     sendText(NODENUM_BROADCAST, channels.getPrimaryIndex(), this->messages[this->currentMessageIndex], true);
 #else
-                    sendText(NODENUM_RPI5, 1, this->messages[this->currentMessageIndex], true); // this always pubs to channal 1, which is St Anthony
+                    sendText(NODENUM_HYTEC, 1, this->messages[this->currentMessageIndex], true); // this always pubs to channal 1, which is St Anthony
 #endif
                 }
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
@@ -387,6 +387,7 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
         case 0xb4: // left
+#ifndef SIMPLE_TDECK
             if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
@@ -402,6 +403,16 @@ int32_t CannedMessageModule::runOnce()
                 if (this->dest == nodeDB->getNodeNum()) {
                     this->dest = NODENUM_BROADCAST;
                 }
+						} else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
+								if (this->channel == numChannels - 1) {
+										this->channel = 0;
+								} else {
+										this->channel++;
+								}
+						} else {
+								if (this->cursor < this->getCurrentMessage().length()) {
+										this->cursor++;
+								}
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -416,12 +427,16 @@ int32_t CannedMessageModule::runOnce()
                     this->channel--;
                 }
             } else {
+#endif
                 if (this->cursor > 0) {
                     this->cursor--;
                 }
+#ifndef SIMPLE_TDECK
             }
+#endif
             break;
         case 0xb7: // right
+#ifndef SIMPLE_TDECK
             if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
@@ -451,10 +466,13 @@ int32_t CannedMessageModule::runOnce()
                     this->channel++;
                 }
             } else {
+#endif
                 if (this->cursor < this->freetext.length()) {
                     this->cursor++;
                 }
+#ifndef SIMPLE_TDECK
             }
+#endif
             break;
         default:
             break;
@@ -475,6 +493,7 @@ int32_t CannedMessageModule::runOnce()
                 break;
             case 0x09: // tab
             case 0x91: // alt+t for T-Deck that doesn't have a tab key
+#ifndef SIMPLE_TDECK
                 if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
                 } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
@@ -482,6 +501,7 @@ int32_t CannedMessageModule::runOnce()
                 } else {
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
                 }
+#endif
                 break;
             case 0xb4: // left
             case 0xb7: // right
@@ -646,15 +666,19 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setFont(FONT_MEDIUM);
 #endif
         String displayString;
-        if (this->ack) {
 #ifdef SIMPLE_TDECK
+        if (this->ack) {
             displayString = "Delivered\n";
+        } else {
+            displayString = "Delivery failed";
+        }
 #else
+        if (this->ack) {
             displayString = "Delivered to\n%s";
-#endif
         } else {
             displayString = "Delivery failed\nto %s";
         }
+#endif
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
 				display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), displayString);
 #ifdef SIMPLE_TDECK
@@ -719,6 +743,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->setColor(BLACK);
         }
         switch (this->destSelect) {
+#ifndef SIMPLE_TDECK
         case CANNED_MESSAGE_DESTINATION_TYPE_NODE:
             display->drawStringf(1 + x, 0 + y, buffer, "To: >%s<@%s", cannedMessageModule->getNodeName(this->dest),
                                  channels.getName(indexChannels[this->channel]));
@@ -731,6 +756,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s@>%s<", cannedMessageModule->getNodeName(this->dest),
                                  channels.getName(indexChannels[this->channel]));
             break;
+#endif
         default:
             if (display->getWidth() > 128) {
 #ifndef SIMPLE_TDECK

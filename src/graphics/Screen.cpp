@@ -1973,7 +1973,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 		char totalMsgs[35];
 		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
-    const char *title = "Monastery Messenger  v4.24a";
+    const char *title = "Monastery Messenger  v4.29a";
     display->setFont(FONT_SMALL);
     display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);
     display->setFont(FONT_MEDIUM);
