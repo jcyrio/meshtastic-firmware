@@ -467,30 +467,30 @@ int32_t CannedMessageModule::runOnce()
                 if (this->dest == nodeDB->getNodeNum()) {
                     this->dest = NODENUM_BROADCAST;
                 }
-						} else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
-								if (this->channel == numChannels - 1) {
-										this->channel = 0;
-								} else {
-										this->channel++;
-								}
-						} else {
-								if (this->cursor < this->getCurrentMessage().length()) {
-										this->cursor++;
-								}
-            } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
-                for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
-                    if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
-                        (channels.getByIndex(i).role == meshtastic_Channel_Role_PRIMARY)) {
-                        indexChannels[numChannels] = i;
-                        numChannels++;
-                    }
-                }
-                if (this->channel == 0) {
-                    this->channel = numChannels - 1;
-                } else {
-                    this->channel--;
-                }
-            } else {
+						// else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
+						// 		if (this->channel == numChannels - 1) {
+						// 				this->channel = 0;
+						// 		} else {
+						// 				this->channel++;
+						// 		}
+						// } else {
+						// 		if (this->cursor < this->getCurrentMessage().length()) {
+						// 				this->cursor++;
+						// 		}
+      //       } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
+      //           for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
+      //               if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
+      //                   (channels.getByIndex(i).role == meshtastic_Channel_Role_PRIMARY)) {
+      //                   indexChannels[numChannels] = i;
+      //                   numChannels++;
+      //               }
+      //           }
+      //           if (this->channel == 0) {
+      //               this->channel = numChannels - 1;
+      //           } else {
+      //               this->channel--;
+      //           }
+      //       } else {
 #endif
                 if (this->cursor > 0) {
                     this->cursor--;
@@ -557,11 +557,8 @@ int32_t CannedMessageModule::runOnce()
                 }
                 break;
             case 0x09: // tab
-<<<<<<< HEAD
             case 0x91: // alt+t for T-Deck that doesn't have a tab key
 #ifndef SIMPLE_TDECK
-=======
->>>>>>> 5d9800b7c2c7754e91db228efd7fd73320883a14
                 if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
                 } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
