@@ -52,8 +52,8 @@ ButtonThread::ButtonThread() : OSThread("Button")
 
 #if defined(BUTTON_PIN) || defined(ARCH_PORTDUINO)
     userButton.attachClick(userButtonPressed);
-    userButton.setClickMs(250);
-    userButton.setPressMs(c_longPressTime);
+    userButton.setClickMs(BUTTON_CLICK_MS);
+    userButton.setPressMs(BUTTON_LONGPRESS_MS);
     userButton.setDebounceMs(1);
     userButton.attachDoubleClick(userButtonDoublePressed);
     userButton.attachMultiClick(userButtonMultiPressed, this); // Reference to instance: get click count from non-static OneButton
@@ -70,8 +70,8 @@ ButtonThread::ButtonThread() : OSThread("Button")
     pinMode(BUTTON_PIN_ALT, INPUT_PULLUP_SENSE);
 #endif
     userButtonAlt.attachClick(userButtonPressed);
-    userButtonAlt.setClickMs(250);
-    userButtonAlt.setPressMs(c_longPressTime);
+    userButtonAlt.setClickMs(BUTTON_CLICK_MS);
+    userButtonAlt.setPressMs(BUTTON_LONGPRESS_MS);
     userButtonAlt.setDebounceMs(1);
     userButtonAlt.attachDoubleClick(userButtonDoublePressed);
     userButtonAlt.attachLongPressStart(userButtonPressedLongStart);
@@ -80,7 +80,7 @@ ButtonThread::ButtonThread() : OSThread("Button")
 
 #ifdef BUTTON_PIN_TOUCH
     userButtonTouch = OneButton(BUTTON_PIN_TOUCH, true, true);
-    userButtonTouch.setPressMs(400);
+    userButtonTouch.setPressMs(BUTTON_TOUCH_MS);
     userButtonTouch.attachLongPressStart(touchPressedLongStart); // Better handling with longpress than click?
 #endif
 
@@ -196,15 +196,13 @@ int32_t ButtonThread::runOnce()
 #ifdef BUTTON_PIN_TOUCH
         case BUTTON_EVENT_TOUCH_LONG_PRESSED: {
             LOG_BUTTON("Touch press!\n");
-            if (config.display.wake_on_tap_or_motion) {
-                if (screen) {
-                    // Wake if asleep
-                    if (powerFSM.getState() == &stateDARK)
-                        powerFSM.trigger(EVENT_PRESS);
+            if (screen) {
+                // Wake if asleep
+                if (powerFSM.getState() == &stateDARK)
+                    powerFSM.trigger(EVENT_PRESS);
 
-                    // Update display (legacy behaviour)
-                    screen->forceDisplay();
-                }
+                // Update display (legacy behaviour)
+                screen->forceDisplay();
             }
             break;
         }
@@ -216,6 +214,7 @@ int32_t ButtonThread::runOnce()
         btnEvent = BUTTON_EVENT_NONE;
     }
 
+    runASAP = false;
     return 50;
 }
 
@@ -236,6 +235,7 @@ void ButtonThread::attachButtonInterrupts()
             BaseType_t higherWake = 0;
             mainDelay.interruptFromISR(&higherWake);
             ButtonThread::userButton.tick();
+            runASAP = true;
         },
         CHANGE);
 #endif
@@ -282,6 +282,7 @@ void ButtonThread::wakeOnIrq(int irq, int mode)
         [] {
             BaseType_t higherWake = 0;
             mainDelay.interruptFromISR(&higherWake);
+            runASAP = true;
         },
         FALLING);
 }
