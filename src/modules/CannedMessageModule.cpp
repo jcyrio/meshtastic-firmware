@@ -266,11 +266,11 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
         default:
-            // pass the pressed key
-            // LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            this->payload = event->kbchar;
-            this->lastTouchMillis = millis();
-            validEvent = true;
+        // pass the pressed key
+        // LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+        this->payload = event->kbchar;
+        this->lastTouchMillis = millis();
+        validEvent = true;
             break;
         }
         if (screen && (event->kbchar != 0xf1)) {
@@ -362,13 +362,13 @@ int32_t CannedMessageModule::runOnce()
 		this->dontACK = true;
 	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
 	LOG_DEBUG("** processing message\n");
-	e.frameChanged = true;
-	this->currentMessageIndex = -1;
-	this->freetext = ""; // clear freetext
-	this->cursor = 0;
-	this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+        e.frameChanged = true;
+        this->currentMessageIndex = -1;
+        this->freetext = ""; // clear freetext
+        this->cursor = 0;
+        this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 	this->runState = CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE;
-	this->notifyObservers(&e);
+        this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
 		// sendText(NODENUM_BROADCAST, 1, str, false);
@@ -572,7 +572,7 @@ int32_t CannedMessageModule::runOnce()
             case 0xb7: // right
                 // already handled above
                 break;
-                // handle fn+s for shutdown
+            // handle fn+s for shutdown
             case 0x9b:
                 if (screen)
                     screen->startShutdownScreen();
