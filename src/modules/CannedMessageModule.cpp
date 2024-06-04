@@ -195,6 +195,8 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
         } else {
             // pass the pressed key
+					//FRC TEMP
+					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
             this->payload = event->kbchar;
         }
         this->lastTouchMillis = millis();
@@ -202,6 +204,9 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     }
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
         LOG_DEBUG("Canned message event any key pressed\n");
+				// temp FRC
+				// display key that was pressed
+				LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
@@ -450,6 +455,17 @@ int32_t CannedMessageModule::runOnce()
         }
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
+#ifdef SIMPLE_TDECK
+        case 0x24: // $ sign
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+					LOG_DEBUG("GOT DOLLAR SIGN!");
+						break;
+#endif
         case 0xb4: // left
 						if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
@@ -463,10 +479,12 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
+#ifdef SIMPLE_TDECK
                 if (this->dest == nodeDB->getNodeNum()) {
-                    this->dest = NODENUM_BROADCAST;
+									//TODO: change to other node later. this shows the custom destination when it gets to your node so that you can't message yourself
+                    this->dest = NODENUM_HYTEC;
                 }
-#ifndef SIMPLE_TDECK
+#else
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -500,10 +518,14 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
+#ifdef SIMPLE_TDECK
                 if (this->dest == nodeDB->getNodeNum()) {
-                    this->dest = NODENUM_BROADCAST;
+									//FRC here is probably where it defaults to broadcast to the channel, reMOVE
+                    // this->dest = NODENUM_BROADCAST;
+									//TODO: change to other node later. this shows the custom destination when it gets to your node so that you can't message yourself
+                    this->dest = NODENUM_HYTEC;
                 }
-#ifndef SIMPLE_TDECK
+#else
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -759,20 +781,32 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
     } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) {
         display->setTextAlignment(TEXT_ALIGN_LEFT);
 #ifdef SIMPLE_TDECK
-        display->setFont(FONT_MEDIUM);
+        display->setFont(FONT_LARGE);
 #else
         display->setFont(FONT_SMALL);
 #endif
         if (this->destSelect != CANNED_MESSAGE_DESTINATION_TYPE_NONE) {
 #ifdef SIMPLE_TDECK
-            display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_MEDIUM);
+            display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
 #else
             display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
 #endif
             display->setColor(BLACK);
         }
         switch (this->destSelect) {
-#ifndef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK
+        case CANNED_MESSAGE_DESTINATION_TYPE_NODE:
+            display->drawStringf(1 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+            display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+            break;
+						//never gets here, removed channel destinations
+        case CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL:
+            display->drawStringf(1 + x, 0 + y, buffer, "To: %s@>%s<", cannedMessageModule->getNodeName(this->dest),
+                                 channels.getName(indexChannels[this->channel]));
+            display->drawStringf(0 + x, 0 + y, buffer, "To: %s@>%s<", cannedMessageModule->getNodeName(this->dest),
+                                 channels.getName(indexChannels[this->channel]));
+            break;
+#else
         case CANNED_MESSAGE_DESTINATION_TYPE_NODE:
             display->drawStringf(1 + x, 0 + y, buffer, "To: >%s<@%s", cannedMessageModule->getNodeName(this->dest),
                                  channels.getName(indexChannels[this->channel]));
@@ -788,11 +822,12 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #endif
         default:
             if (display->getWidth() > 128) {
-#ifndef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK
+                display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+                // display->drawStringf(0 + x, 0 + y, buffer, "Send Message:");
+#else
                 display->drawStringf(0 + x, 0 + y, buffer, "To: %s@%s", cannedMessageModule->getNodeName(this->dest),
                                      channels.getName(indexChannels[this->channel]));
-#else
-                display->drawStringf(0 + x, 0 + y, buffer, "Send Message:");
 #endif
             } else {
                 display->drawStringf(0 + x, 0 + y, buffer, "To: %.5s@%.5s", cannedMessageModule->getNodeName(this->dest),
@@ -806,7 +841,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
                 meshtastic_Constants_DATA_PAYLOAD_LEN - this->freetext.length() - (moduleConfig.canned_message.send_bell ? 1 : 0);
             snprintf(buffer, sizeof(buffer), "%d left", charsLeft);
 #ifdef SIMPLE_TDECK
-            display->drawString(x + display->getWidth() - display->getStringWidth(buffer), y + 200, buffer);
+            display->drawString(x + display->getWidth() - display->getStringWidth(buffer), y + 180, buffer);
 #else
 						display->drawString(x + display->getWidth() - display->getStringWidth(buffer), y + 0, buffer);
 #endif
@@ -826,9 +861,9 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         if (this->messagesCount > 0) {
             display->setTextAlignment(TEXT_ALIGN_LEFT);
 #ifdef SIMPLE_TDECK
-            display->setFont(FONT_MEDIUM);
+            display->setFont(FONT_LARGE);
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
-            int lines = (display->getHeight() / FONT_HEIGHT_MEDIUM) - 1;
+            int lines = (display->getHeight() / FONT_HEIGHT_LARGE) - 1;
 #else
             display->setFont(FONT_SMALL);
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
@@ -848,13 +883,13 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
                 for (int i = 0; i < std::min(messagesCount, lines); i++) {
 #ifdef SIMPLE_TDECK
                     if (i == currentMessageIndex - topMsg) {
-                        display->fillRect(0 + x, 0 + y + FONT_HEIGHT_MEDIUM * (i + 1), x + display->getWidth(),
-                                          y + FONT_HEIGHT_MEDIUM);
+                        display->fillRect(0 + x, 0 + y + FONT_HEIGHT_LARGE * (i + 1), x + display->getWidth(),
+                                          y + FONT_HEIGHT_LARGE);
                         display->setColor(BLACK);
-                        display->drawString(0 + x, 0 + y + FONT_HEIGHT_MEDIUM * (i + 1), cannedMessageModule->getCurrentMessage());
+                        display->drawString(0 + x, 0 + y + FONT_HEIGHT_LARGE * (i + 1), cannedMessageModule->getCurrentMessage());
                         display->setColor(WHITE);
                     } else {
-                        display->drawString(0 + x, 0 + y + FONT_HEIGHT_MEDIUM * (i + 1),
+                        display->drawString(0 + x, 0 + y + FONT_HEIGHT_LARGE * (i + 1),
                                             cannedMessageModule->getMessageByIndex(topMsg + i));
                     }
 #else

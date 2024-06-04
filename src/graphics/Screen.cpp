@@ -760,10 +760,12 @@ class Point
 
 } // namespace
 
+#ifndef SIMPLE_TDECK
 static void drawLine(OLEDDisplay *d, const Point &p1, const Point &p2)
 {
     d->drawLine(p1.x, p1.y, p2.x, p2.y);
 }
+#endif
 
 /**
  * Given a recent lat/lon return a guess of the heading the user is walking on.
@@ -771,6 +773,7 @@ static void drawLine(OLEDDisplay *d, const Point &p1, const Point &p2)
  * We keep a series of "after you've gone 10 meters, what is your heading since
  * the last reference point?"
  */
+#ifndef SIMPLE_TDECK
 static float estimatedHeading(double lat, double lon)
 {
     static double oldLat, oldLon;
@@ -794,7 +797,9 @@ static float estimatedHeading(double lat, double lon)
 
     return b;
 }
+#endif
 
+#ifndef SIMPLE_TDECK
 static uint16_t getCompassDiam(OLEDDisplay *display)
 {
     uint16_t diam = 0;
@@ -819,6 +824,7 @@ static uint16_t getCompassDiam(OLEDDisplay *display)
 
     return diam - 20;
 };
+#endif
 
 /// We will skip one node - the one for us, so we just blindly loop over all
 /// nodes
@@ -826,6 +832,7 @@ static size_t nodeIndex;
 static int8_t prevFrame = -1;
 
 // Draw the arrow pointing to a node's location
+#ifndef SIMPLE_TDECK
 static void drawNodeHeading(OLEDDisplay *display, int16_t compassX, int16_t compassY, float headingRadian)
 {
     Point tip(0.0f, 0.5f), tail(0.0f, -0.5f); // pointing up initially
@@ -843,8 +850,10 @@ static void drawNodeHeading(OLEDDisplay *display, int16_t compassX, int16_t comp
     drawLine(display, leftArrow, tip);
     drawLine(display, rightArrow, tip);
 }
+#endif
 
 // Draw north
+#ifndef SIMPLE_TDECK
 static void drawCompassNorth(OLEDDisplay *display, int16_t compassX, int16_t compassY, float myHeading)
 {
     // If north is supposed to be at the top of the compass we want rotation to be +0
@@ -865,6 +874,7 @@ static void drawCompassNorth(OLEDDisplay *display, int16_t compassX, int16_t com
     drawLine(display, N2, N4);
     drawLine(display, N1, N4);
 }
+#endif
 
 /// Convert an integer GPS coords to a floating point
 #define DegD(i) (i * 1e-7)
@@ -887,14 +897,25 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
 
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNodeByIndex(nodeIndex);
 
+#ifdef SIMPLE_TDECK
+    display->setFont(FONT_LARGE);
+#else
     display->setFont(FONT_SMALL);
+#endif
+		
 
     // The coordinates define the left starting point of the text
     display->setTextAlignment(TEXT_ALIGN_LEFT);
 
+#ifdef SIMPLE_TDECK
+    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+    }
+#else
     if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
         display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
     }
+#endif
 
     const char *username = node->has_user ? node->user.long_name : "Unknown Name";
 
@@ -923,8 +944,11 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     } else {
         strncpy(distStr, "? km", sizeof(distStr));
     }
+#ifndef SIMPLE_TDECK
     meshtastic_NodeInfoLite *ourNode = nodeDB->getMeshNode(nodeDB->getNodeNum());
+#endif
     const char *fields[] = {username, distStr, signalStr, lastStr, NULL};
+#ifndef SIMPLE_TDECK
     int16_t compassX = 0, compassY = 0;
 
     // coordinates for the center of the compass/circle
@@ -979,6 +1003,7 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     }
     display->drawCircle(compassX, compassY, getCompassDiam(display) / 2);
 
+#endif
     if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
         display->setColor(BLACK);
     }
@@ -1516,13 +1541,18 @@ void Screen::setFrames()
     // then all the nodes
     // We only show a few nodes in our scrolling list - because meshes with many nodes would have too many screens
 #ifdef SIMPLE_TDECK
-    size_t numToShow = min(numMeshNodes, 8U);
+    size_t numToShow = min(numMeshNodes, 14U);
     // size_t numToShow = 0;
 #else
     size_t numToShow = min(numMeshNodes, 4U);
 #endif
     for (size_t i = 0; i < numToShow; i++)
+			//want to print the node names
+		{
+			// LOG_DEBUG("Adding node %d\n", i);
+			// LOG_DEBUG("Node name: %s\n", nodeDB->getMeshNode(i));
         normalFrames[numframes++] = drawNodeInfo;
+		}
 
     // then the debug info
     //
