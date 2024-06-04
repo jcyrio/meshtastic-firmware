@@ -196,7 +196,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         } else {
             // pass the pressed key
 					//FRC TEMP
-					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+					// LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
             this->payload = event->kbchar;
         }
         this->lastTouchMillis = millis();
@@ -206,7 +206,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         LOG_DEBUG("Canned message event any key pressed\n");
 				// temp FRC
 				// display key that was pressed
-				LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+				// LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
@@ -376,8 +376,8 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-		// sendText(NODENUM_BROADCAST, 1, str, false);
-		sendText(NODENUM_HYTEC, 1, str, false);
+		sendText(NODENUM_BROADCAST, 1, str, false);
+		// sendText(NODENUM_HYTEC, 1, str, false);
 		this->previousMessageIndex = 0;
 		}
 #endif
@@ -521,9 +521,9 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
                 if (this->dest == nodeDB->getNodeNum()) {
 									//FRC here is probably where it defaults to broadcast to the channel, reMOVE
-                    // this->dest = NODENUM_BROADCAST;
+                    this->dest = NODENUM_BROADCAST;
 									//TODO: change to other node later. this shows the custom destination when it gets to your node so that you can't message yourself
-                    this->dest = NODENUM_HYTEC;
+                    // this->dest = NODENUM_HYTEC;
                 }
 #else
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
