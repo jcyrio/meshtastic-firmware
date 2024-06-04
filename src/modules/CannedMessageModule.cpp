@@ -1178,6 +1178,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(),
             cannedMessageModule->drawWithCursor(cannedMessageModule->freetext, cannedMessageModule->cursor));
 #endif
+#endif
     } else {
         if (this->messagesCount > 0) {
             display->setTextAlignment(TEXT_ALIGN_LEFT);
