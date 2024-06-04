@@ -390,11 +390,11 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTION_SELECT) {
         if (this->payload == CANNED_MESSAGE_RUN_STATE_FREETEXT) {
             if (this->freetext.length() > 0) {
-#ifdef SIMPLE_TDECK
-                sendText(NODENUM_HYTEC, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
-#else
+// #ifdef SIMPLE_TDECK
+//                 sendText(NODENUM_HYTEC, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
+// #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
-#endif
+// #endif
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
             } else {
                 LOG_DEBUG("Reset message is empty.\n");
@@ -406,11 +406,11 @@ int32_t CannedMessageModule::runOnce()
                     powerFSM.trigger(EVENT_PRESS);
                     return INT32_MAX;
                 } else {
-#ifndef SIMPLE_TDECK
+// #ifdef SIMPLE_TDECK
+//                     sendText(NODENUM_HYTEC, 1, this->messages[this->currentMessageIndex], true); // this always pubs to channal 1, which is St Anthony
+// #else
                     sendText(NODENUM_BROADCAST, channels.getPrimaryIndex(), this->messages[this->currentMessageIndex], true);
-#else
-                    sendText(NODENUM_HYTEC, 1, this->messages[this->currentMessageIndex], true); // this always pubs to channal 1, which is St Anthony
-#endif
+// #endif
                 }
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
             } else {
@@ -451,8 +451,7 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
         case 0xb4: // left
-#ifndef SIMPLE_TDECK
-            if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+						if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
@@ -467,40 +466,28 @@ int32_t CannedMessageModule::runOnce()
                 if (this->dest == nodeDB->getNodeNum()) {
                     this->dest = NODENUM_BROADCAST;
                 }
-						// else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
-						// 		if (this->channel == numChannels - 1) {
-						// 				this->channel = 0;
-						// 		} else {
-						// 				this->channel++;
-						// 		}
-						// } else {
-						// 		if (this->cursor < this->getCurrentMessage().length()) {
-						// 				this->cursor++;
-						// 		}
-      //       } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
-      //           for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
-      //               if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
-      //                   (channels.getByIndex(i).role == meshtastic_Channel_Role_PRIMARY)) {
-      //                   indexChannels[numChannels] = i;
-      //                   numChannels++;
-      //               }
-      //           }
-      //           if (this->channel == 0) {
-      //               this->channel = numChannels - 1;
-      //           } else {
-      //               this->channel--;
-      //           }
-      //       } else {
+#ifndef SIMPLE_TDECK
+            } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
+                for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
+                    if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
+                        (channels.getByIndex(i).role == meshtastic_Channel_Role_PRIMARY)) {
+                        indexChannels[numChannels] = i;
+                        numChannels++;
+                    }
+                }
+                if (this->channel == 0) {
+                    this->channel = numChannels - 1;
+                } else {
+                    this->channel--;
+                }
 #endif
+            } else {
                 if (this->cursor > 0) {
                     this->cursor--;
                 }
-#ifndef SIMPLE_TDECK
             }
-#endif
             break;
         case 0xb7: // right
-#ifndef SIMPLE_TDECK
             if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
@@ -516,6 +503,7 @@ int32_t CannedMessageModule::runOnce()
                 if (this->dest == nodeDB->getNodeNum()) {
                     this->dest = NODENUM_BROADCAST;
                 }
+#ifndef SIMPLE_TDECK
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -529,14 +517,12 @@ int32_t CannedMessageModule::runOnce()
                 } else {
                     this->channel++;
                 }
-            } else {
 #endif
+            } else {
                 if (this->cursor < this->freetext.length()) {
                     this->cursor++;
                 }
-#ifndef SIMPLE_TDECK
-            }
-#endif
+            }					
             break;
         default:
             break;
@@ -563,6 +549,12 @@ int32_t CannedMessageModule::runOnce()
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
                 } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL;
+                } else {
+                    this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+                }
+#else // skip channels, only rotate through nodes
+                if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+                    this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
                 } else {
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
                 }

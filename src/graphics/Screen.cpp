@@ -1516,7 +1516,8 @@ void Screen::setFrames()
     // then all the nodes
     // We only show a few nodes in our scrolling list - because meshes with many nodes would have too many screens
 #ifdef SIMPLE_TDECK
-    size_t numToShow = 0;
+    size_t numToShow = min(numMeshNodes, 8U);
+    // size_t numToShow = 0;
 #else
     size_t numToShow = min(numMeshNodes, 4U);
 #endif
@@ -1527,7 +1528,7 @@ void Screen::setFrames()
     //
     // Since frames are basic function pointers, we have to use a helper to
     // call a method on debugInfo object.
-#ifndef SIMPLE_TDECK
+#ifndef SIMPLE_TDECK // hide debug info frame
     normalFrames[numframes++] = &Screen::drawDebugInfoTrampoline;
 #endif
 
@@ -1993,7 +1994,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
             display->drawString(x + 1, y, String("USB"));
     }
 
-#ifndef SIMPLE_TDECK
+#ifndef SIMPLE_TDECK // hide modem preset
     auto mode = DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, true);
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode), y, mode);
     if (config.display.heading_bold)
@@ -2043,7 +2044,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     // Display Channel Utilization
     char chUtil[13];
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK // custom home screen
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
 		char totalMsgs[35];
 		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
