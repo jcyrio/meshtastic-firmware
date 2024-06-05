@@ -45,9 +45,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "modules/TextMessageModule.h"
 #include "sleep.h"
 #include "target_specific.h"
-// #ifdef SIMPLE_TDECK
-// std::vector<std::string> skipNodes = {"", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
-// #endif
+#ifdef SIMPLE_TDECK
+std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
+#endif
 
 #if HAS_WIFI && !defined(ARCH_PORTDUINO)
 #include "mesh/wifi/WiFiAPClient.h"
@@ -2179,12 +2179,13 @@ void Screen::setFrames()
 				const char *username = node->has_user ? node->user.long_name : "Unknown Name";
 				// make sure username is not in skipNodes
 				// if (skipNodes.find(username) != skipNodes.end())
-				// {
-					LOG_DEBUG("Skipping node %s\n", username);
-					continue;
-				// }
-				LOG_DEBUG("** HERE HERE HERE Node name: %s\n", username);
+				// frc NOTE: this might not be nessary. This is just having less frames, but they still show
+				// if (std::find(skipNodes2.begin(), skipNodes2.end(), username) != skipNodes2.end()) {
+				// 	LOG_DEBUG("HEY HEY Skipping node %s\n", username);
+				// } else {
+				// LOG_DEBUG("** HERE HERE HERE Node name: %s\n", username);
         normalFrames[numframes++] = drawNodeInfo;
+				// }
 		}
 
     // then the debug info

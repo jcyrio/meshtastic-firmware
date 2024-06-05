@@ -18,7 +18,7 @@
 #include "GPS.h"
 #endif
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes = {"", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
+std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -145,7 +145,9 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     bool validEvent = false;
 #ifdef SIMPLE_TDECK
 		// if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN) && (this->previousMessageIndex > 0)))) {
-		if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0))) {
+		// if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0))) {
+		if ((this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) &&
+				((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0)))) {
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 				this->previousMessageIndex++;
 			} else this->previousMessageIndex--;
@@ -573,6 +575,13 @@ int32_t CannedMessageModule::runOnce()
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 					}
 					// note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
+					// This does though remove subsequent characters. Only the first one isn't caught
+					if (this->freetext.length() > 0) {
+						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+						// this->freetext = "";
+						this->cursor--;
+						// this->notifyObservers(&e);
+					}
 #endif
 					break;
         case 0xb4: // left
