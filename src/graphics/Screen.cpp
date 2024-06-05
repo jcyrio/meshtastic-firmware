@@ -1548,7 +1548,9 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     } else {
         strncpy(distStr, "? km", sizeof(distStr));
     }
+#ifndef SIMPLE_TDECK
     meshtastic_NodeInfoLite *ourNode = nodeDB->getMeshNode(nodeDB->getNodeNum());
+#endif
     const char *fields[] = {username, lastStr, signalStr, distStr, NULL};
 #ifndef SIMPLE_TDECK
     int16_t compassX = 0, compassY = 0;
