@@ -144,8 +144,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #endif
     bool validEvent = false;
 #ifdef SIMPLE_TDECK
-		// if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN) && (this->previousMessageIndex > 0)))) {
-		// if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0))) {
 		if ((this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) &&
 				((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0)))) {
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
@@ -474,8 +472,7 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-		sendText(NODENUM_BROADCAST, 1, str, false);
-		// sendText(NODENUM_HYTEC, 1, str, false);
+		sendText(NODENUM_HYTEC, 1, str, false);
 		this->previousMessageIndex = 0;
 		}
 #endif
@@ -598,9 +595,10 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
-                if (this->dest == nodeDB->getNodeNum()) {
-                    this->dest = NODENUM_BROADCAST;
-                }
+								// TODO: below seems to repeat from above. check with base
+                // if (this->dest == nodeDB->getNodeNum()) {
+                //     this->dest = NODENUM_BROADCAST;
+                // }
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
