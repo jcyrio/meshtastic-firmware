@@ -17,6 +17,9 @@
 #if !MESHTASTIC_EXCLUDE_GPS
 #include "GPS.h"
 #endif
+#ifdef SIMPLE_TDECK
+std::vector<std::string> skipNodes = {"", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
+#endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
 #define INPUTBROKER_MATRIX_TYPE 0
@@ -564,21 +567,21 @@ int32_t CannedMessageModule::runOnce()
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
         case 0x24: // $ sign
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-					LOG_DEBUG("GOT DOLLAR SIGN!");
-						break;
+					if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+					} else {
+							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+					}
+					// note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
 #endif
+					break;
         case 0xb4: // left
-						if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+          if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
                 }
+#ifndef SIMPLE_TDECK
                 for (unsigned int i = 0; i < numMeshNodes; i++) {
                     if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
                         this->dest =
@@ -586,12 +589,9 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
-#ifdef SIMPLE_TDECK
                 if (this->dest == nodeDB->getNodeNum()) {
-									//TODO: change to other node later. this shows the custom destination when it gets to your node so that you can't message yourself
-                    this->dest = NODENUM_HYTEC;
+                    this->dest = NODENUM_BROADCAST;
                 }
-#else
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -604,6 +604,20 @@ int32_t CannedMessageModule::runOnce()
                     this->channel = numChannels - 1;
                 } else {
                     this->channel--;
+                }
+#else
+                for (unsigned int i = 0; i < numMeshNodes; i++) {
+                    if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
+											unsigned int nextNode = i;
+											const char* nodeName;
+											do {
+												nextNode = (nextNode > 0) ? nextNode - 1 : numMeshNodes - 1;
+												nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+											} while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
+											this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+											LOG_INFO("Next node: %s\n", nodeName);
+											break;
+                    }
                 }
 #endif
             } else {
@@ -618,6 +632,7 @@ int32_t CannedMessageModule::runOnce()
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
                 }
+#ifndef SIMPLE_TDECK
                 for (unsigned int i = 0; i < numMeshNodes; i++) {
                     if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
                         this->dest =
@@ -625,14 +640,6 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
-#ifdef SIMPLE_TDECK
-                if (this->dest == nodeDB->getNodeNum()) {
-									//FRC here is probably where it defaults to broadcast to the channel, reMOVE
-                    this->dest = NODENUM_BROADCAST;
-									//TODO: change to other node later. this shows the custom destination when it gets to your node so that you can't message yourself
-                    // this->dest = NODENUM_HYTEC;
-                }
-#else
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -645,6 +652,20 @@ int32_t CannedMessageModule::runOnce()
                     this->channel = 0;
                 } else {
                     this->channel++;
+                }
+#else
+                for (unsigned int i = 0; i < numMeshNodes; i++) {
+                    if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
+											unsigned int nextNode = i;
+											const char* nodeName;
+											do {
+													nextNode = (nextNode < numMeshNodes - 1) ? nextNode + 1 : 0;
+													nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+											} while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
+											this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+											LOG_INFO("Next node: %s\n", nodeName);
+											break;
+                    }
                 }
 #endif
             } else {

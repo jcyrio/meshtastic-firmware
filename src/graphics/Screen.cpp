@@ -45,6 +45,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "modules/TextMessageModule.h"
 #include "sleep.h"
 #include "target_specific.h"
+#ifdef SIMPLE_TDECK
+std::vector<std::string> skipNodes = {"", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
+#endif
 
 #if HAS_WIFI && !defined(ARCH_PORTDUINO)
 #include "mesh/wifi/WiFiAPClient.h"
@@ -2172,6 +2175,15 @@ void Screen::setFrames()
 		{
 			// LOG_DEBUG("Adding node %d\n", i);
 			// LOG_DEBUG("Node name: %s\n", nodeDB->getMeshNode(i));
+				meshtastic_NodeInfoLite *node = nodeDB->getMeshNodeByIndex(i);
+				const char *username = node->has_user ? node->user.long_name : "Unknown Name";
+				// make sure username is not in skipNodes
+				// if (skipNodes.find(username) != skipNodes.end())
+				// {
+					LOG_DEBUG("Skipping node %s\n", username);
+					continue;
+				// }
+				LOG_DEBUG("** HERE HERE HERE Node name: %s\n", username);
         normalFrames[numframes++] = drawNodeInfo;
 		}
 
