@@ -1078,15 +1078,15 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
+#ifdef SIMPLE_TDECK
+        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 2, x + display->getWidth(), tempBuf);
+#else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+#endif
     }
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-#ifdef SIMPLE_TDECK
-    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 3, x + display->getWidth(), tempBuf);
-#else
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-#endif
 #endif
 }
 
@@ -1123,7 +1123,11 @@ static void drawWaypointFrame(OLEDDisplay *display, OLEDDisplayUiState *state, i
     memset(&scratch, 0, sizeof(scratch));
     if (pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, &meshtastic_Waypoint_msg, &scratch)) {
         snprintf(tempBuf, sizeof(tempBuf), "Received waypoint: %s", scratch.name);
+#ifdef SIMPLE_TDECK
+        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 2, x + display->getWidth(), tempBuf);
+#else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+#endif
     }
 }
 
@@ -1554,7 +1558,11 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
 #ifndef SIMPLE_TDECK
     meshtastic_NodeInfoLite *ourNode = nodeDB->getMeshNode(nodeDB->getNodeNum());
 #endif
+#ifndef SIMPLE_TDECK
     const char *fields[] = {username, lastStr, signalStr, distStr, NULL};
+#else
+		const char *fields[] = {username, lastStr, signalStr, NULL};
+#endif
 #ifndef SIMPLE_TDECK
     int16_t compassX = 0, compassY = 0;
 
@@ -2804,7 +2812,7 @@ int Screen::handleInputEvent(const InputEvent *event)
         setFrames();
 
         return 0;
-    }
+   }
 #endif
 
     if (showingNormalScreen && moduleFrames.size() == 0) {

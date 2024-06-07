@@ -435,9 +435,9 @@ int32_t CannedMessageModule::runOnce()
         // TODO: might have some feedback of sending state
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
         temporaryMessage = "";
-#ifdef SIMPLE_TDECK
-				this->dontACK = false;
-#endif
+// #ifdef SIMPLE_TDECK
+// 				this->dontACK = false;
+// #endif
         e.frameChanged = true;
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
@@ -472,7 +472,8 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-		sendText(NODENUM_HYTEC, 1, str, false);
+		// sendText(NODENUM_HYTEC, 1, str, false);
+		sendText(NODENUM_RPI5, 1, str, false);
 		this->previousMessageIndex = 0;
 		}
 #endif
@@ -570,6 +571,7 @@ int32_t CannedMessageModule::runOnce()
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 					} else {
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+							this->dest = NODENUM_RPI5;
 					}
 					// note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
 					// This does though remove subsequent characters. Only the first one isn't caught
@@ -595,10 +597,9 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
-								// TODO: below seems to repeat from above. check with base
-                // if (this->dest == nodeDB->getNodeNum()) {
-                //     this->dest = NODENUM_BROADCAST;
-                // }
+                if (this->dest == nodeDB->getNodeNum()) {
+                    this->dest = NODENUM_BROADCAST;
+                }
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
                     if ((channels.getByIndex(i).role == meshtastic_Channel_Role_SECONDARY) ||
@@ -625,6 +626,14 @@ int32_t CannedMessageModule::runOnce()
 											LOG_INFO("Next node: %s\n", nodeName);
 											break;
                     }
+                }
+								//just added, testing. Bad, this brings back the broadcast node (at least on the display)
+                // if (this->dest == nodeDB->getNodeNum()) {
+                //     this->dest = NODENUM_BROADCAST;
+                // }
+								// added below, instead of showing broadcast node, it shows the router node
+                if (this->dest == nodeDB->getNodeNum()) {
+                    this->dest = NODENUM_RPI5;
                 }
 #endif
             } else {
@@ -1067,11 +1076,12 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         }
 #endif
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
-				display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), displayString);
 #ifdef SIMPLE_TDECK
-				if (!this->dontACK) {
+				if (!this->dontACK) { // I don't think this works
+        display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + FONT_HEIGHT_LARGE, buffer, displayString,
+#else
+        display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12, buffer, displayString,
 #endif
-        display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), buffer, displayString,
                              cannedMessageModule->getNodeName(this->incoming));
         display->setFont(FONT_SMALL);
 
@@ -1148,7 +1158,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->drawStringf(1 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
             break;
-						//never gets here, removed channel destinations
+						//never gets here TODO: remove
         case CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL:
             display->drawStringf(1 + x, 0 + y, buffer, "To: %s@>%s<", cannedMessageModule->getNodeName(this->dest),
                                  channels.getName(indexChannels[this->channel]));
