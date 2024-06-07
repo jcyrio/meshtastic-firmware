@@ -18,7 +18,7 @@
 #include "GPS.h"
 #endif
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post"};
+std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD"};
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -494,6 +494,12 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTION_SELECT) {
         if (this->payload == CANNED_MESSAGE_RUN_STATE_FREETEXT) {
             if (this->freetext.length() > 0) {
+#ifdef SIMPLE_TDECK
+							//if there is a leading '$' char at the start, then remove it
+							if (this->freetext[0] == '$') {
+								this->freetext = this->freetext.substring(1);
+							}
+#endif
 // #ifdef SIMPLE_TDECK
 //                 sendText(NODENUM_HYTEC, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
 // #else
@@ -623,8 +629,9 @@ int32_t CannedMessageModule::runOnce()
 											do {
 												nextNode = (nextNode > 0) ? nextNode - 1 : numMeshNodes - 1;
 												nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-											} while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
+											} while ((std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end()) && (cannedMessageModule->getNodeName(nodeDB->getNodeNum()) != nodeName));
 											this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+											LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 											LOG_INFO("Next node: %s\n", nodeName);
 											break;
                     }
