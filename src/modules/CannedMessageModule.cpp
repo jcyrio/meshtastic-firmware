@@ -598,7 +598,9 @@ int32_t CannedMessageModule::runOnce()
                     }
                 }
                 if (this->dest == nodeDB->getNodeNum()) {
-                    this->dest = NODENUM_BROADCAST;
+                    // this->dest = NODENUM_BROADCAST;
+									//new test
+										this->dest = NODENUM_RPI5;
                 }
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
@@ -627,14 +629,15 @@ int32_t CannedMessageModule::runOnce()
 											break;
                     }
                 }
+								// none of below works. makes left show less than right
 								//just added, testing. Bad, this brings back the broadcast node (at least on the display)
                 // if (this->dest == nodeDB->getNodeNum()) {
                 //     this->dest = NODENUM_BROADCAST;
                 // }
 								// added below, instead of showing broadcast node, it shows the router node
-                if (this->dest == nodeDB->getNodeNum()) {
-                    this->dest = NODENUM_RPI5;
-                }
+                // if (this->dest == nodeDB->getNodeNum()) {
+                //     this->dest = NODENUM_RPI5;
+                // }
 #endif
             } else {
                 if (this->cursor > 0) {
