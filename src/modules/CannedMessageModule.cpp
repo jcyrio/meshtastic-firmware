@@ -577,7 +577,9 @@ int32_t CannedMessageModule::runOnce()
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 					} else {
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
-							this->dest = NODENUM_RPI5;
+							if (this->dest == NODENUM_BROADCAST) {
+									this->dest = NODENUM_RPI5;
+							}
 					}
 					// note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
 					// This does though remove subsequent characters. Only the first one isn't caught
