@@ -228,9 +228,11 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
                 this->payload = 0xb7;
             }
         } else {
+#ifdef SIMPLE_TDECK
             // pass the pressed key
 					//FRC TEMP
 					// LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+#endif
             this->payload = event->kbchar;
         }
 #endif
@@ -303,11 +305,11 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
         default:
-        // pass the pressed key
-        // LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-        this->payload = event->kbchar;
-        this->lastTouchMillis = millis();
-        validEvent = true;
+						// pass the pressed key
+						LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+						this->payload = event->kbchar;
+						this->lastTouchMillis = millis();
+						validEvent = true;
             break;
         }
         if (screen && (event->kbchar != 0xf1)) {
@@ -496,7 +498,8 @@ int32_t CannedMessageModule::runOnce()
             if (this->freetext.length() > 0) {
 #ifdef SIMPLE_TDECK
 							//if there is a leading '$' char at the start, then remove it
-							if (this->freetext[0] == '$') {
+							// if (this->freetext[0] == '$') {
+							if (this->freetext[0] == '>') {
 								this->freetext = this->freetext.substring(1);
 							}
 #endif
@@ -572,7 +575,8 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
-        case 0x24: // $ sign
+        // case 0x24: // $ sign
+        case 0x3e: // > sign
 					if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 					} else {

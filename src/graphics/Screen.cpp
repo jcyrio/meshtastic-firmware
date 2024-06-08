@@ -2178,6 +2178,7 @@ void Screen::setFrames()
 #else
     size_t numToShow = min(numMeshNodes, 4U);
 #endif
+#ifndef SIMPLE_TDECK
     for (size_t i = 0; i < numToShow; i++)
 			//want to print the node names
 		{
@@ -2195,6 +2196,7 @@ void Screen::setFrames()
         normalFrames[numframes++] = drawNodeInfo;
 				// }
 		}
+#endif
 
     // then the debug info
     //
