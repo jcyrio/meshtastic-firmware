@@ -18,7 +18,7 @@
 #include "GPS.h"
 #endif
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD"};
+std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony"};
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE

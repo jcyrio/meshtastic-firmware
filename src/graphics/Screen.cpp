@@ -46,7 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "sleep.h"
 #include "target_specific.h"
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD"};
+std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony"};
 #endif
 
 #if HAS_WIFI && !defined(ARCH_PORTDUINO)
