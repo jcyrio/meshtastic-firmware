@@ -496,8 +496,7 @@ int32_t CannedMessageModule::runOnce()
             if (this->freetext.length() > 0) {
 #ifdef SIMPLE_TDECK
 							//if there is a leading '$' char at the start, then remove it
-							//if there is a leading ' ' char at the start, then remove it. I modded the keyboard esp32 so that $ produces ' '
-							if (this->freetext[0] == ' ') {
+							if (this->freetext[0] == '$') {
 								this->freetext = this->freetext.substring(1);
 							}
 #endif
