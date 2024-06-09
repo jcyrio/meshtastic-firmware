@@ -60,6 +60,8 @@ CannedMessageModule::CannedMessageModule()
 #ifdef T_WATCH_S3
             this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 #endif
+						// this makes the first one go to NODE changing, but the subsequent ones don't. Also it repeats the first letter
+        // this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 
             this->inputObserver.observe(inputBroker);
         }
@@ -537,6 +539,8 @@ int32_t CannedMessageModule::runOnce()
 
 #ifndef T_WATCH_S3
         this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+				//this one below causes the letters to double. 
+        // this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 #endif
 
         this->notifyObservers(&e);
@@ -685,7 +689,7 @@ int32_t CannedMessageModule::runOnce()
                 } else {
                     this->channel++;
                 }
-#else
+#else  // SIMPLE_TDECK
                 for (unsigned int i = 0; i < numMeshNodes; i++) {
                     if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
 											unsigned int nextNode = i;
