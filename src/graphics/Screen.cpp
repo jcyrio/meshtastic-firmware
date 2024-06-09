@@ -2723,8 +2723,32 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 		char totalMsgs[35];
 		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
-    const char *title = "Monastery Messenger  v4.29a";
+
+  String date = __DATE__; // format: "MMM DD YYYY"
+	String time = __TIME__; // format: "HH:MM:SS"
+	String month = date.substring(0, 3);
+	int monthNumber;
+	if (month == "Jan") monthNumber = 1;
+	else if (month == "Feb") monthNumber = 2;
+	else if (month == "Mar") monthNumber = 3;
+	else if (month == "Apr") monthNumber = 4;
+	else if (month == "May") monthNumber = 5;
+	else if (month == "Jun") monthNumber = 6;
+	else if (month == "Jul") monthNumber = 7;
+	else if (month == "Aug") monthNumber = 8;
+	else if (month == "Sep") monthNumber = 9;
+	else if (month == "Oct") monthNumber = 10;
+	else if (month == "Nov") monthNumber = 11;
+	else if (month == "Dec") monthNumber = 12;
+	int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
+	int hour = time.substring(0, 2).toInt(); // Extract hour and remove leading zero
+	// Construct the final string in M.DD.H format
+	String title = "Monastery Messenger v" + String(monthNumber) + "." + String(day) + "." + String(hour);
+	// Serial.println(dateTimeString);
+		
+    // const char *title = "Monastery Messenger  v4.29a";
     display->setFont(FONT_SMALL);
+    // display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);
     display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);
     display->setFont(FONT_MEDIUM);
 #else

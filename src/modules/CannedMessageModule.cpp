@@ -508,7 +508,9 @@ int32_t CannedMessageModule::runOnce()
 // #ifdef SIMPLE_TDECK
 //                 sendText(NODENUM_HYTEC, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
 // #else
-                sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
+                // sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
+							//TODO:
+                sendText(this->dest, 1, this->freetext.c_str(), true);
 // #endif
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
             } else {
