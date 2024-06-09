@@ -501,13 +501,13 @@ int32_t CannedMessageModule::runOnce()
 							if (this->freetext[0] == '>') {
 								this->freetext = this->freetext.substring(1);
 							}
+							// always goes to St Anthony's channel
+							// prevent all broadcast, go just to router node
+							if (this->dest == NODENUM_BROADCAST) sendText(NODENUM_RPI5, 1, this->freetext.c_str(), true);
+							else sendText(this->dest, 1, this->freetext.c_str(), true);
+#else
+                sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
 #endif
-// #ifdef SIMPLE_TDECK
-//                 sendText(NODENUM_HYTEC, 1, this->freetext.c_str(), true); //this always sends to Channel 1, St Anthony
-// #else
-                // sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
-							//TODO:
-                sendText(this->dest, 1, this->freetext.c_str(), true);
 // #endif
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
             } else {
@@ -522,7 +522,12 @@ int32_t CannedMessageModule::runOnce()
 #ifdef T_WATCH_S3
                     sendText(this->dest, indexChannels[this->channel], this->messages[this->currentMessageIndex], true);
 #else
+#ifdef SIMPLE_TDECK
+										// always goes to St Anthony's channel (not sure what it's sending here though)
+                    sendText(NODENUM_BROADCAST, 1, this->messages[this->currentMessageIndex], true);
+#else
                     sendText(NODENUM_BROADCAST, channels.getPrimaryIndex(), this->messages[this->currentMessageIndex], true);
+#endif
 #endif
                 }
                 this->runState = CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE;
@@ -831,7 +836,11 @@ const char *CannedMessageModule::getMessageByIndex(int index)
 const char *CannedMessageModule::getNodeName(NodeNum node)
 {
     if (node == NODENUM_BROADCAST) {
+#ifdef SIMPLE_TDECK
+        return "Router";
+#else
         return "Broadcast";
+#endif
     } else {
         meshtastic_NodeInfoLite *info = nodeDB->getMeshNode(node);
         if (info != NULL) {
