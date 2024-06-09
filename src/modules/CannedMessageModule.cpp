@@ -597,10 +597,14 @@ int32_t CannedMessageModule::runOnce()
 						this->cursor--;
 						// this->notifyObservers(&e);
 					}
-#endif
 					break;
+#endif
         case 0xb4: // left
+#ifndef SIMPLE_TDECK
           if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+#else  // this always allows to change the destination with scrolling
+          if (1 == 1) {
+#endif
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
@@ -663,7 +667,11 @@ int32_t CannedMessageModule::runOnce()
             }
             break;
         case 0xb7: // right
-            if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+#ifndef SIMPLE_TDECK
+          if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+#else  // this always allows to change the destination with scrolling
+          if (1 == 1) {
+#endif
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
@@ -675,6 +683,9 @@ int32_t CannedMessageModule::runOnce()
                             (i < numMeshNodes - 1) ? nodeDB->getMeshNodeByIndex(i + 1)->num : nodeDB->getMeshNodeByIndex(0)->num;
                         break;
                     }
+                }
+								if (this->dest == nodeDB->getNodeNum()) {
+                    this->dest = NODENUM_BROADCAST;
                 }
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
