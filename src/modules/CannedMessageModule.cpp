@@ -503,9 +503,9 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 							//if there is a leading '$' char at the start, then remove it
 							// if (this->freetext[0] == '$') {
-							if (this->freetext[0] == '>') {
-								this->freetext = this->freetext.substring(1);
-							}
+							// if (this->freetext[0] == '>') {
+							// 	this->freetext = this->freetext.substring(1);
+							// }
 							// always goes to St Anthony's channel
 							// prevent all broadcast, go just to router node
 							if (this->dest == NODENUM_BROADCAST) sendText(NODENUM_RPI5, 1, this->freetext.c_str(), true);
@@ -586,7 +586,19 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
-        // case 0x24: // $ sign
+				case 0x7e: // mic / 0 key, clear line
+					this->freetext = ""; // clear freetext
+					this->notifyObservers(&e);
+					// this->freetext = this->freetext.substring(1);
+					this->cursor = 0;
+					this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+					// this->cursor--;
+					// might want runOnce here
+					break;
+        case 0x1e: // shift-$, toggle brightness
+					screen->increaseBrightness();
+					break;
+        case 0x24: // $ sign
         case 0x3e: // > sign
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
@@ -771,6 +783,12 @@ int32_t CannedMessageModule::runOnce()
                 break;
             case 0xb4: // left
             case 0xb7: // right
+#ifdef SIMPLE_TDECK
+						case 0x7e: // mic / 0 key, clear line
+						case 0x1e: // shift-$, toggle brightness
+						case 0x24: // $ sign
+						case 0x3e: // > sign
+#endif
                 // already handled above
                 break;
             // handle fn+s for shutdown

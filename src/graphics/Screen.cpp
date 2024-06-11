@@ -2315,7 +2315,11 @@ void Screen::blink()
 
 void Screen::increaseBrightness()
 {
+#ifdef SIMPLE_TDECK
+		brightness = (brightness + 62) % 255;
+#else
     brightness = ((brightness + 62) > 254) ? brightness : (brightness + 62);
+#endif
 
 #if defined(ST7789_CS)
     // run the setDisplayBrightness function. This works on t-decks
