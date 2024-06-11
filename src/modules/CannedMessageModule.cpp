@@ -67,8 +67,10 @@ CannedMessageModule::CannedMessageModule()
         this->runState = CANNED_MESSAGE_RUN_STATE_DISABLED;
         disable();
     }
-		LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+#ifdef SIMPLE_TDECK
+		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+#endif
 }
 
 /**
@@ -586,22 +588,36 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
         // case 0x24: // $ sign
         case 0x3e: // > sign
-					if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
-							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-					} else {
-							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
-							if (this->dest == NODENUM_BROADCAST) {
-									this->dest = NODENUM_RPI5;
+					if (moduleConfig.external_notification.enabled == true) {
+							if (externalNotificationModule->getMute()) {
+									externalNotificationModule->setMute(false);
+									showTemporaryMessage("Notifications \nEnabled");
+									if (screen)
+											screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
+							} else {
+									externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
+									externalNotificationModule->setMute(true);
+									showTemporaryMessage("Notifications \nDisabled");
+									if (screen)
+											screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
 							}
 					}
+					// if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+					// 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+					// } else {
+					// 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+					// 		if (this->dest == NODENUM_BROADCAST) {
+					// 				this->dest = NODENUM_RPI5;
+					// 		}
+					// }
 					// note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
 					// This does though remove subsequent characters. Only the first one isn't caught
-					if (this->freetext.length() > 0) {
-						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-						// this->freetext = "";
-						this->cursor--;
-						// this->notifyObservers(&e);
-					}
+					// if (this->freetext.length() > 0) {
+					// 	this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+					// 	// this->freetext = "";
+					// 	this->cursor--;
+					// 	// this->notifyObservers(&e);
+					// }
 					break;
 #endif
         case 0xb4: // left

@@ -228,4 +228,5 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 };
 
 extern CannedMessageModule *cannedMessageModule;
+
 #endif
