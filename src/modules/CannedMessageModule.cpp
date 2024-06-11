@@ -18,7 +18,7 @@
 #include "GPS.h"
 #endif
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony"};
+std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient"};
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -58,6 +58,7 @@ CannedMessageModule::CannedMessageModule()
 
             // T-Watch interface currently has no way to select destination type, so default to 'node'
 #ifdef T_WATCH_S3
+						//FRC TODO: might want to do the same for SIMPLE_TDECK, test sometime
             this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 #endif
             this->inputObserver.observe(inputBroker);
@@ -66,6 +67,8 @@ CannedMessageModule::CannedMessageModule()
         this->runState = CANNED_MESSAGE_RUN_STATE_DISABLED;
         disable();
     }
+		LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 }
 
 /**
@@ -645,22 +648,13 @@ int32_t CannedMessageModule::runOnce()
 											do {
 												nextNode = (nextNode > 0) ? nextNode - 1 : numMeshNodes - 1;
 												nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-											} while ((std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end()) && (cannedMessageModule->getNodeName(nodeDB->getNodeNum()) != nodeName));
+											} while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
 											this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
-											LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-											LOG_INFO("Next node: %s\n", nodeName);
+											// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+											// LOG_INFO("Next node: %s\n", nodeName);
 											break;
                     }
                 }
-								// none of below works. makes left show less than right
-								//just added, testing. Bad, this brings back the broadcast node (at least on the display)
-                // if (this->dest == nodeDB->getNodeNum()) {
-                //     this->dest = NODENUM_BROADCAST;
-                // }
-								// added below, instead of showing broadcast node, it shows the router node
-                // if (this->dest == nodeDB->getNodeNum()) {
-                //     this->dest = NODENUM_RPI5;
-                // }
 #endif
             } else {
                 if (this->cursor > 0) {
