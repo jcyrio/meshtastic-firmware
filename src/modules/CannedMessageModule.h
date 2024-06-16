@@ -151,6 +151,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     int messagesCount = 0;
 #ifdef SIMPLE_TDECK
 		int previousMessageIndex = 0;
+		int totalMessagesSent = 0;
 		bool dontACK = false;
 #endif
     unsigned long lastTouchMillis = 0;

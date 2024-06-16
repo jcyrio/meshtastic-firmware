@@ -408,12 +408,28 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 
 void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const char *message, bool wantReplies)
 {
+#ifdef SIMPLE_TDECK
+		this->totalMessagesSent++;
+		LOG_INFO("Total messages sent: %d\n", this->totalMessagesSent);
+#endif
     meshtastic_MeshPacket *p = allocDataPacket();
     p->to = dest;
     p->channel = channel;
     p->want_ack = true;
+// add totalMessagesSent to beginning of message
+#ifdef SIMPLE_TDECK
+		char totalMessagesSent[8];
+		memset(totalMessagesSent, 0, sizeof(totalMessagesSent)); // clear the string, first send has junk data
+		sprintf(totalMessagesSent, "%d] ", this->totalMessagesSent);
+		char newMessage[strlen(totalMessagesSent) + strlen(message) + 1];
+		strcpy(newMessage, totalMessagesSent);
+		strcat(newMessage, message);
+		p->decoded.payload.size = strlen(newMessage);
+		memcpy(p->decoded.payload.bytes, newMessage, p->decoded.payload.size);
+#else
     p->decoded.payload.size = strlen(message);
     memcpy(p->decoded.payload.bytes, message, p->decoded.payload.size);
+#endif
     if (moduleConfig.canned_message.send_bell && p->decoded.payload.size < meshtastic_Constants_DATA_PAYLOAD_LEN) {
         p->decoded.payload.bytes[p->decoded.payload.size] = 7;        // Bell character
         p->decoded.payload.bytes[p->decoded.payload.size + 1] = '\0'; // Bell character
@@ -478,7 +494,6 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-		// sendText(NODENUM_HYTEC, 1, str, false);
 		sendText(NODENUM_RPI5, 1, str, false);
 		this->previousMessageIndex = 0;
 		}
