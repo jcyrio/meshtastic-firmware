@@ -155,6 +155,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 			} else this->previousMessageIndex--;
 			LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
 			this->runState = CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG;
+			// this->dontACK = 1;
         UIFrameEvent e = {false, true};
         e.frameChanged = true;
         this->currentMessageIndex = -1;
@@ -396,9 +397,11 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
 #ifdef SIMPLE_TDECK
 				} else if ((this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex > 0)) {
+					this->dontACK = 1;
 					setIntervalFromNow(1300);
 #endif
         } else {
+					this->dontACK = 0;
             runOnce();
         }
     }
@@ -473,6 +476,7 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
 		if (this->previousMessageIndex == 0) {
+		// this->dontACK = 0;
         UIFrameEvent e = {false, true};
         e.frameChanged = true;
         this->currentMessageIndex = -1;
@@ -482,7 +486,7 @@ int32_t CannedMessageModule::runOnce()
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
         this->notifyObservers(&e);
 		} else {
-		this->dontACK = true;
+		// this->dontACK = 1;
 	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
 	LOG_DEBUG("** processing message\n");
         e.frameChanged = true;
@@ -1157,7 +1161,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #endif
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
 #ifdef SIMPLE_TDECK
-				if (!this->dontACK) { // I don't think this works
+				// LOG_DEBUG("dontACK: %d", this->dontACK);
+				if (this->dontACK == 0) { // I don't think this works
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + FONT_HEIGHT_LARGE, buffer, displayString,
 #else
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12, buffer, displayString,
@@ -1187,7 +1192,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 
 #ifdef SIMPLE_TDECK
 		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
-				this->dontACK = true;
+			// removed 6-16-24, trying to fix missing 'delivered' message. Seems to not have affected anything
+				// this->dontACK = 1;
         display->setTextAlignment(TEXT_ALIGN_CENTER);
         display->setFont(FONT_LARGE);
         display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
@@ -1195,7 +1201,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 		//TODO: should this be else if below? compare with orig
 		//new 4-24-24 2:25
 		else if ((cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex != 0)) {
-		this->dontACK = true;
+			// FIXME: testing
+		// this->dontACK = 1;
 		display->setTextAlignment(TEXT_ALIGN_CENTER);
 		display->setFont(FONT_LARGE);
 		char msgBuffer1[32]; char msgBuffer2[32];
@@ -1363,6 +1370,9 @@ ProcessMessage CannedMessageModule::handleReceived(const meshtastic_MeshPacket &
             pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, meshtastic_Routing_fields, &decoded);
             this->ack = decoded.error_reason == meshtastic_Routing_Error_NONE;
             this->notifyObservers(&e);
+#ifdef SIMPLE_TDECK
+						// this->dontACK = 0;
+#endif
             // run the next time 2 seconds later
             setIntervalFromNow(2000);
         }
