@@ -18,7 +18,7 @@
 #include "GPS.h"
 #endif
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient"};
+std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -155,7 +155,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 			} else this->previousMessageIndex--;
 			LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
 			this->runState = CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG;
-			// this->dontACK = 1;
         UIFrameEvent e = {false, true};
         e.frameChanged = true;
         this->currentMessageIndex = -1;
@@ -245,6 +244,21 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         this->lastTouchMillis = millis();
         validEvent = true;
     }
+#ifdef SIMPLE_TDECK
+//FIXME: doesn't work. Trying to make it so that pressing trackball key goes to Router node in freetext
+  //   if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_SELECT)) {
+  //       if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE)) {
+  //           this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+		// 				this->dest = NODENUM_RPI5;
+		// 				this->lastTouchMillis = millis();
+		// 				this->freetext = ""; // clear freetext
+		// 				this->cursor = 0;
+		// 				validEvent = true;
+		// 				UIFrameEvent e = {false, true};
+		// 				e.frameChanged = true;
+		// 	}
+		// }
+#endif
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
@@ -460,9 +474,6 @@ int32_t CannedMessageModule::runOnce()
         // TODO: might have some feedback of sending state
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
         temporaryMessage = "";
-// #ifdef SIMPLE_TDECK
-// 				this->dontACK = false;
-// #endif
         e.frameChanged = true;
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
@@ -476,7 +487,6 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
 		if (this->previousMessageIndex == 0) {
-		// this->dontACK = 0;
         UIFrameEvent e = {false, true};
         e.frameChanged = true;
         this->currentMessageIndex = -1;
@@ -486,7 +496,6 @@ int32_t CannedMessageModule::runOnce()
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
         this->notifyObservers(&e);
 		} else {
-		// this->dontACK = 1;
 	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
 	LOG_DEBUG("** processing message\n");
         e.frameChanged = true;
@@ -548,7 +557,9 @@ int32_t CannedMessageModule::runOnce()
 #else
 #ifdef SIMPLE_TDECK
 										// always goes to St Anthony's channel (not sure what it's sending here though)
-                    sendText(NODENUM_BROADCAST, 1, this->messages[this->currentMessageIndex], true);
+                    // sendText(NODENUM_BROADCAST, 1, this->messages[this->currentMessageIndex], true);
+										// new 6-17-24, trying make sure never send to broadcast, saw some StA's messages in app
+                    sendText(NODENUM_RPI5, 1, this->messages[this->currentMessageIndex], true);
 #else
                     sendText(NODENUM_BROADCAST, channels.getPrimaryIndex(), this->messages[this->currentMessageIndex], true);
 #endif
@@ -1161,7 +1172,6 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #endif
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
 #ifdef SIMPLE_TDECK
-				// LOG_DEBUG("dontACK: %d", this->dontACK);
 				if (this->dontACK == 0) { // I don't think this works
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + FONT_HEIGHT_LARGE, buffer, displayString,
 #else
@@ -1192,8 +1202,6 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 
 #ifdef SIMPLE_TDECK
 		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
-			// removed 6-16-24, trying to fix missing 'delivered' message. Seems to not have affected anything
-				// this->dontACK = 1;
         display->setTextAlignment(TEXT_ALIGN_CENTER);
         display->setFont(FONT_LARGE);
         display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
@@ -1201,8 +1209,6 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 		//TODO: should this be else if below? compare with orig
 		//new 4-24-24 2:25
 		else if ((cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex != 0)) {
-			// FIXME: testing
-		// this->dontACK = 1;
 		display->setTextAlignment(TEXT_ALIGN_CENTER);
 		display->setFont(FONT_LARGE);
 		char msgBuffer1[32]; char msgBuffer2[32];
@@ -1370,9 +1376,6 @@ ProcessMessage CannedMessageModule::handleReceived(const meshtastic_MeshPacket &
             pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, meshtastic_Routing_fields, &decoded);
             this->ack = decoded.error_reason == meshtastic_Routing_Error_NONE;
             this->notifyObservers(&e);
-#ifdef SIMPLE_TDECK
-						// this->dontACK = 0;
-#endif
             // run the next time 2 seconds later
             setIntervalFromNow(2000);
         }
