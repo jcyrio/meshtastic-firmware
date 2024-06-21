@@ -70,6 +70,9 @@ CannedMessageModule::CannedMessageModule()
 #ifdef SIMPLE_TDECK
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		// String str = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
+		// str.concat(" on");
+		// sendText(NODENUM_RPI5, 1, str, false);
 #endif
 }
 
@@ -1178,6 +1181,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12, buffer, displayString,
 #endif
                              cannedMessageModule->getNodeName(this->incoming));
+#ifndef SIMPLE_TDECK
         display->setFont(FONT_SMALL);
 
         String snrString = "Last Rx SNR: %f";
@@ -1187,6 +1191,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->drawStringf(display->getWidth() / 2 + x, y + 100, buffer, snrString, this->lastRxSnr);
             display->drawStringf(display->getWidth() / 2 + x, y + 130, buffer, rssiString, this->lastRxRssi);
         }
+#endif
 #ifdef SIMPLE_TDECK
 				}
 #endif
