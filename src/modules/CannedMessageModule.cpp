@@ -18,7 +18,8 @@
 #include "GPS.h"
 #endif
 #ifdef SIMPLE_TDECK
-std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
+// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
+std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient"};
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -70,9 +71,9 @@ CannedMessageModule::CannedMessageModule()
 #ifdef SIMPLE_TDECK
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-		// String str = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
-		// str.concat(" on");
-		// sendText(NODENUM_RPI5, 1, str, false);
+		char startupMessage[20];
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		sendText(NODENUM_RPI5, 1, startupMessage, false);
 #endif
 }
 
