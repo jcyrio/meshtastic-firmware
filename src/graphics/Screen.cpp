@@ -971,6 +971,15 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
+		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
+#ifdef SIMPLE_TDECK
+		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp)));
+		// char nodeName[35];
+		// snprintf(nodeName, sizeof(nodeName), "%s", '!da656e60');
+		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(3664080480));
+#endif
+		
+		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode('!da656e60'));
     // LOG_DEBUG("drawing text message from 0x%x: %s\n", mp.from,
     // mp.decoded.variant.data.decoded.bytes);
 
@@ -2724,9 +2733,18 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
 #ifdef SIMPLE_TDECK // custom home screen
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
+		char ownNodeName[35];
+		// meshtastic_NodeInfoLite *info = nodeDB->getMeshNode(node);
+		// sprintf(ownNodeName, "%s", info->user.long_name);
+		sprintf(ownNodeName, "%s", owner.long_name);
+		snprintf(ownNodeName, sizeof(ownNodeName), "%s", ownNodeName);
+		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(ownNodeName)) / 2, y + 12 + FONT_HEIGHT_LARGE * 2, ownNodeName);
 		char totalMsgs[35];
 		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
+		char totalNodes[35];
+		snprintf(totalNodes, sizeof(totalNodes), "Total Nodes: %d", nodeDB->getNumMeshNodes());
+		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalNodes)) / 2, y + 12 + FONT_HEIGHT_LARGE * 4, totalNodes);
 
   String date = __DATE__; // format: "MMM DD YYYY"
 	String time = __TIME__; // format: "HH:MM:SS"

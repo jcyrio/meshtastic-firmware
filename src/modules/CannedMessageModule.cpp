@@ -20,6 +20,7 @@
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient"};
+std::vector<unsigned int> nodeList = { 3664080480, 207141012, 2864390690, 3014898611, 1486348306, 3719082304, 4184738532, 207089188, 4184751652, 2864386355, 202935032 };
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -71,9 +72,11 @@ CannedMessageModule::CannedMessageModule()
 #ifdef SIMPLE_TDECK
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+// FIXME: remove below later, doesn't do anything
 		char startupMessage[20];
 		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		sendText(NODENUM_RPI5, 1, startupMessage, false);
+		nodeList.erase(std::remove(nodeList.begin(), nodeList.end(), nodeDB->getNodeNum()), nodeList.end());
 #endif
 }
 
@@ -702,21 +705,27 @@ int32_t CannedMessageModule::runOnce()
                 } else {
                     this->channel--;
                 }
-#else
-                for (unsigned int i = 0; i < numMeshNodes; i++) {
-                    if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
-											unsigned int nextNode = i;
-											const char* nodeName;
-											do {
-												nextNode = (nextNode > 0) ? nextNode - 1 : numMeshNodes - 1;
-												nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-											} while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
-											this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
-											// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-											// LOG_INFO("Next node: %s\n", nodeName);
-											break;
-                    }
-                }
+#else  // SIMPLE_TDECK
+           //      for (unsigned int i = 0; i < numMeshNodes; i++) {
+           //          if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
+											// unsigned int nextNode = i;
+											// const char* nodeName;
+											// do {
+											// 	nextNode = (nextNode > 0) ? nextNode - 1 : numMeshNodes - 1;
+											// 	nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+											// } while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
+											// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+											// // LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+											// // LOG_INFO("Next node: %s\n", nodeName);
+											// break;
+           //          }
+           //      }
+								
+						nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
+						this->dest = nodeList[nodeIndex];
+						// nodeDB->getMeshNode(3664080480));
+						// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+								
 #endif
             } else {
                 if (this->cursor > 0) {
@@ -759,19 +768,21 @@ int32_t CannedMessageModule::runOnce()
                     this->channel++;
                 }
 #else  // SIMPLE_TDECK
-                for (unsigned int i = 0; i < numMeshNodes; i++) {
-                    if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
-											unsigned int nextNode = i;
-											const char* nodeName;
-											do {
-													nextNode = (nextNode < numMeshNodes - 1) ? nextNode + 1 : 0;
-													nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-											} while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
-											this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
-											LOG_INFO("Next node: %s\n", nodeName);
-											break;
-                    }
-                }
+           //      for (unsigned int i = 0; i < numMeshNodes; i++) {
+           //          if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
+											// unsigned int nextNode = i;
+											// const char* nodeName;
+											// do {
+											// 		nextNode = (nextNode < numMeshNodes - 1) ? nextNode + 1 : 0;
+											// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+											// } while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
+											// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+											// LOG_INFO("Next node: %s\n", nodeName);
+											// break;
+           //          }
+           //      }
+						nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+						this->dest = nodeList[nodeIndex];
 #endif
             } else {
                 if (this->cursor < this->freetext.length()) {

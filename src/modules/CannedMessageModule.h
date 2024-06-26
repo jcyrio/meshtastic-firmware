@@ -153,6 +153,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int previousMessageIndex = 0;
 		int totalMessagesSent = 0;
 		bool dontACK = 0;
+		int nodeIndex = 0;
 #endif
     unsigned long lastTouchMillis = 0;
     String temporaryMessage;
