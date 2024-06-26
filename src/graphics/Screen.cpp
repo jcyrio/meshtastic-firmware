@@ -2733,7 +2733,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
 #ifdef SIMPLE_TDECK // custom home screen
     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
-		char ownNodeName[35];
+		char ownNodeName[20];
 		// meshtastic_NodeInfoLite *info = nodeDB->getMeshNode(node);
 		// sprintf(ownNodeName, "%s", info->user.long_name);
 		sprintf(ownNodeName, "%s", owner.long_name);
@@ -2823,6 +2823,20 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 	LOG_DEBUG("Screen got text message\n");
 	LOG_DEBUG("Increasing totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
 		totalReceivedMessagesSinceBoot++;
+#ifdef SIMPLE_TDECK
+    // char channelStr[20];
+		// snprintf(channelStr, sizeof(channelStr), "%s", packet->channel);
+		// char channelName[20];
+		// snprintf(channelName, sizeof(channelName), "%s", channels.getName(packet->channel));
+		// LOG_DEBUG("Channel Name: %s\n", channelName);
+		// don't want to continue if the channel name is "LongFast"
+		// if (strcmp(channelName, "LongFast") == 0) {
+		// NOTE: below works for detecting channel, but doesn't stop msg from going through
+		// if (strcmp(channelName, "St Anthony") == 0) {
+		// 	LOG_DEBUG("Channel Name is LongFast\n");
+		// 	return 0;
+		// }
+#endif
     if (showingNormalScreen) {
         setFrames(); // Regen the list of screens (will show new text message)
     }
