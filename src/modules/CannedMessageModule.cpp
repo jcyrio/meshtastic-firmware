@@ -73,9 +73,9 @@ CannedMessageModule::CannedMessageModule()
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 // FIXME: remove below later, doesn't do anything
-		char startupMessage[20];
-		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-		sendText(NODENUM_RPI5, 1, startupMessage, false);
+		// char startupMessage[20];
+		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		// sendText(NODENUM_RPI5, 1, startupMessage, false);
 		nodeList.erase(std::remove(nodeList.begin(), nodeList.end(), nodeDB->getNodeNum()), nodeList.end());
 #endif
 }
@@ -442,14 +442,17 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     p->want_ack = true;
 // add totalMessagesSent to beginning of message
 #ifdef SIMPLE_TDECK
-		char totalMessagesSent[8];
-		memset(totalMessagesSent, 0, sizeof(totalMessagesSent)); // clear the string, first send has junk data
-		sprintf(totalMessagesSent, "%d] ", this->totalMessagesSent);
-		char newMessage[strlen(totalMessagesSent) + strlen(message) + 1];
-		strcpy(newMessage, totalMessagesSent);
-		strcat(newMessage, message);
-		p->decoded.payload.size = strlen(newMessage);
-		memcpy(p->decoded.payload.bytes, newMessage, p->decoded.payload.size);
+		// char totalMessagesSent[8];
+		// memset(totalMessagesSent, 0, sizeof(totalMessagesSent)); // clear the string, first send has junk data
+		// sprintf(totalMessagesSent, "%d] ", this->totalMessagesSent);
+		// char newMessage[strlen(totalMessagesSent) + strlen(message) + 1];
+		// strcpy(newMessage, totalMessagesSent);
+		// strcat(newMessage, message);
+		// p->decoded.payload.size = strlen(newMessage);
+		// memcpy(p->decoded.payload.bytes, newMessage, p->decoded.payload.size);
+		//NOTE: This doesn't actually do anything anymore. It's for enabling the number count before every message, for when testing. Not very useful.
+    p->decoded.payload.size = strlen(message);
+    memcpy(p->decoded.payload.bytes, message, p->decoded.payload.size);
 #else
     p->decoded.payload.size = strlen(message);
     memcpy(p->decoded.payload.bytes, message, p->decoded.payload.size);
@@ -721,7 +724,13 @@ int32_t CannedMessageModule::runOnce()
            //          }
            //      }
 								
-						nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
+						// nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
+						// this->dest = nodeList[nodeIndex];
+						do {
+							nodeIndex = (nodeIndex + 1) % nodeList.size();
+						} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+											// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
 						this->dest = nodeList[nodeIndex];
 						// nodeDB->getMeshNode(3664080480));
 						// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
@@ -781,7 +790,11 @@ int32_t CannedMessageModule::runOnce()
 											// break;
            //          }
            //      }
-						nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+						// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+						// this->dest = nodeList[nodeIndex];
+						do {
+							nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+						} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
 						this->dest = nodeList[nodeIndex];
 #endif
             } else {
