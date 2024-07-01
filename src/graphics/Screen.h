@@ -209,6 +209,9 @@ class Screen : public concurrency::OSThread
     }
 
     // functions for display brightness
+#ifdef SIMPLE_TDECK
+    void showFirstBrightnessLevel();
+#endif
     void increaseBrightness();
     void decreaseBrightness();
 

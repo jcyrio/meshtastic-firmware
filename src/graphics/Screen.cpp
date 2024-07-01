@@ -64,6 +64,7 @@ std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Bi
 
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
+char brightnessLevel = '2';
 
 namespace graphics
 {
@@ -2322,13 +2323,35 @@ void Screen::blink()
     dispdev->setBrightness(brightness);
 }
 
+#ifdef SIMPLE_TDECK
+void Screen::showFirstBrightnessLevel() {
+	setFunctionSymbal(std::string(1, brightnessLevel));
+}
+#endif
+
 void Screen::increaseBrightness()
 {
 #ifdef SIMPLE_TDECK
-		brightness = (brightness + 62) % 255;
-		LOG_INFO("Brightness: %d\n", brightness);
+	removeFunctionSymbal(std::string(1, brightnessLevel));
+	// 4 levels we want are 1, 130, 192, 254 
+	if (brightnessLevel == '1') {
+		brightness = 110; brightnessLevel = '2';
+	} else if (brightnessLevel == '2') {
+		brightness = 162; brightnessLevel = '3';
+	} else if (brightnessLevel == '3') {
+		brightness = 254; brightnessLevel = '4';
+	} else {
+		brightness = 40; brightnessLevel = '1';
+	}
+	// brightness = (brightness + 62) % 255;
+	LOG_INFO("Brightness: %d\n", brightness);
+	setFunctionSymbal(std::string(1, brightnessLevel));
+	// if (brightness < 64) brightnessLevel = '1';
+	// else if (brightness < 128) brightnessLevel = '2';
+	// else if (brightness < 192) brightnessLevel = '3';
+	// else brightnessLevel = '4';
 #else
-    brightness = ((brightness + 62) > 254) ? brightness : (brightness + 62);
+	brightness = ((brightness + 62) > 254) ? brightness : (brightness + 62);
 #endif
 
 #if defined(ST7789_CS)

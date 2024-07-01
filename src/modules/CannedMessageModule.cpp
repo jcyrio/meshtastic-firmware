@@ -77,6 +77,7 @@ CannedMessageModule::CannedMessageModule()
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		// sendText(NODENUM_RPI5, 1, startupMessage, false);
 		nodeList.erase(std::remove(nodeList.begin(), nodeList.end(), nodeDB->getNodeNum()), nodeList.end());
+		screen->showFirstBrightnessLevel();
 #endif
 }
 
@@ -644,10 +645,12 @@ int32_t CannedMessageModule::runOnce()
 					// might want runOnce here
 					break;
         case 0x1e: // shift-$, toggle brightness
+        case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
 					screen->increaseBrightness();
 					break;
         case 0x24: // $ sign
         case 0x3e: // > sign
+        case 0x20: // speaker sign, some tdecks with newer keyboards
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
 									externalNotificationModule->setMute(false);
@@ -852,7 +855,9 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 						case 0x7e: // mic / 0 key, clear line
 						case 0x1e: // shift-$, toggle brightness
+						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
+						case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
 #endif
                 // already handled above
