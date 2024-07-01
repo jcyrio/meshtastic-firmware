@@ -2326,6 +2326,7 @@ void Screen::increaseBrightness()
 {
 #ifdef SIMPLE_TDECK
 		brightness = (brightness + 62) % 255;
+		LOG_INFO("Brightness: %d\n", brightness);
 #else
     brightness = ((brightness + 62) > 254) ? brightness : (brightness + 62);
 #endif
