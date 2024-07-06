@@ -650,7 +650,7 @@ int32_t CannedMessageModule::runOnce()
 					break;
         case 0x24: // $ sign
         case 0x3e: // > sign
-        case 0x20: // speaker sign, some tdecks with newer keyboards
+        // case 0x20: // speaker sign, some tdecks with newer keyboards
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
 									externalNotificationModule->setMute(false);
@@ -857,8 +857,8 @@ int32_t CannedMessageModule::runOnce()
 						case 0x1e: // shift-$, toggle brightness
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
-						case 0x20: // speaker sign (some tdecks, new)
-						case 0x3e: // > sign
+						// case 0x20: // speaker sign (some tdecks, new)
+						// case 0x3e: // > sign
 #endif
                 // already handled above
                 break;
