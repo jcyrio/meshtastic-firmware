@@ -649,7 +649,7 @@ int32_t CannedMessageModule::runOnce()
 					screen->increaseBrightness();
 					break;
         case 0x24: // $ sign
-        case 0x3e: // > sign
+        // case 0x3e: // > sign
         // case 0x20: // speaker sign, some tdecks with newer keyboards
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
