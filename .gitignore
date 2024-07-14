@@ -37,3 +37,4 @@ src/mesh/raspihttp/private_key.pem
 .vscode/extensions.json
 .vscode/settings.json
 src/desktop.ini
+.trunk/trunk.yaml
