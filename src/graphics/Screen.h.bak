@@ -25,10 +25,6 @@ class Screen
     void print(const char *) {}
     void doDeepSleep() {}
     void forceDisplay(bool forceUiUpdate = false) {}
-    void startBluetoothPinScreen(uint32_t pin) {}
-    void stopBluetoothPinScreen() {}
-    void startRebootScreen() {}
-    void startShutdownScreen() {}
     void startFirmwareUpdateScreen() {}
     void increaseBrightness() {}
     void decreaseBrightness() {}
@@ -427,7 +423,6 @@ class Screen : public concurrency::OSThread
     //
     // Called periodically from the main loop.
     int32_t runOnce() final;
-
     bool isAUTOOled = false;
 
     // Screen dimensions (for convenience)

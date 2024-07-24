@@ -59,9 +59,11 @@ CannedMessageModule::CannedMessageModule()
             LOG_INFO("CannedMessageModule is enabled\n");
 
             // T-Watch interface currently has no way to select destination type, so default to 'node'
-#if defined(T_WATCH_S3) || defined(RAK14014)
+#ifdef T_WATCH_S3
+						//FRC TODO: might want to do the same for SIMPLE_TDECK, test sometime
             this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 #endif
+
             this->inputObserver.observe(inputBroker);
         }
     } else {
@@ -162,8 +164,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 			} else this->previousMessageIndex--;
 			LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
 			this->runState = CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG;
-        UIFrameEvent e = {false, true};
-        e.frameChanged = true;
+        // UIFrameEvent e = {false, true};
+        // e.frameChanged = true;
+				UIFrameEvent e;
+				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
         this->cursor = 0;
@@ -332,11 +336,11 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
         default:
-						// pass the pressed key
-						LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-						this->payload = event->kbchar;
-						this->lastTouchMillis = millis();
-						validEvent = true;
+            // pass the pressed key
+            // LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            this->payload = event->kbchar;
+            this->lastTouchMillis = millis();
+            validEvent = true;
             break;
         }
         if (screen && (event->kbchar != 0xf1)) {
@@ -513,8 +517,11 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
 		if (this->previousMessageIndex == 0) {
-        UIFrameEvent e = {false, true};
-        e.frameChanged = true;
+        // UIFrameEvent e = {false, true};
+        // e.frameChanged = true;
+				requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
+				UIFrameEvent e;
+				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
         this->cursor = 0;
@@ -524,7 +531,11 @@ int32_t CannedMessageModule::runOnce()
 		} else {
 	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
 	LOG_DEBUG("** processing message\n");
-        e.frameChanged = true;
+	// TODO: previously this had just frameChanged = true, not sure if need requestFocus and uiframevent
+				requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
+				UIFrameEvent e;
+				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+        // e.frameChanged = true;
         this->currentMessageIndex = -1;
         this->freetext = ""; // clear freetext
         this->cursor = 0;
@@ -778,7 +789,7 @@ int32_t CannedMessageModule::runOnce()
                         break;
                     }
                 }
-								if (this->dest == nodeDB->getNodeNum()) {
+                if (this->dest == nodeDB->getNodeNum()) {
                     this->dest = NODENUM_BROADCAST;
                 }
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
@@ -819,7 +830,7 @@ int32_t CannedMessageModule::runOnce()
                 if (this->cursor < this->freetext.length()) {
                     this->cursor++;
                 }
-            }					
+            }
             break;
         default:
             break;
@@ -840,7 +851,6 @@ int32_t CannedMessageModule::runOnce()
                 }
                 break;
             case 0x09: // tab
-            case 0x91: // alt+t for T-Deck that doesn't have a tab key
 #ifndef SIMPLE_TDECK
                 if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                     this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
@@ -869,7 +879,7 @@ int32_t CannedMessageModule::runOnce()
 #endif
                 // already handled above
                 break;
-            // handle fn+s for shutdown
+                // handle fn+s for shutdown
             case 0x9b:
                 if (screen)
                     screen->startAlert("Shutting down...");
@@ -985,6 +995,7 @@ int CannedMessageModule::getPrevIndex()
 void CannedMessageModule::showTemporaryMessage(const String &message)
 {
     temporaryMessage = message;
+		requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
     UIFrameEvent e;
     e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
     notifyObservers(&e);
