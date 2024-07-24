@@ -31,6 +31,10 @@ lint:
     - gitleaks@8.18.2
     - clang-format@16.0.3
     - prettier@3.2.5
+  ignore:
+    - linters: [ALL]
+      paths:
+        - bin/**
 runtimes:
   enabled:
     - python@3.10.8
