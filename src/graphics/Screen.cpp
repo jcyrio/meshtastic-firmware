@@ -2863,7 +2863,11 @@ int Screen::handleInputEvent(const InputEvent *event)
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
             showPrevFrame();
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
+#ifndef SIMPLE_TDECK
             showNextFrame();
+#else
+            showPrevFrame();  // for some reason it freezes if do nextFrame. Not sure why. Either way don't need it now, since only have 2 screens. 7-25-24
+#endif
         }
     }
 
