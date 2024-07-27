@@ -875,7 +875,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
 						// case 0x20: // speaker sign (some tdecks, new)
-						// case 0x3e: // > sign
+						case 0x3e: // > sign
 #endif
                 // already handled above
                 break;
