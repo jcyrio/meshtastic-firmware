@@ -337,7 +337,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             break;
         default:
             // pass the pressed key
-            // LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
             this->payload = event->kbchar;
             this->lastTouchMillis = millis();
             validEvent = true;
@@ -659,10 +659,11 @@ int32_t CannedMessageModule::runOnce()
 					break;
         case 0x1e: // shift-$, toggle brightness
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
+        case 0x3e: // > sign
+        case 0x04: // > sign
 					screen->increaseBrightness();
 					break;
         case 0x24: // $ sign
-        case 0x3e: // > sign
         // case 0x20: // speaker sign, some tdecks with newer keyboards
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
@@ -871,6 +872,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x24: // $ sign
 						// case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
+						case 0x04: // > sign
 #endif
                 // already handled above
                 break;
