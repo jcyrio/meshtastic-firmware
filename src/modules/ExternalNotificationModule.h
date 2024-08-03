@@ -33,6 +33,10 @@ class ExternalNotificationModule : public SinglePortModule, private concurrency:
     ExternalNotificationModule();
 
     uint32_t nagCycleCutoff = UINT32_MAX;
+#ifdef SIMPLE_TDECK
+		uint32_t tdeckBuzzerTimeout = 1;
+		uint32_t tdeckBuzzerCutoff = 0;
+#endif
 
     void setExternalOn(uint8_t index = 0);
     void setExternalOff(uint8_t index = 0);

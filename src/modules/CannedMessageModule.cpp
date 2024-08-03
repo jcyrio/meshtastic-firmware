@@ -272,6 +272,12 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 		// }
 #endif
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
+#ifdef SIMPLE_TDECK
+				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX)) 
+				// FIXME: later on try to make it detect if the LED is on first
+					// externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
+					externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+#endif
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
@@ -660,7 +666,7 @@ int32_t CannedMessageModule::runOnce()
         case 0x1e: // shift-$, toggle brightness
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
         case 0x3e: // > sign
-        case 0x04: // > sign
+        case 0x04: // > sign, at least on newest tdecks with black trackballs
 					screen->increaseBrightness();
 					break;
         case 0x24: // $ sign
@@ -872,7 +878,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x24: // $ sign
 						// case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
-						case 0x04: // > sign
+						case 0x04: // > sign, at least on newest tdecks with black trackball
 #endif
                 // already handled above
                 break;

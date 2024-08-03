@@ -2792,9 +2792,9 @@ int Screen::handleStatusUpdate(const meshtastic::Status *arg)
 int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 {
 	LOG_DEBUG("Screen got text message\n");
+#ifdef SIMPLE_TDECK
 	LOG_DEBUG("Increasing totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
 		totalReceivedMessagesSinceBoot++;
-#ifdef SIMPLE_TDECK
     // char channelStr[20];
 		// snprintf(channelStr, sizeof(channelStr), "%s", packet->channel);
 		// char channelName[20];

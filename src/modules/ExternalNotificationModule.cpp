@@ -88,11 +88,38 @@ int32_t ExternalNotificationModule::runOnce()
 #ifdef HAS_I2S
         isPlaying = rtttl::isPlaying() || audioThread->isPlaying();
 #endif
+// #ifdef SIMPLE_TDECK
+//         if ((tdeckBuzzerCutoff < millis()) && !isPlaying) {
+//             // let the song finish if we reach timeout
+//             tdeckBuzzerCutoff = UINT32_MAX;
+//             LOG_INFO("Turning off external buzzer notification: ");
+// 						setExternalOff(2);
+// 						externalTurnedOn[2] = 0;
+//             LOG_INFO("\n");
+//             // isNagging = false;
+//             return INT32_MAX; // save cycles till we're needed again
+//             // return 1000; // save cycles till we're needed again
+//         }
+//below was same code but skipping 0
+        // if ((nagCycleCutoff < millis()) && !isPlaying) {
+        //     // let the song finish if we reach timeout
+        //     nagCycleCutoff = UINT32_MAX;
+        //     LOG_INFO("Turning off external notification: ");
+        //     for (int i = 0; i < 2; i++) {
+        //         setExternalOff(i);
+        //         externalTurnedOn[i] = 0;
+        //         LOG_INFO("%d ", i);
+        //     }
+        //     LOG_INFO("\n");
+        //     isNagging = false;
+        //     return INT32_MAX; // save cycles till we're needed again
+        // }
+// #else
         if ((nagCycleCutoff < millis()) && !isPlaying) {
             // let the song finish if we reach timeout
             nagCycleCutoff = UINT32_MAX;
             LOG_INFO("Turning off external notification: ");
-            for (int i = 0; i < 3; i++) {
+            for (int i = 1; i < 3; i++) {
                 setExternalOff(i);
                 externalTurnedOn[i] = 0;
                 LOG_INFO("%d ", i);
@@ -101,14 +128,15 @@ int32_t ExternalNotificationModule::runOnce()
             isNagging = false;
             return INT32_MAX; // save cycles till we're needed again
         }
+// #endif
 
         // If the output is turned on, turn it back off after the given period of time.
         if (isNagging) {
-            if (externalTurnedOn[0] + (moduleConfig.external_notification.output_ms ? moduleConfig.external_notification.output_ms
-                                                                                    : EXT_NOTIFICATION_MODULE_OUTPUT_MS) <
-                millis()) {
-                getExternal(0) ? setExternalOff(0) : setExternalOn(0);
-            }
+            // if (externalTurnedOn[0] + (moduleConfig.external_notification.output_ms ? moduleConfig.external_notification.output_ms
+            //                                                                         : EXT_NOTIFICATION_MODULE_OUTPUT_MS) <
+            //     millis()) {
+            //     getExternal(0) ? setExternalOff(0) : setExternalOn(0);
+            // }
             if (externalTurnedOn[1] + (moduleConfig.external_notification.output_ms ? moduleConfig.external_notification.output_ms
                                                                                     : EXT_NOTIFICATION_MODULE_OUTPUT_MS) <
                 millis()) {
@@ -267,6 +295,7 @@ void ExternalNotificationModule::setExternalOff(uint8_t index)
             digitalWrite(moduleConfig.external_notification.output_buzzer, false);
         break;
     default:
+				// FrC here is where you can disable turning the led off, but it does it everywhere
         if (output > 0)
             digitalWrite(output, (moduleConfig.external_notification.active ? false : true));
         break;
@@ -522,7 +551,11 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
 #endif
                 }
                 if (moduleConfig.external_notification.nag_timeout) {
+#ifdef SIMPLE_TDECK
+										tdeckBuzzerCutoff = millis() + tdeckBuzzerTimeout * 1000;
+#else
                     nagCycleCutoff = millis() + moduleConfig.external_notification.nag_timeout * 1000;
+#endif
                 } else {
                     nagCycleCutoff = millis() + moduleConfig.external_notification.output_ms;
                 }
