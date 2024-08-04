@@ -159,6 +159,15 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #ifdef SIMPLE_TDECK
 		if ((this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) &&
 				((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0)))) {
+			if (this->lastTrackballMillis + 10000 > millis()) {
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
+				this->lastTrackballMillis = millis();
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 				this->previousMessageIndex++;
 			} else this->previousMessageIndex--;
@@ -173,6 +182,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         this->cursor = 0;
         this->notifyObservers(&e);
 			validEvent = true;
+			} // end trackballEnabled
 }
 #endif
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
@@ -281,7 +291,14 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
+					
+#ifdef SIMPLE_TDECK
+			if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
+#endif
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+#ifdef SIMPLE_TDECK
+			}
+#endif
         }
 
         validEvent = false; // If key is normal than it will be set to true.
@@ -341,6 +358,15 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
                 showTemporaryMessage("Node Info \nUpdate Sent");
             }
             break;
+#ifdef SIMPLE_TDECK
+				case 0x7e: // 0-mic key, press to enable trackball scrolling for next 10 seconds
+						LOG_INFO("Trackball enabled for next 10 seconds\n");
+						this->lastTrackballMillis = millis();
+            this->lastTouchMillis = millis();
+            this->payload = event->kbchar;
+            validEvent = true;
+					break;
+#endif
         default:
             // pass the pressed key
             LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
