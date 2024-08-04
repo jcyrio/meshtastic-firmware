@@ -161,12 +161,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 				((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0)))) {
 			if (this->lastTrackballMillis + 10000 > millis()) {
 				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
 				this->lastTrackballMillis = millis();
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 				this->previousMessageIndex++;
@@ -293,11 +287,13 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
 					
 #ifdef SIMPLE_TDECK
-			if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
+			if (this->skipNextFreetextMode == false) {
+			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
 #endif
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 #ifdef SIMPLE_TDECK
-			}
+			// }
+			} else this->skipNextFreetextMode = false;
 #endif
         }
 
@@ -364,6 +360,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						this->lastTrackballMillis = millis();
             this->lastTouchMillis = millis();
             this->payload = event->kbchar;
+						this->skipNextFreetextMode = true;
             validEvent = true;
 					break;
 #endif
@@ -694,6 +691,19 @@ int32_t CannedMessageModule::runOnce()
         case 0x3e: // > sign
         case 0x04: // > sign, at least on newest tdecks with black trackballs
 					screen->increaseBrightness();
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					LOG_INFO("Brightness increased\n");
+					this->skipNextFreetextMode = true;
 					break;
         case 0x24: // $ sign
         // case 0x20: // speaker sign, some tdecks with newer keyboards
@@ -1295,9 +1305,10 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 
 #ifdef SIMPLE_TDECK
 		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
-        display->setTextAlignment(TEXT_ALIGN_CENTER);
-        display->setFont(FONT_LARGE);
-        display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
+        // display->setTextAlignment(TEXT_ALIGN_CENTER);
+        // display->setFont(FONT_LARGE);
+        // display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
+				showTemporaryMessage("Retrieving...");
     }
 		//TODO: should this be else if below? compare with orig
 		//new 4-24-24 2:25
