@@ -1,7 +1,8 @@
 #include "ScanI2CTwoWire.h"
 
+#if !MESHTASTIC_EXCLUDE_I2C
+
 #include "concurrency/LockGuard.h"
-#include "configuration.h"
 #if defined(ARCH_PORTDUINO)
 #include "linux/LinuxHardwareI2C.h"
 #endif
@@ -314,7 +315,7 @@ void ScanI2CTwoWire::scanPort(I2CPort port, uint8_t *address, uint8_t asize)
 
             case SHT31_4x_ADDR:
                 registerValue = getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x89), 2);
-                if (registerValue == 0x11a2) {
+                if (registerValue == 0x11a2 || registerValue == 0x11da) {
                     type = SHT4X;
                     LOG_INFO("SHT4X sensor found\n");
                 } else if (getRegisterValue(ScanI2CTwoWire::RegisterLocation(addr, 0x7E), 2) == 0x5449) {
@@ -403,3 +404,4 @@ size_t ScanI2CTwoWire::countDevices() const
 {
     return foundDevices.size();
 }
+#endif

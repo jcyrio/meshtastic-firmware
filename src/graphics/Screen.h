@@ -22,6 +22,10 @@ class Screen
     void doDeepSleep() {}
     void forceDisplay(bool forceUiUpdate = false) {}
     void startFirmwareUpdateScreen() {}
+    void increaseBrightness() {}
+    void decreaseBrightness() {}
+    void setFunctionSymbal(std::string) {}
+    void removeFunctionSymbal(std::string) {}
     void startAlert(const char *) {}
     void endAlert() {}
 };
@@ -41,6 +45,8 @@ class Screen
 #include <SH1106Wire.h>
 #elif defined(USE_SSD1306)
 #include <SSD1306Wire.h>
+#elif defined(USE_ST7789)
+#include <ST7789Spi.h>
 #else
 // the SH1106/SSD1306 variant is auto-detected
 #include <AutoOLEDWire.h>
@@ -81,6 +87,46 @@ class Screen
 // Base segment dimensions for T-Watch segmented display
 #define SEGMENT_WIDTH 16
 #define SEGMENT_HEIGHT 4
+
+/// Convert an integer GPS coords to a floating point
+#define DegD(i) (i * 1e-7)
+
+namespace
+{
+/// A basic 2D point class for drawing
+class Point
+{
+  public:
+    float x, y;
+
+    Point(float _x, float _y) : x(_x), y(_y) {}
+
+    /// Apply a rotation around zero (standard rotation matrix math)
+    void rotate(float radian)
+    {
+        float cos = cosf(radian), sin = sinf(radian);
+        float rx = x * cos + y * sin, ry = -x * sin + y * cos;
+
+        x = rx;
+        y = ry;
+    }
+
+    void translate(int16_t dx, int dy)
+    {
+        x += dx;
+        y += dy;
+    }
+
+    void scale(float f)
+    {
+        // We use -f here to counter the flip that happens
+        // on the y axis when drawing and rotating on screen
+        x *= f;
+        y *= -f;
+    }
+};
+
+} // namespace
 
 namespace graphics
 {
@@ -126,12 +172,12 @@ class Screen : public concurrency::OSThread
         CallbackObserver<Screen, const meshtastic::Status *>(this, &Screen::handleStatusUpdate);
     CallbackObserver<Screen, const meshtastic_MeshPacket *> textMessageObserver =
         CallbackObserver<Screen, const meshtastic_MeshPacket *>(this, &Screen::handleTextMessage);
-    CallbackObserver<Screen, const meshtastic_MeshPacket *> waypointObserver =
-        CallbackObserver<Screen, const meshtastic_MeshPacket *>(this, &Screen::handleWaypoint);
     CallbackObserver<Screen, const UIFrameEvent *> uiFrameEventObserver =
-        CallbackObserver<Screen, const UIFrameEvent *>(this, &Screen::handleUIFrameEvent);
+        CallbackObserver<Screen, const UIFrameEvent *>(this, &Screen::handleUIFrameEvent); // Sent by Mesh Modules
     CallbackObserver<Screen, const InputEvent *> inputObserver =
         CallbackObserver<Screen, const InputEvent *>(this, &Screen::handleInputEvent);
+    CallbackObserver<Screen, const meshtastic_AdminMessage *> adminMessageObserver =
+        CallbackObserver<Screen, const meshtastic_AdminMessage *>(this, &Screen::handleAdminMessage);
 
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
@@ -167,6 +213,21 @@ class Screen : public concurrency::OSThread
     void doDeepSleep();
 
     void blink();
+
+    void drawFrameText(OLEDDisplay *, OLEDDisplayUiState *, int16_t, int16_t, const char *);
+
+    void getTimeAgoStr(uint32_t agoSecs, char *timeStr, uint8_t maxLength);
+
+    // Draw north
+    void drawCompassNorth(OLEDDisplay *display, int16_t compassX, int16_t compassY, float myHeading);
+
+    static uint16_t getCompassDiam(uint32_t displayWidth, uint32_t displayHeight);
+
+    float estimatedHeading(double lat, double lon);
+
+    void drawNodeHeading(OLEDDisplay *display, int16_t compassX, int16_t compassY, uint16_t compassDiam, float headingRadian);
+
+    void drawColumns(OLEDDisplay *display, int16_t x, int16_t y, const char **fields);
 
     /// Handle button press, trackball or swipe action)
     void onPress() { enqueueCmd(ScreenCmd{.cmd = Cmd::ON_PRESS}); }
@@ -335,7 +396,7 @@ class Screen : public concurrency::OSThread
     int handleTextMessage(const meshtastic_MeshPacket *arg);
     int handleUIFrameEvent(const UIFrameEvent *arg);
     int handleInputEvent(const InputEvent *arg);
-    int handleWaypoint(const meshtastic_MeshPacket *arg);
+    int handleAdminMessage(const meshtastic_AdminMessage *arg);
 
     /// Used to force (super slow) eink displays to draw critical frames
     void forceDisplay(bool forceUiUpdate = false);
@@ -357,6 +418,11 @@ class Screen : public concurrency::OSThread
     int32_t runOnce() final;
 
     bool isAUTOOled = false;
+
+    // Screen dimensions (for convenience)
+    // Defined during Screen::setup
+    uint16_t displayWidth = 0;
+    uint16_t displayHeight = 0;
 
   private:
     FrameCallback alertFrames[1];
@@ -387,8 +453,34 @@ class Screen : public concurrency::OSThread
     void handleShowPrevFrame();
     void handlePrint(const char *text);
     void handleStartFirmwareUpdateScreen();
-    /// Rebuilds our list of frames (screens) to default ones.
-    void setFrames();
+
+    // Info collected by setFrames method.
+    // Index location of specific frames. Used to apply the FrameFocus parameter of setFrames
+    struct FramesetInfo {
+        struct FramePositions {
+            uint8_t fault = 0;
+            uint8_t textMessage = 0;
+            uint8_t focusedModule = 0;
+            uint8_t log = 0;
+            uint8_t settings = 0;
+            uint8_t wifi = 0;
+        } positions;
+
+        uint8_t frameCount = 0;
+    } framesetInfo;
+
+    // Which frame we want to be displayed, after we regen the frameset by calling setFrames
+    enum FrameFocus : uint8_t {
+        FOCUS_DEFAULT,  // No specific frame
+        FOCUS_PRESERVE, // Return to the previous frame
+        FOCUS_FAULT,
+        FOCUS_TEXTMESSAGE,
+        FOCUS_MODULE, // Note: target module should call requestFocus(), otherwise no info about which module to focus
+    };
+
+    // Regenerate the normal set of frames, focusing a specific frame if requested
+    // Call when a frame should be added / removed, or custom frames should be cleared
+    void setFrames(FrameFocus focus = FOCUS_DEFAULT);
 
     /// Try to start drawing ASAP
     void setFastFramerate();
@@ -453,92 +545,5 @@ class Screen : public concurrency::OSThread
 };
 
 } // namespace graphics
-namespace
-{
-/// A basic 2D point class for drawing
-class Point
-{
-  public:
-    float x, y;
 
-    Point(float _x, float _y) : x(_x), y(_y) {}
-
-    /// Apply a rotation around zero (standard rotation matrix math)
-    void rotate(float radian)
-    {
-        float cos = cosf(radian), sin = sinf(radian);
-        float rx = x * cos + y * sin, ry = -x * sin + y * cos;
-
-        x = rx;
-        y = ry;
-    }
-
-    void translate(int16_t dx, int dy)
-    {
-        x += dx;
-        y += dy;
-    }
-
-    void scale(float f)
-    {
-        // We use -f here to counter the flip that happens
-        // on the y axis when drawing and rotating on screen
-        x *= f;
-        y *= -f;
-    }
-};
-
-} // namespace
-
-static void drawLine(OLEDDisplay *d, const Point &p1, const Point &p2)
-{
-    d->drawLine(p1.x, p1.y, p2.x, p2.y);
-}
-
-static uint16_t getCompassDiam(OLEDDisplay *display)
-{
-    uint16_t diam = 0;
-    uint16_t offset = 0;
-
-    if (config.display.displaymode != meshtastic_Config_DisplayConfig_DisplayMode_DEFAULT)
-        offset = FONT_HEIGHT_SMALL;
-
-    // get the smaller of the 2 dimensions and subtract 20
-    if (display->getWidth() > (display->getHeight() - offset)) {
-        diam = display->getHeight() - offset;
-        // if 2/3 of the other size would be smaller, use that
-        if (diam > (display->getWidth() * 2 / 3)) {
-            diam = display->getWidth() * 2 / 3;
-        }
-    } else {
-        diam = display->getWidth();
-        if (diam > ((display->getHeight() - offset) * 2 / 3)) {
-            diam = (display->getHeight() - offset) * 2 / 3;
-        }
-    }
-
-    return diam - 20;
-};
-
-// Draw north
-static void drawCompassNorth(OLEDDisplay *display, int16_t compassX, int16_t compassY, float myHeading)
-{
-    // If north is supposed to be at the top of the compass we want rotation to be +0
-    if (config.display.compass_north_top)
-        myHeading = -0;
-
-    Point N1(-0.04f, 0.65f), N2(0.04f, 0.65f);
-    Point N3(-0.04f, 0.55f), N4(0.04f, 0.55f);
-    Point *rosePoints[] = {&N1, &N2, &N3, &N4};
-
-    for (int i = 0; i < 4; i++) {
-        // North on compass will be negative of heading
-        rosePoints[i]->rotate(-myHeading);
-        rosePoints[i]->scale(getCompassDiam(display));
-        rosePoints[i]->translate(compassX, compassY);
-    }
-    drawLine(display, N1, N3);
-    drawLine(display, N2, N4);
-    drawLine(display, N1, N4);
-}
 #endif

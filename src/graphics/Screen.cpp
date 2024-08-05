@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 #include "Screen.h"
+#include "../userPrefs.h"
 #include "configuration.h"
 #if HAS_SCREEN
 #include <OLEDDisplay.h>
@@ -41,9 +42,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh/Channels.h"
 #include "mesh/generated/meshtastic/deviceonly.pb.h"
 #include "meshUtils.h"
+#include "modules/AdminModule.h"
 #include "modules/ExternalNotificationModule.h"
 #include "modules/TextMessageModule.h"
-#include "modules/WaypointModule.h"
 #include "sleep.h"
 #include "target_specific.h"
 
@@ -59,9 +60,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if ARCH_PORTDUINO
 #include "platform/portduino/PortduinoGlue.h"
 #endif
-
-/// Convert an integer GPS coords to a floating point
-#define DegD(i) (i * 1e-7)
 
 using namespace meshtastic; /** @todo remove */
 
@@ -79,7 +77,6 @@ namespace graphics
 // A text message frame + debug frame + all the node infos
 FrameCallback *normalFrames;
 static uint32_t targetFramerate = IDLE_FRAMERATE;
-static char btPIN[16] = "888888";
 
 uint32_t logo_timeout = 5000; // 4 seconds for EACH logo
 
@@ -112,10 +109,10 @@ GeoCoord geoCoord;
 static bool heartbeat = false;
 #endif
 
-static uint16_t displayWidth, displayHeight;
-
-#define SCREEN_WIDTH displayWidth
-#define SCREEN_HEIGHT displayHeight
+// Quick access to screen dimensions from static drawing functions
+// DEPRECATED. To-do: move static functions inside Screen class
+#define SCREEN_WIDTH display->getWidth()
+#define SCREEN_HEIGHT display->getHeight()
 
 #include "graphics/ScreenFonts.h"
 
@@ -160,7 +157,11 @@ static void drawIconScreen(const char *upperMsg, OLEDDisplay *display, OLEDDispl
 
     display->setFont(FONT_MEDIUM);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
+#ifdef SPLASH_TITLE_USERPREFS
+    const char *title = SPLASH_TITLE_USERPREFS;
+#else
     const char *title = "meshtastic.org";
+#endif
     display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM, title);
     display->setFont(FONT_SMALL);
 
@@ -229,25 +230,12 @@ static void drawOEMBootScreen(OLEDDisplay *display, OLEDDisplayUiState *state, i
     drawOEMIconScreen(region, display, state, x, y);
 }
 
-static void drawFrameText(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y, const char *message)
+void Screen::drawFrameText(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y, const char *message)
 {
     uint16_t x_offset = display->width() / 2;
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->setFont(FONT_MEDIUM);
     display->drawString(x_offset + x, 26 + y, message);
-}
-
-static void drawBootScreen(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
-{
-#ifdef ARCH_ESP32
-    if (wakeCause == ESP_SLEEP_WAKEUP_TIMER || wakeCause == ESP_SLEEP_WAKEUP_EXT1) {
-        drawFrameText(display, state, x, y, "Resuming...");
-    } else
-#endif
-    {
-        const char *region = myRegion ? myRegion->name : NULL;
-        drawIconScreen(region, display, state, x, y);
-    }
 }
 
 // Used on boot when a certificate is being created
@@ -428,37 +416,6 @@ static void drawCriticalFaultFrame(OLEDDisplay *display, OLEDDisplayUiState *sta
 static bool shouldDrawMessage(const meshtastic_MeshPacket *packet)
 {
     return packet->from != 0 && !moduleConfig.store_forward.enabled;
-}
-
-// Determine whether the waypoint frame should be drawn (waypoint deleted? expired?)
-static bool shouldDrawWaypoint(const meshtastic_MeshPacket *packet)
-{
-#if !MESHTASTIC_EXCLUDE_WAYPOINT
-    // If no waypoint to show
-    if (!devicestate.has_rx_waypoint)
-        return false;
-
-    // Decode the message, to find the expiration time (is waypoint still valid)
-    // This handles "deletion" as well as expiration
-    meshtastic_Waypoint wp;
-    memset(&wp, 0, sizeof(wp));
-    if (pb_decode_from_bytes(packet->decoded.payload.bytes, packet->decoded.payload.size, &meshtastic_Waypoint_msg, &wp)) {
-        // Valid waypoint
-        if (wp.expire > getTime())
-            return devicestate.has_rx_waypoint = true;
-
-        // Expired, or deleted
-        else
-            return devicestate.has_rx_waypoint = false;
-    }
-
-    // If decoding failed
-    LOG_ERROR("Failed to decode waypoint\n");
-    devicestate.has_rx_waypoint = false;
-    return false;
-#else
-    return false;
-#endif
 }
 
 // Draw power bars or a charging indicator on an image of a battery, determined by battery charge voltage or percentage.
@@ -1107,7 +1064,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 }
 
 /// Draw a series of fields in a column, wrapping to multiple columns if needed
-static void drawColumns(OLEDDisplay *display, int16_t x, int16_t y, const char **fields)
+void Screen::drawColumns(OLEDDisplay *display, int16_t x, int16_t y, const char **fields)
 {
     // The coordinates define the left starting point of the text
     display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -1293,7 +1250,7 @@ static void drawGPScoordinates(OLEDDisplay *display, int16_t x, int16_t y, const
  * We keep a series of "after you've gone 10 meters, what is your heading since
  * the last reference point?"
  */
-static float estimatedHeading(double lat, double lon)
+float Screen::estimatedHeading(double lat, double lon)
 {
     static double oldLat, oldLon;
     static float b;
@@ -1323,7 +1280,7 @@ static size_t nodeIndex;
 static int8_t prevFrame = -1;
 
 // Draw the arrow pointing to a node's location
-static void drawNodeHeading(OLEDDisplay *display, int16_t compassX, int16_t compassY, float headingRadian)
+void Screen::drawNodeHeading(OLEDDisplay *display, int16_t compassX, int16_t compassY, uint16_t compassDiam, float headingRadian)
 {
     Point tip(0.0f, 0.5f), tail(0.0f, -0.5f); // pointing up initially
     float arrowOffsetX = 0.2f, arrowOffsetY = 0.2f;
@@ -1333,38 +1290,16 @@ static void drawNodeHeading(OLEDDisplay *display, int16_t compassX, int16_t comp
 
     for (int i = 0; i < 4; i++) {
         arrowPoints[i]->rotate(headingRadian);
-        arrowPoints[i]->scale(getCompassDiam(display) * 0.6);
+        arrowPoints[i]->scale(compassDiam * 0.6);
         arrowPoints[i]->translate(compassX, compassY);
     }
-    drawLine(display, tip, tail);
-    drawLine(display, leftArrow, tip);
-    drawLine(display, rightArrow, tip);
+    display->drawLine(tip.x, tip.y, tail.x, tail.y);
+    display->drawLine(leftArrow.x, leftArrow.y, tip.x, tip.y);
+    display->drawLine(rightArrow.x, rightArrow.y, tip.x, tip.y);
 }
-/*
-// Draw north
-static void drawCompassNorth(OLEDDisplay *display, int16_t compassX, int16_t compassY, float myHeading)
-{
-    // If north is supposed to be at the top of the compass we want rotation to be +0
-    if (config.display.compass_north_top)
-        myHeading = -0;
-
-    Point N1(-0.04f, 0.65f), N2(0.04f, 0.65f);
-    Point N3(-0.04f, 0.55f), N4(0.04f, 0.55f);
-    Point *rosePoints[] = {&N1, &N2, &N3, &N4};
-
-    for (int i = 0; i < 4; i++) {
-        // North on compass will be negative of heading
-        rosePoints[i]->rotate(-myHeading);
-        rosePoints[i]->scale(getCompassDiam(display));
-        rosePoints[i]->translate(compassX, compassY);
-    }
-    drawLine(display, N1, N3);
-    drawLine(display, N2, N4);
-    drawLine(display, N1, N4);
-}*/
 
 // Get a string representation of the time passed since something happened
-static void getTimeAgoStr(uint32_t agoSecs, char *timeStr, uint8_t maxLength)
+void Screen::getTimeAgoStr(uint32_t agoSecs, char *timeStr, uint8_t maxLength)
 {
     // Use an absolute timestamp in some cases.
     // Particularly useful with E-Ink displays. Static UI, fewer refreshes.
@@ -1392,6 +1327,54 @@ static void getTimeAgoStr(uint32_t agoSecs, char *timeStr, uint8_t maxLength)
     else
         snprintf(timeStr, maxLength, "unknown age");
 }
+
+void Screen::drawCompassNorth(OLEDDisplay *display, int16_t compassX, int16_t compassY, float myHeading)
+{
+    // If north is supposed to be at the top of the compass we want rotation to be +0
+    if (config.display.compass_north_top)
+        myHeading = -0;
+
+    Point N1(-0.04f, 0.65f), N2(0.04f, 0.65f);
+    Point N3(-0.04f, 0.55f), N4(0.04f, 0.55f);
+    Point *rosePoints[] = {&N1, &N2, &N3, &N4};
+
+    uint16_t compassDiam = Screen::getCompassDiam(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    for (int i = 0; i < 4; i++) {
+        // North on compass will be negative of heading
+        rosePoints[i]->rotate(-myHeading);
+        rosePoints[i]->scale(compassDiam);
+        rosePoints[i]->translate(compassX, compassY);
+    }
+    display->drawLine(N1.x, N1.y, N3.x, N3.y);
+    display->drawLine(N2.x, N2.y, N4.x, N4.y);
+    display->drawLine(N1.x, N1.y, N4.x, N4.y);
+}
+
+uint16_t Screen::getCompassDiam(uint32_t displayWidth, uint32_t displayHeight)
+{
+    uint16_t diam = 0;
+    uint16_t offset = 0;
+
+    if (config.display.displaymode != meshtastic_Config_DisplayConfig_DisplayMode_DEFAULT)
+        offset = FONT_HEIGHT_SMALL;
+
+    // get the smaller of the 2 dimensions and subtract 20
+    if (displayWidth > (displayHeight - offset)) {
+        diam = displayHeight - offset;
+        // if 2/3 of the other size would be smaller, use that
+        if (diam > (displayWidth * 2 / 3)) {
+            diam = displayWidth * 2 / 3;
+        }
+    } else {
+        diam = displayWidth;
+        if (diam > ((displayHeight - offset) * 2 / 3)) {
+            diam = (displayHeight - offset) * 2 / 3;
+        }
+    }
+
+    return diam - 20;
+};
 
 static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
@@ -1432,7 +1415,7 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     }
 
     static char lastStr[20];
-    getTimeAgoStr(sinceLastSeen(node), lastStr, sizeof(lastStr));
+    screen->getTimeAgoStr(sinceLastSeen(node), lastStr, sizeof(lastStr));
 
     static char distStr[20];
     if (config.display.units == meshtastic_Config_DisplayConfig_DisplayUnits_IMPERIAL) {
@@ -1443,13 +1426,14 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     meshtastic_NodeInfoLite *ourNode = nodeDB->getMeshNode(nodeDB->getNodeNum());
     const char *fields[] = {username, lastStr, signalStr, distStr, NULL};
     int16_t compassX = 0, compassY = 0;
+    uint16_t compassDiam = Screen::getCompassDiam(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // coordinates for the center of the compass/circle
     if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_DEFAULT) {
-        compassX = x + SCREEN_WIDTH - getCompassDiam(display) / 2 - 5;
+        compassX = x + SCREEN_WIDTH - compassDiam / 2 - 5;
         compassY = y + SCREEN_HEIGHT / 2;
     } else {
-        compassX = x + SCREEN_WIDTH - getCompassDiam(display) / 2 - 5;
+        compassX = x + SCREEN_WIDTH - compassDiam / 2 - 5;
         compassY = y + FONT_HEIGHT_SMALL + (SCREEN_HEIGHT - FONT_HEIGHT_SMALL) / 2;
     }
     bool hasNodeHeading = false;
@@ -1460,8 +1444,8 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
         if (screen->hasHeading())
             myHeading = (screen->getHeading()) * PI / 180; // gotta convert compass degrees to Radians
         else
-            myHeading = estimatedHeading(DegD(op.latitude_i), DegD(op.longitude_i));
-        drawCompassNorth(display, compassX, compassY, myHeading);
+            myHeading = screen->estimatedHeading(DegD(op.latitude_i), DegD(op.longitude_i));
+        screen->drawCompassNorth(display, compassX, compassY, myHeading);
 
         if (hasValidPosition(node)) {
             // display direction toward node
@@ -1488,7 +1472,7 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
             // If the top of the compass is not a static north we need adjust bearingToOther based on heading
             if (!config.display.compass_north_top)
                 bearingToOther -= myHeading;
-            drawNodeHeading(display, compassX, compassY, bearingToOther);
+            screen->drawNodeHeading(display, compassX, compassY, compassDiam, bearingToOther);
         }
     }
     if (!hasNodeHeading) {
@@ -1498,120 +1482,18 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
         // hasValidPosition(node));
         display->drawString(compassX - FONT_HEIGHT_SMALL / 4, compassY - FONT_HEIGHT_SMALL / 2, "?");
     }
-    display->drawCircle(compassX, compassY, getCompassDiam(display) / 2);
+    display->drawCircle(compassX, compassY, compassDiam / 2);
 
     if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
         display->setColor(BLACK);
     }
     // Must be after distStr is populated
-    drawColumns(display, x, y, fields);
+    screen->drawColumns(display, x, y, fields);
 }
 
-/// Draw the last waypoint we received
-static void drawWaypointFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
-{
-    // Prepare to draw
-    display->setFont(FONT_SMALL);
-    display->setTextAlignment(TEXT_ALIGN_LEFT);
-
-    // Handle inverted display
-    // Unsure of expected behavior: for now, copy drawNodeInfo
-    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED)
-        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
-
-    // Decode the waypoint
-    meshtastic_MeshPacket &mp = devicestate.rx_waypoint;
-    meshtastic_Waypoint wp;
-    memset(&wp, 0, sizeof(wp));
-    if (!pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, &meshtastic_Waypoint_msg, &wp)) {
-        // This *should* be caught by shouldDrawWaypoint, but we'll short-circuit here just in case
-        display->drawStringMaxWidth(0 + x, 0 + y, x + display->getWidth(), "Couldn't decode waypoint");
-        devicestate.has_rx_waypoint = false;
-        return;
-    }
-
-    // Get timestamp info. Will pass as a field to drawColumns
-    static char lastStr[20];
-    getTimeAgoStr(sinceReceived(&mp), lastStr, sizeof(lastStr));
-
-    // Will contain distance information, passed as a field to drawColumns
-    static char distStr[20];
-
-    // Get our node, to use our own position
-    meshtastic_NodeInfoLite *ourNode = nodeDB->getMeshNode(nodeDB->getNodeNum());
-
-    // Text fields to draw (left of compass)
-    // Last element must be NULL. This signals the end of the char*[] to drawColumns
-    const char *fields[] = {"Waypoint", lastStr, wp.name, distStr, NULL};
-
-    // Co-ordinates for the center of the compass/circle
-    int16_t compassX = 0, compassY = 0;
-    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_DEFAULT) {
-        compassX = x + SCREEN_WIDTH - getCompassDiam(display) / 2 - 5;
-        compassY = y + SCREEN_HEIGHT / 2;
-    } else {
-        compassX = x + SCREEN_WIDTH - getCompassDiam(display) / 2 - 5;
-        compassY = y + FONT_HEIGHT_SMALL + (SCREEN_HEIGHT - FONT_HEIGHT_SMALL) / 2;
-    }
-
-    // If our node has a position:
-    if (ourNode && (hasValidPosition(ourNode) || screen->hasHeading())) {
-        const meshtastic_PositionLite &op = ourNode->position;
-        float myHeading;
-        if (screen->hasHeading())
-            myHeading = (screen->getHeading()) * PI / 180; // gotta convert compass degrees to Radians
-        else
-            myHeading = estimatedHeading(DegD(op.latitude_i), DegD(op.longitude_i));
-        drawCompassNorth(display, compassX, compassY, myHeading);
-
-        // Distance to Waypoint
-        float d = GeoCoord::latLongToMeter(DegD(wp.latitude_i), DegD(wp.longitude_i), DegD(op.latitude_i), DegD(op.longitude_i));
-        if (config.display.units == meshtastic_Config_DisplayConfig_DisplayUnits_IMPERIAL) {
-            if (d < (2 * MILES_TO_FEET))
-                snprintf(distStr, sizeof(distStr), "%.0f ft", d * METERS_TO_FEET);
-            else
-                snprintf(distStr, sizeof(distStr), "%.1f mi", d * METERS_TO_FEET / MILES_TO_FEET);
-        } else {
-            if (d < 2000)
-                snprintf(distStr, sizeof(distStr), "%.0f m", d);
-            else
-                snprintf(distStr, sizeof(distStr), "%.1f km", d / 1000);
-        }
-
-        // Compass bearing to waypoint
-        float bearingToOther =
-            GeoCoord::bearing(DegD(op.latitude_i), DegD(op.longitude_i), DegD(wp.latitude_i), DegD(wp.longitude_i));
-        // If the top of the compass is a static north then bearingToOther can be drawn on the compass directly
-        // If the top of the compass is not a static north we need adjust bearingToOther based on heading
-        if (!config.display.compass_north_top)
-            bearingToOther -= myHeading;
-        drawNodeHeading(display, compassX, compassY, bearingToOther);
-    }
-
-    // If our node doesn't have position
-    else {
-        // ? in the compass
-        display->drawString(compassX - FONT_HEIGHT_SMALL / 4, compassY - FONT_HEIGHT_SMALL / 2, "?");
-
-        // ? in the distance field
-        if (config.display.units == meshtastic_Config_DisplayConfig_DisplayUnits_IMPERIAL)
-            strncpy(distStr, "? mi", sizeof(distStr));
-        else
-            strncpy(distStr, "? km", sizeof(distStr));
-    }
-
-    // Undo color-inversion, if set prior to drawing header
-    // Unsure of expected behavior? For now: copy drawNodeInfo
-    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
-        display->setColor(BLACK);
-    }
-
-    // Draw compass circle
-    display->drawCircle(compassX, compassY, getCompassDiam(display) / 2);
-
-    // Must be after distStr is populated
-    drawColumns(display, x, y, fields);
-}
+#if defined(ESP_PLATFORM) && defined(USE_ST7789)
+SPIClass SPI1(HSPI);
+#endif
 
 Screen::Screen(ScanI2C::DeviceAddress address, meshtastic_Config_DisplayConfig_OledType screenType, OLEDDISPLAY_GEOMETRY geometry)
     : concurrency::OSThread("Screen"), address_found(address), model(screenType), geometry(geometry), cmdQueue(32)
@@ -1620,6 +1502,13 @@ Screen::Screen(ScanI2C::DeviceAddress address, meshtastic_Config_DisplayConfig_O
 #if defined(USE_SH1106) || defined(USE_SH1107) || defined(USE_SH1107_128_64)
     dispdev = new SH1106Wire(address.address, -1, -1, geometry,
                              (address.port == ScanI2C::I2CPort::WIRE1) ? HW_I2C::I2C_TWO : HW_I2C::I2C_ONE);
+#elif defined(USE_ST7789)
+#ifdef ESP_PLATFORM
+    dispdev = new ST7789Spi(&SPI1, ST7789_RESET, ST7789_RS, ST7789_NSS, GEOMETRY_RAWMODE, TFT_WIDTH, TFT_HEIGHT, ST7789_SDA,
+                            ST7789_MISO, ST7789_SCK);
+#else
+    dispdev = new ST7789Spi(&SPI1, ST7789_RESET, ST7789_RS, ST7789_NSS, GEOMETRY_RAWMODE, TFT_WIDTH, TFT_HEIGHT);
+#endif
 #elif defined(USE_SSD1306)
     dispdev = new SSD1306Wire(address.address, -1, -1, geometry,
                               (address.port == ScanI2C::I2CPort::WIRE1) ? HW_I2C::I2C_TWO : HW_I2C::I2C_ONE);
@@ -1698,7 +1587,14 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 #endif
 
             dispdev->displayOn();
-
+#ifdef USE_ST7789
+#ifdef ESP_PLATFORM
+            analogWrite(VTFT_LEDA, BRIGHTNESS_DEFAULT);
+#else
+            pinMode(VTFT_LEDA, OUTPUT);
+            digitalWrite(VTFT_LEDA, TFT_BACKLIGHT_ON);
+#endif
+#endif
             enabled = true;
             setInterval(0); // Draw ASAP
             runASAP = true;
@@ -1709,6 +1605,12 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 #endif
             LOG_INFO("Turning off screen\n");
             dispdev->displayOff();
+
+#ifdef USE_ST7789
+            pinMode(VTFT_LEDA, OUTPUT);
+            digitalWrite(VTFT_LEDA, !TFT_BACKLIGHT_ON);
+#endif
+
 #ifdef T_WATCH_S3
             PMU->disablePowerOutput(XPOWERS_ALDO2);
 #endif
@@ -1758,9 +1660,19 @@ void Screen::setup()
 
     // Add frames.
     EINK_ADD_FRAMEFLAG(dispdev, DEMAND_FAST);
-    static FrameCallback bootFrames[] = {drawBootScreen};
-    static const int bootFrameCount = sizeof(bootFrames) / sizeof(bootFrames[0]);
-    ui->setFrames(bootFrames, bootFrameCount);
+    alertFrames[0] = [this](OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y) -> void {
+#ifdef ARCH_ESP32
+        if (wakeCause == ESP_SLEEP_WAKEUP_TIMER || wakeCause == ESP_SLEEP_WAKEUP_EXT1) {
+            drawFrameText(display, state, x, y, "Resuming...");
+        } else
+#endif
+        {
+            // Draw region in upper left
+            const char *region = myRegion ? myRegion->name : NULL;
+            drawIconScreen(region, display, state, x, y);
+        }
+    };
+    ui->setFrames(alertFrames, 1);
     // No overlays.
     ui->setOverlays(nullptr, 0);
 
@@ -1819,12 +1731,11 @@ void Screen::setup()
     powerStatusObserver.observe(&powerStatus->onNewStatus);
     gpsStatusObserver.observe(&gpsStatus->onNewStatus);
     nodeStatusObserver.observe(&nodeStatus->onNewStatus);
+    adminMessageObserver.observe(adminModule);
     if (textMessageModule)
         textMessageObserver.observe(textMessageModule);
     if (inputBroker)
         inputObserver.observe(inputBroker);
-    if (waypointModule)
-        waypointObserver.observe(waypointModule);
 
     // Modules can notify screen about refresh
     MeshModule::observeUIEvents(&uiFrameEventObserver);
@@ -1991,6 +1902,13 @@ int32_t Screen::runOnce()
         // standard screen loop handling here
         if (config.display.auto_screen_carousel_secs > 0 &&
             (millis() - lastScreenTransition) > (config.display.auto_screen_carousel_secs * 1000)) {
+
+// If an E-Ink display struggles with fast refresh, force carousel to use full refresh instead
+// Carousel is potentially a major source of E-Ink display wear
+#if !defined(EINK_BACKGROUND_USES_FAST)
+            EINK_ADD_FRAMEFLAG(dispdev, COSMETIC);
+#endif
+
             LOG_DEBUG("LastScreenTransition exceeded %ums transitioning to next frame\n", (millis() - lastScreenTransition));
             handleOnPress();
         }
@@ -2049,9 +1967,6 @@ void Screen::setWelcomeFrames()
 /// Determine which screensaver frame to use, then set the FrameCallback
 void Screen::setScreensaverFrames(FrameCallback einkScreensaver)
 {
-    // Remember current frame, restore position at power-on
-    uint8_t frameNumber = ui->getUiState()->currentFrame;
-
     // Retain specified frame / overlay callback beyond scope of this method
     static FrameCallback screensaverFrame;
     static OverlayCallback screensaverOverlay;
@@ -2089,9 +2004,8 @@ void Screen::setScreensaverFrames(FrameCallback einkScreensaver)
 #endif
 
     // Prepare now for next frame, shown when display wakes
-    ui->setOverlays(NULL, 0);       // Clear overlay
-    setFrames();                    // Return to normal display updates
-    ui->switchToFrame(frameNumber); // Attempt to return to same frame after power-on
+    ui->setOverlays(NULL, 0);  // Clear overlay
+    setFrames(FOCUS_PRESERVE); // Return to normal display updates, showing same frame as before screensaver, ideally
 
     // Pick a refresh method, for when display wakes
 #ifdef EINK_HASQUIRK_GHOSTING
@@ -2102,9 +2016,13 @@ void Screen::setScreensaverFrames(FrameCallback einkScreensaver)
 }
 #endif
 
-// restore our regular frame list
-void Screen::setFrames()
+// Regenerate the normal set of frames, focusing a specific frame if requested
+// Called when a frame should be added / removed, or custom frames should be cleared
+void Screen::setFrames(FrameFocus focus)
 {
+    uint8_t originalPosition = ui->getUiState()->currentFrame;
+    FramesetInfo fsi; // Location of specific frames, for applying focus parameter
+
     LOG_DEBUG("showing standard frames\n");
     showingNormalScreen = true;
 
@@ -2138,27 +2056,35 @@ void Screen::setFrames()
     // is the same offset into the moduleFrames vector
     // so that we can invoke the module's callback
     for (auto i = moduleFrames.begin(); i != moduleFrames.end(); ++i) {
-        normalFrames[numframes++] = drawModuleFrame;
+        // Draw the module frame, using the hack described above
+        normalFrames[numframes] = drawModuleFrame;
+
+        // Check if the module being drawn has requested focus
+        // We will honor this request later, if setFrames was triggered by a UIFrameEvent
+        MeshModule *m = *i;
+        if (m->isRequestingFocus())
+            fsi.positions.focusedModule = numframes;
+
+        numframes++;
     }
 
     LOG_DEBUG("Added modules.  numframes: %d\n", numframes);
 
     // If we have a critical fault, show it first
-    if (error_code)
+    fsi.positions.fault = numframes;
+    if (error_code) {
         normalFrames[numframes++] = drawCriticalFaultFrame;
+        focus = FOCUS_FAULT; // Change our "focus" parameter, to ensure we show the fault frame
+    }
 
 #ifdef T_WATCH_S3
     normalFrames[numframes++] = screen->digitalWatchFace ? &Screen::drawDigitalClockFrame : &Screen::drawAnalogClockFrame;
 #endif
 
     // If we have a text message - show it next, unless it's a phone message and we aren't using any special modules
+    fsi.positions.textMessage = numframes;
     if (devicestate.has_rx_text_message && shouldDrawMessage(&devicestate.rx_text_message)) {
         normalFrames[numframes++] = drawTextMessageFrame;
-    }
-
-    // If we have a waypoint (not expired, not deleted)
-    if (devicestate.has_rx_waypoint && shouldDrawWaypoint(&devicestate.rx_waypoint)) {
-        normalFrames[numframes++] = drawWaypointFrame;
     }
 
     // then all the nodes
@@ -2171,11 +2097,14 @@ void Screen::setFrames()
     //
     // Since frames are basic function pointers, we have to use a helper to
     // call a method on debugInfo object.
+    fsi.positions.log = numframes;
     normalFrames[numframes++] = &Screen::drawDebugInfoTrampoline;
 
     // call a method on debugInfoScreen object (for more details)
+    fsi.positions.settings = numframes;
     normalFrames[numframes++] = &Screen::drawDebugInfoSettingsTrampoline;
 
+    fsi.positions.wifi = numframes;
 #if HAS_WIFI && !defined(ARCH_PORTDUINO)
     if (isWifiAvailable()) {
         // call a method on debugInfoScreen object (for more details)
@@ -2183,6 +2112,7 @@ void Screen::setFrames()
     }
 #endif
 
+    fsi.frameCount = numframes; // Total framecount is used to apply FOCUS_PRESERVE
     LOG_DEBUG("Finished building frames. numframes: %d\n", numframes);
 
     ui->setFrames(normalFrames, numframes);
@@ -2195,6 +2125,55 @@ void Screen::setFrames()
 
     prevFrame = -1; // Force drawNodeInfo to pick a new node (because our list
                     // just changed)
+
+    // Focus on a specific frame, in the frame set we just created
+    switch (focus) {
+    case FOCUS_DEFAULT:
+        ui->switchToFrame(0); // First frame
+        break;
+    case FOCUS_FAULT:
+        ui->switchToFrame(fsi.positions.fault);
+        break;
+    case FOCUS_TEXTMESSAGE:
+        ui->switchToFrame(fsi.positions.textMessage);
+        break;
+    case FOCUS_MODULE:
+        // Whichever frame was marked by MeshModule::requestFocus(), if any
+        // If no module requested focus, will show the first frame instead
+        ui->switchToFrame(fsi.positions.focusedModule);
+        break;
+
+    case FOCUS_PRESERVE:
+        // If we can identify which type of frame "originalPosition" was, can move directly to it in the new frameset
+        FramesetInfo &oldFsi = this->framesetInfo;
+        if (originalPosition == oldFsi.positions.log)
+            ui->switchToFrame(fsi.positions.log);
+        else if (originalPosition == oldFsi.positions.settings)
+            ui->switchToFrame(fsi.positions.settings);
+        else if (originalPosition == oldFsi.positions.wifi)
+            ui->switchToFrame(fsi.positions.wifi);
+
+        // If frame count has decreased
+        else if (fsi.frameCount < oldFsi.frameCount) {
+            uint8_t numDropped = oldFsi.frameCount - fsi.frameCount;
+            // Move n frames backwards
+            if (numDropped <= originalPosition)
+                ui->switchToFrame(originalPosition - numDropped);
+            // Unless that would put us "out of bounds" (< 0)
+            else
+                ui->switchToFrame(0);
+        }
+
+        // If we're not sure exactly which frame we were on, at least return to the same frame number
+        // (node frames; module frames)
+        else
+            ui->switchToFrame(originalPosition);
+
+        break;
+    }
+
+    // Store the info about this frameset, for future setFrames calls
+    this->framesetInfo = fsi;
 
     setFastFramerate(); // Draw ASAP
 }
@@ -2222,7 +2201,7 @@ void Screen::blink()
     uint8_t count = 10;
     dispdev->setBrightness(254);
     while (count > 0) {
-        dispdev->fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        dispdev->fillRect(0, 0, dispdev->getWidth(), dispdev->getHeight());
         dispdev->display();
         delay(50);
         dispdev->clear();
@@ -2650,7 +2629,7 @@ int Screen::handleStatusUpdate(const meshtastic::Status *arg)
     switch (arg->getStatusType()) {
     case STATUS_TYPE_NODE:
         if (showingNormalScreen && nodeStatus->getLastNumTotal() != nodeStatus->getNumTotal()) {
-            setFrames(); // Regen the list of screens
+            setFrames(FOCUS_PRESERVE); // Regen the list of screen frames (returning to same frame, if possible)
         }
         nodeDB->updateGUI = false;
         break;
@@ -2662,23 +2641,33 @@ int Screen::handleStatusUpdate(const meshtastic::Status *arg)
 int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 {
     if (showingNormalScreen) {
-        setFrames(); // Regen the list of screens (will show new text message)
+        // Outgoing message
+        if (packet->from == 0)
+            setFrames(FOCUS_PRESERVE); // Return to same frame (quietly hiding the rx text message frame)
+
+        // Incoming message
+        else
+            setFrames(FOCUS_TEXTMESSAGE); // Focus on the new message
     }
 
     return 0;
 }
 
+// Triggered by MeshModules
 int Screen::handleUIFrameEvent(const UIFrameEvent *event)
 {
     if (showingNormalScreen) {
-        if (event->frameChanged) {
-            setFrames(); // Regen the list of screens (will show new text message)
-        } else if (event->needRedraw) {
+        // Regenerate the frameset, potentially honoring a module's internal requestFocus() call
+        if (event->action == UIFrameEvent::Action::REGENERATE_FRAMESET)
+            setFrames(FOCUS_MODULE);
+
+        // Regenerate the frameset, while attempting to maintain focus on the current frame
+        else if (event->action == UIFrameEvent::Action::REGENERATE_FRAMESET_BACKGROUND)
+            setFrames(FOCUS_PRESERVE);
+
+        // Don't regenerate the frameset, just re-draw whatever is on screen ASAP
+        else if (event->action == UIFrameEvent::Action::REDRAW_ONLY)
             setFastFramerate();
-            // TODO: We might also want switch to corresponding frame,
-            //       but we don't know the exact frame number.
-            // ui->switchToFrame(0);
-        }
     }
 
     return 0;
@@ -2713,10 +2702,21 @@ int Screen::handleInputEvent(const InputEvent *event)
     return 0;
 }
 
-int Screen::handleWaypoint(const meshtastic_MeshPacket *arg)
+int Screen::handleAdminMessage(const meshtastic_AdminMessage *arg)
 {
-    // TODO: move to appropriate frame when redrawing
-    setFrames();
+    // Note: only selected admin messages notify this observer
+    // If you wish to handle a new type of message, you should modify AdminModule.cpp first
+
+    switch (arg->which_payload_variant) {
+    // Node removed manually (i.e. via app)
+    case meshtastic_AdminMessage_remove_by_nodenum_tag:
+        setFrames(FOCUS_PRESERVE);
+        break;
+
+    // Default no-op, in case the admin message observable gets used by other classes in future
+    default:
+        break;
+    }
     return 0;
 }
 
