@@ -372,7 +372,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						LOG_INFO("Trackball enabled for next 10 seconds\n");
 						this->lastTrackballMillis = millis();
             this->lastTouchMillis = millis();
-            this->payload = event->kbchar;
+            // this->payload = event->kbchar;
 						this->skipNextFreetextMode = true;
             validEvent = true;
 					break;
