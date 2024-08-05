@@ -1165,7 +1165,8 @@ static void drawGPSpowerstat(OLEDDisplay *display, int16_t x, int16_t y, const G
                                                                                                        : "GPS is disabled";
         pos = (SCREEN_WIDTH - display->getStringWidth(displayLine)) / 2;
     }
-    display->drawString(x + pos, y, displayLine);
+		//frc
+    // display->drawString(x + pos, y, displayLine);
 }
 
 static void drawGPSAltitude(OLEDDisplay *display, int16_t x, int16_t y, const GPSStatus *gps)
@@ -2601,12 +2602,52 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
         uptime += timebuf;
     }
 
-    display->drawString(x, y + FONT_HEIGHT_SMALL * 1, uptime.c_str());
+    // display->drawString(x, y + FONT_HEIGHT_SMALL * 1, uptime.c_str());
+		// frc
+    display->drawString(x, y + FONT_HEIGHT_MEDIUM * 1, uptime.c_str());
+
 
     // Display Channel Utilization
     char chUtil[13];
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
-    display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_SMALL * 1, chUtil);
+    // frc
+    display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
+		char ownNodeName[20];
+		sprintf(ownNodeName, "%s", owner.long_name);
+		snprintf(ownNodeName, sizeof(ownNodeName), "%s", ownNodeName);
+		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(ownNodeName)) / 2, y + 12 + FONT_HEIGHT_LARGE * 2, ownNodeName);
+		char totalMsgs[35];
+		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
+		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
+		char totalNodes[35];
+		snprintf(totalNodes, sizeof(totalNodes), "Total Nodes: %d", nodeDB->getNumMeshNodes());
+		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalNodes)) / 2, y + 12 + FONT_HEIGHT_LARGE * 4, totalNodes);
+
+  String date = __DATE__; // format: "MMM DD YYYY"
+	String time = __TIME__; // format: "HH:MM:SS"
+	String month = date.substring(0, 3);
+	int monthNumber;
+	if (month == "Jan") monthNumber = 1;
+	else if (month == "Feb") monthNumber = 2;
+	else if (month == "Mar") monthNumber = 3;
+	else if (month == "Apr") monthNumber = 4;
+	else if (month == "May") monthNumber = 5;
+	else if (month == "Jun") monthNumber = 6;
+	else if (month == "Jul") monthNumber = 7;
+	else if (month == "Aug") monthNumber = 8;
+	else if (month == "Sep") monthNumber = 9;
+	else if (month == "Oct") monthNumber = 10;
+	else if (month == "Nov") monthNumber = 11;
+	else if (month == "Dec") monthNumber = 12;
+	int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
+	int hour = time.substring(0, 2).toInt(); // Extract hour and remove leading zero
+	String title = "Monastery Messenger v" + String(monthNumber) + "." + String(day) + "." + String(hour);
+    display->setFont(FONT_SMALL);
+    display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);
+    display->setFont(FONT_MEDIUM);
+
+		//frc
+    // display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_SMALL * 1, chUtil);
 #if HAS_GPS
     if (config.position.gps_mode == meshtastic_Config_PositionConfig_GpsMode_ENABLED) {
         // Line 3
