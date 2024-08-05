@@ -1605,7 +1605,8 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
         } else {
 #ifdef USE_EINK
             // eInkScreensaver parameter is usually NULL (default argument), default frame used instead
-            setScreensaverFrames(einkScreensaver);
+						// frc
+            // setScreensaverFrames(einkScreensaver);
 #endif
             LOG_INFO("Turning off screen\n");
             dispdev->displayOff();
@@ -2032,11 +2033,12 @@ void Screen::setFrames(FrameFocus focus)
 
 #ifdef USE_EINK
     // If user has disabled the screensaver, warn them after boot
-    static bool warnedScreensaverDisabled = false;
-    if (config.display.screen_on_secs == 0 && !warnedScreensaverDisabled) {
-        screen->print("Screensaver disabled\n");
-        warnedScreensaverDisabled = true;
-    }
+		// frc
+    // static bool warnedScreensaverDisabled = false;
+    // if (config.display.screen_on_secs == 0 && !warnedScreensaverDisabled) {
+    //     screen->print("Screensaver disabled\n");
+    //     warnedScreensaverDisabled = true;
+    // }
 #endif
 
     moduleFrames = MeshModule::GetMeshModulesWithUIFrames();

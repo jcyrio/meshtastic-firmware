@@ -96,8 +96,6 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     int splitConfiguredMessages();
     int getNextIndex();
     int getPrevIndex();
-		//frc
-		bool alreadySentFirstMessage = 0;
 
 #if defined(T_WATCH_S3) || defined(RAK14014)
     void drawKeyboard(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
@@ -151,6 +149,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     int messagesCount = 0;
     unsigned long lastTouchMillis = 0;
     String temporaryMessage;
+		//frc
+		bool alreadySentFirstMessage = 0;
 
 #if defined(T_WATCH_S3) || defined(RAK14014)
     Letter keyboard[2][4][10] = {{{{"Q", 20, 0, 0, 0, 0},
