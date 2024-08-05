@@ -25,8 +25,8 @@ std::vector<unsigned int> nodeList = {
 	207141012,  //spare5
 	2864390690,  //kitchen
 	3014898611,  //bookstore
-	1486348306,  //router?
-	3719082304, //router?
+	1486348306,  //not sure
+	3719082304, //router
 	4184738532, //spare6
 	207089188,  //spare1
 	4184751652, //spare2
