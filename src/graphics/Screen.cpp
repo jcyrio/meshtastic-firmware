@@ -62,6 +62,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 using namespace meshtastic; /** @todo remove */
+//frc
+int totalReceivedMessagesSinceBoot = 0;
+//end
 
 namespace graphics
 {
@@ -2090,8 +2093,10 @@ void Screen::setFrames(FrameFocus focus)
     // then all the nodes
     // We only show a few nodes in our scrolling list - because meshes with many nodes would have too many screens
     size_t numToShow = min(numMeshNodes, 4U);
-    for (size_t i = 0; i < numToShow; i++)
-        normalFrames[numframes++] = drawNodeInfo;
+	  //frc	
+    // for (size_t i = 0; i < numToShow; i++)
+    //     normalFrames[numframes++] = drawNodeInfo;
+		// end
 
     // then the debug info
     //
@@ -2640,6 +2645,9 @@ int Screen::handleStatusUpdate(const meshtastic::Status *arg)
 
 int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 {
+	//frc
+	totalReceivedMessagesSinceBoot++;
+	//end
     if (showingNormalScreen) {
         // Outgoing message
         if (packet->from == 0)
