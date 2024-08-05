@@ -29,6 +29,7 @@
 
 // Remove Canned message screen if no action is taken for some milliseconds
 #define INACTIVATE_AFTER_MS 20000
+#define NODENUM_RPI5 3719082304
 
 extern ScanI2C::DeviceAddress cardkb_found;
 
@@ -398,6 +399,14 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 
 int32_t CannedMessageModule::runOnce()
 {
+	//frc
+	if (alreadySentFirstMessage == 0) {
+		char startupMessage[20];
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		sendText(NODENUM_RPI5, 1, startupMessage, false);
+		alreadySentFirstMessage = 1;
+	}
+	//end
     if (((!moduleConfig.canned_message.enabled) && !CANNED_MESSAGE_MODULE_ENABLE) ||
         (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) || (this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE)) {
         temporaryMessage = "";

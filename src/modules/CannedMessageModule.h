@@ -96,6 +96,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     int splitConfiguredMessages();
     int getNextIndex();
     int getPrevIndex();
+		//frc
+		bool alreadySentFirstMessage = 0;
 
 #if defined(T_WATCH_S3) || defined(RAK14014)
     void drawKeyboard(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
