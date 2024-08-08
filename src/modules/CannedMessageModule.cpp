@@ -22,9 +22,9 @@
 std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3"};
 std::vector<unsigned int> nodeList = { 
 	// 3664080480, //my tbeam supreme, broken
+	// 1486348306,  //not sure
 	2864386355,  //kitchen
 	3014898611,  //bookstore
-	// 1486348306,  //not sure
 	3719082304, //router
 	207089188,  //spare1
 	4184751652, //spare2
@@ -375,6 +375,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             this->lastTouchMillis = millis();
             // this->payload = event->kbchar;
 						this->skipNextFreetextMode = true;
+						this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
             validEvent = true;
 					break;
 #endif
@@ -706,18 +707,8 @@ int32_t CannedMessageModule::runOnce()
         case 0x04: // > sign, at least on newest tdecks with black trackballs
 					screen->increaseBrightness();
 					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
-					LOG_INFO("Brightness increased\n");
 					this->skipNextFreetextMode = true;
+					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					break;
         case 0x24: // $ sign
         // case 0x20: // speaker sign, some tdecks with newer keyboards
