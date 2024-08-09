@@ -386,6 +386,8 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						this->cursor = 0;
 						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
             // validEvent = true;
+						requestFocus();
+						// runOnce();
 					}
 					break;
 #endif
