@@ -699,7 +699,7 @@ int32_t CannedMessageModule::runOnce()
 					this->notifyObservers(&e);
 					// this->freetext = this->freetext.substring(1);
 					this->cursor = 0;
-					// this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+					this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
 					// this->cursor--;
 					// might want runOnce here
 					break;
