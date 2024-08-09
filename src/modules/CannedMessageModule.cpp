@@ -370,13 +370,23 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             break;
 #ifdef SIMPLE_TDECK
 				case 0x7e: // 0-mic key, press to enable trackball scrolling for next 10 seconds
+									 // NOTE: this one supersedes the other one that deletes the line. Maybe remove that case
+					if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
 						LOG_INFO("Trackball enabled for next 10 seconds\n");
 						this->lastTrackballMillis = millis();
             this->lastTouchMillis = millis();
-            // this->payload = event->kbchar;
+            this->payload = event->kbchar;
 						this->skipNextFreetextMode = true;
 						this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
             validEvent = true;
+					} else {  // if in freetext mode, delete / clear the line
+						this->freetext = ""; // clear freetext
+						// this->notifyObservers(&e);
+						// this->freetext = this->freetext.substring(1);
+						this->cursor = 0;
+						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+            // validEvent = true;
+					}
 					break;
 #endif
         default:
