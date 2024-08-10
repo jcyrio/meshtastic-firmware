@@ -764,7 +764,7 @@ int32_t CannedMessageModule::runOnce()
 									 // NOTE: there is a delay here. Might want to fix in future
 					screen->increaseBrightness();
 					LOG_INFO("Brightness increased\n");
-					// this->skipNextFreetextMode = true;
+					// this->skipNextFreetextMode = true; //this caused a big delay in setting brightness
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					break;
      //    case 0x24: // $ sign
