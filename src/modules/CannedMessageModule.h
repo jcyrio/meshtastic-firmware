@@ -64,6 +64,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     void handleSetCannedMessageModuleMessages(const char *from_msg);
 
     void showTemporaryMessage(const String &message);
+		// frc
+    void sendText(NodeNum dest, ChannelIndex channel, const char *message, bool wantReplies);
 
     String drawWithCursor(String text, int cursor);
 
@@ -91,7 +93,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
   protected:
     virtual int32_t runOnce() override;
 
-    void sendText(NodeNum dest, ChannelIndex channel, const char *message, bool wantReplies);
+		//frc
+    // void sendText(NodeNum dest, ChannelIndex channel, const char *message, bool wantReplies);
 
     int splitConfiguredMessages();
     int getNextIndex();

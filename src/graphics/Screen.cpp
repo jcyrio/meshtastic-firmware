@@ -45,6 +45,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "modules/AdminModule.h"
 #include "modules/ExternalNotificationModule.h"
 #include "modules/TextMessageModule.h"
+#include "modules/CannedMessageModule.h"
 #include "sleep.h"
 #include "target_specific.h"
 
@@ -60,10 +61,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if ARCH_PORTDUINO
 #include "platform/portduino/PortduinoGlue.h"
 #endif
+#define NODENUM_RPI5 3719082304
 
 using namespace meshtastic; /** @todo remove */
 //frc
 int totalReceivedMessagesSinceBoot = 0;
+bool alreadySentFirstMessage = false;
 //end
 
 namespace graphics
@@ -1781,6 +1784,31 @@ static uint32_t lastScreenTransition;
 
 int32_t Screen::runOnce()
 {
+	if (alreadySentFirstMessage == 0) {
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		LOG_INFO("Sending startup message\n");
+		char startupMessage[20];
+		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		snprintf(startupMessage, sizeof(startupMessage), "Fr Cyril ON");
+		cannedMessageModule->sendText(NODENUM_RPI5, 1, startupMessage, false);
+		alreadySentFirstMessage = 1;
+		LOG_INFO("DONE\n");
+		LOG_INFO("DONE\n");
+		LOG_INFO("DONE\n");
+		LOG_INFO("DONE\n");
+		LOG_INFO("DONE\n");
+		LOG_INFO("DONE\n");
+	}
     // If we don't have a screen, don't ever spend any CPU for us.
     if (!useDisplay) {
         enabled = false;
@@ -2353,11 +2381,11 @@ void DebugInfo::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16
         display->setColor(BLACK);
     }
 
-    char channelStr[20];
-    {
-        concurrency::LockGuard guard(&lock);
-        snprintf(channelStr, sizeof(channelStr), "#%s", channels.getName(channels.getPrimaryIndex()));
-    }
+    // char channelStr[20];
+    // {
+    //     concurrency::LockGuard guard(&lock);
+    //     snprintf(channelStr, sizeof(channelStr), "#%s", channels.getName(channels.getPrimaryIndex()));
+    // }
 
     // Display power status
     if (powerStatus->getHasBattery()) {
@@ -2393,7 +2421,7 @@ void DebugInfo::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16
 #endif
     display->setColor(WHITE);
     // Draw the channel name
-    display->drawString(x, y + FONT_HEIGHT_SMALL, channelStr);
+    // display->drawString(x, y + FONT_HEIGHT_SMALL, channelStr);
     // Draw our hardware ID to assist with bluetooth pairing. Either prefix with Info or S&F Logo
     if (moduleConfig.store_forward.enabled) {
 #ifdef ARCH_ESP32
@@ -2564,11 +2592,11 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
             display->drawString(x + 1, y, String("USB"));
     }
 
-    auto mode = DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, true);
-
-    display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode), y, mode);
-    if (config.display.heading_bold)
-        display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode) - 1, y, mode);
+    // auto mode = DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, true);
+    //
+    // display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode), y, mode);
+    // if (config.display.heading_bold)
+    //     display->drawString(x + SCREEN_WIDTH - display->getStringWidth(mode) - 1, y, mode);
 
     // Line 2
     uint32_t currentMillis = millis();
@@ -2613,16 +2641,16 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     char chUtil[13];
     snprintf(chUtil, sizeof(chUtil), "ChUtil %2.0f%%", airTime->channelUtilizationPercent());
     // frc
-    display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 1, chUtil);
-		char ownNodeName[20];
-		sprintf(ownNodeName, "%s", owner.long_name);
-		snprintf(ownNodeName, sizeof(ownNodeName), "%s", ownNodeName);
-		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(ownNodeName)) / 2, y + 12 + FONT_HEIGHT_LARGE * 2, ownNodeName);
+    display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_MEDIUM * 2, chUtil);
+		// char ownNodeName[20];
+		// sprintf(ownNodeName, "%s", owner.long_name);
+		// snprintf(ownNodeName, sizeof(ownNodeName), "%s", ownNodeName);
+		// display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(ownNodeName)) / 2, y + 12 + FONT_HEIGHT_LARGE * 2, ownNodeName);
 		char totalMsgs[35];
-		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
+		snprintf(totalMsgs, sizeof(totalMsgs), "Rec Msgs: %d", totalReceivedMessagesSinceBoot);
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
 		char totalNodes[35];
-		snprintf(totalNodes, sizeof(totalNodes), "Total Nodes: %d", nodeDB->getNumMeshNodes());
+		snprintf(totalNodes, sizeof(totalNodes), "Nodes: %d", nodeDB->getNumMeshNodes());
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalNodes)) / 2, y + 12 + FONT_HEIGHT_LARGE * 4, totalNodes);
 
   String date = __DATE__; // format: "MMM DD YYYY"
@@ -2643,10 +2671,10 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 	else if (month == "Dec") monthNumber = 12;
 	int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
 	int hour = time.substring(0, 2).toInt(); // Extract hour and remove leading zero
-	String title = "Monastery Messenger v" + String(monthNumber) + "." + String(day) + "." + String(hour);
-    display->setFont(FONT_SMALL);
-    display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);
+	String title = "v" + String(monthNumber) + "." + String(day) + "." + String(hour);
     display->setFont(FONT_MEDIUM);
+    display->drawString(x + getStringCenteredX(title), y + 12 + FONT_HEIGHT_LARGE * 5, title);
+    // display->setFont(FONT_MEDIUM);
 
 		//frc
     // display->drawString(x + SCREEN_WIDTH - display->getStringWidth(chUtil), y + FONT_HEIGHT_SMALL * 1, chUtil);
