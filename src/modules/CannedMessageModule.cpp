@@ -344,6 +344,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
                 } else {
                     externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
                     externalNotificationModule->setMute(true);
+                    externalNotificationModule->setExternalOff(0); // this will turn off the LED if it was on
                     showTemporaryMessage("Notifications \nDisabled");
                     if (screen)
                         screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
@@ -369,27 +370,47 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
 #ifdef SIMPLE_TDECK
-				case 0x7e: // 0-mic key, press to enable trackball scrolling for next 10 seconds
-									 // NOTE: this one supersedes the other one that deletes the line. Maybe remove that case
-					if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
-						LOG_INFO("Trackball enabled for next 10 seconds\n");
-						this->lastTrackballMillis = millis();
-            this->lastTouchMillis = millis();
-            this->payload = event->kbchar;
-						this->skipNextFreetextMode = true;
-						this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
-            validEvent = true;
-					} else {  // if in freetext mode, delete / clear the line
-						this->freetext = ""; // clear freetext
-						// this->notifyObservers(&e);
-						// this->freetext = this->freetext.substring(1);
-						this->cursor = 0;
-						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-            // validEvent = true;
-						requestFocus();
-						// runOnce();
+				case 0x24:
+					if (moduleConfig.external_notification.enabled == true) {
+							if (externalNotificationModule->getMute()) {
+									externalNotificationModule->setMute(false);
+									showTemporaryMessage("Notifications \nEnabled");
+									if (screen)
+											screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
+							} else {
+									externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
+									externalNotificationModule->setMute(true);
+									showTemporaryMessage("Notifications \nDisabled");
+									if (screen)
+											screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
+							}
 					}
-					break;
+						requestFocus();
+				// 		// runOnce();
+				break;
+				// case 0x7e: // 0-mic key, press to enable trackball scrolling for next 10 seconds
+				// 					 // NOTE: this one supersedes the other one that deletes the line. Maybe remove that case
+				// 	LOG_INFO("RunState: %d\n", this->runState);
+				// 	if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
+				// 		LOG_INFO("Trackball enabled for next 10 seconds\n");
+				// 		this->lastTrackballMillis = millis();
+    //         this->lastTouchMillis = millis();
+    //         this->payload = event->kbchar;
+				// 		this->skipNextFreetextMode = true;
+				// 		this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
+    //         validEvent = true;
+				// 	} else {  // if in freetext mode, delete / clear the line
+				// 		LOG_INFO("Was in freetext mode, deleting line\n");
+				// 		this->freetext = ""; // clear freetext
+				// 		// this->notifyObservers(&e);
+				// 		// this->freetext = this->freetext.substring(1);
+				// 		this->cursor = 0;
+				// 		this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+    //         // validEvent = true;
+				// 		requestFocus();
+				// 		// runOnce();
+				// 	}
+				// 	break;
 #endif
         default:
             // pass the pressed key
@@ -707,11 +728,32 @@ int32_t CannedMessageModule::runOnce()
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
 				case 0x7e: // mic / 0 key, clear line
-					this->freetext = ""; // clear freetext
-					this->notifyObservers(&e);
-					// this->freetext = this->freetext.substring(1);
-					this->cursor = 0;
-					this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+					// LOG_INFO("RunState: %d\n", this->runState);
+					// if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
+					if (this->freetext.length() == 0) {
+						LOG_INFO("Trackball enabled for next 10 seconds\n");
+						this->lastTrackballMillis = millis();
+            this->lastTouchMillis = millis();
+            // this->payload = event->kbchar;
+						this->skipNextFreetextMode = true;
+						this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
+            // validEvent = true;
+					} else {  // if in writing mode and more than 1 char written, delete / clear the line
+						LOG_INFO("more than 1 char is on freetext line, deleting line\n");
+						this->freetext = ""; // clear freetext
+						// this->notifyObservers(&e);
+						// this->freetext = this->freetext.substring(1);
+						this->cursor = 0;
+						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+            // validEvent = true;
+						requestFocus();
+						// runOnce();
+					}
+					// this->freetext = ""; // clear freetext
+					// this->notifyObservers(&e);
+					// // this->freetext = this->freetext.substring(1);
+					// this->cursor = 0;
+					// this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
 					// this->cursor--;
 					// might want runOnce here
 					break;
@@ -719,44 +761,45 @@ int32_t CannedMessageModule::runOnce()
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
         case 0x3e: // > sign
         case 0x04: // > sign, at least on newest tdecks with black trackballs
+									 // NOTE: there is a delay here. Might want to fix in future
 					screen->increaseBrightness();
 					LOG_INFO("Brightness increased\n");
-					this->skipNextFreetextMode = true;
+					// this->skipNextFreetextMode = true;
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					break;
-        case 0x24: // $ sign
-        // case 0x20: // speaker sign, some tdecks with newer keyboards
-					if (moduleConfig.external_notification.enabled == true) {
-							if (externalNotificationModule->getMute()) {
-									externalNotificationModule->setMute(false);
-									showTemporaryMessage("Notifications \nEnabled");
-									if (screen)
-											screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
-							} else {
-									externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
-									externalNotificationModule->setMute(true);
-									showTemporaryMessage("Notifications \nDisabled");
-									if (screen)
-											screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
-							}
-					}
-					// if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
-					// 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-					// } else {
-					// 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
-					// 		if (this->dest == NODENUM_BROADCAST) {
-					// 				this->dest = NODENUM_RPI5;
+     //    case 0x24: // $ sign
+     //    // case 0x20: // speaker sign, some tdecks with newer keyboards
+					// if (moduleConfig.external_notification.enabled == true) {
+					// 		if (externalNotificationModule->getMute()) {
+					// 				externalNotificationModule->setMute(false);
+					// 				showTemporaryMessage("Notifications \nEnabled");
+					// 				if (screen)
+					// 						screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
+					// 		} else {
+					// 				externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
+					// 				externalNotificationModule->setMute(true);
+					// 				showTemporaryMessage("Notifications \nDisabled");
+					// 				if (screen)
+					// 						screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
 					// 		}
 					// }
-					// note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
-					// This does though remove subsequent characters. Only the first one isn't caught
-					// if (this->freetext.length() > 0) {
-					// 	this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-					// 	// this->freetext = "";
-					// 	this->cursor--;
-					// 	// this->notifyObservers(&e);
-					// }
-					break;
+					// // if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
+					// // 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+					// // } else {
+					// // 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+					// // 		if (this->dest == NODENUM_BROADCAST) {
+					// // 				this->dest = NODENUM_RPI5;
+					// // 		}
+					// // }
+					// // note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
+					// // This does though remove subsequent characters. Only the first one isn't caught
+					// // if (this->freetext.length() > 0) {
+					// // 	this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+					// // 	// this->freetext = "";
+					// // 	this->cursor--;
+					// // 	// this->notifyObservers(&e);
+					// // }
+					// break;
 #endif
         case 0xb4: // left
 #ifndef SIMPLE_TDECK
