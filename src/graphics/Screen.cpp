@@ -67,6 +67,9 @@ using namespace meshtastic; /** @todo remove */
 //frc
 int totalReceivedMessagesSinceBoot = 0;
 bool alreadySentFirstMessage = false;
+char lastMessageTime[237];
+char lastMessageContent[237];
+
 //end
 
 namespace graphics
@@ -989,21 +992,26 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // If bold, draw twice, shifting right by one pixel
     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
         // Show a timestamp if received today, but longer than 15 minutes ago
+				// frc
         if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes,
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes,
                                  (node && node->has_user) ? node->user.short_name : "???");
         }
         // Timestamp yesterday (if display is wide enough)
         else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "Yesterday %02hu:%02hu from %s", timestampHours, timestampMinutes,
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes,
                                  (node && node->has_user) ? node->user.short_name : "???");
         }
         // Otherwise, show a time delta
         else {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%s %s",
                                  screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
                                  (node && node->has_user) ? node->user.short_name : "???");
+						//end
         }
+				display->drawString(xOff + x, y + 105, lastMessageTime);
+				strcpy(lastMessageTime, tempBuf);
+				LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
     }
 
     display->setColor(WHITE);
@@ -1063,6 +1071,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
     }
+		display->drawStringMaxWidth(0 + x, 0 + y + 140, x + display->getWidth(), lastMessageContent);
+		strcpy(lastMessageContent, tempBuf);
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
@@ -1786,27 +1796,11 @@ int32_t Screen::runOnce()
 {
 	if (alreadySentFirstMessage == 0) {
 		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
-		LOG_INFO("Sending startup message\n");
 		char startupMessage[20];
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		snprintf(startupMessage, sizeof(startupMessage), "Fr Cyril ON");
 		cannedMessageModule->sendText(NODENUM_RPI5, 1, startupMessage, false);
 		alreadySentFirstMessage = 1;
-		LOG_INFO("DONE\n");
-		LOG_INFO("DONE\n");
-		LOG_INFO("DONE\n");
-		LOG_INFO("DONE\n");
-		LOG_INFO("DONE\n");
 		LOG_INFO("DONE\n");
 	}
     // If we don't have a screen, don't ever spend any CPU for us.
