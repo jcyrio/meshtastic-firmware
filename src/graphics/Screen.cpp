@@ -65,7 +65,7 @@ std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Bi
 
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
-char brightnessLevel = '2';
+char brightnessLevel = 'H';
 
 namespace graphics
 {
@@ -1628,7 +1628,11 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             dispdev->displayOn();
 #ifdef USE_ST7789
 #ifdef ESP_PLATFORM
+#ifdef SIMPLE_TDECK
+            analogWrite(VTFT_LEDA, 254);
+#else
             analogWrite(VTFT_LEDA, BRIGHTNESS_DEFAULT);
+#endif
 #else
             pinMode(VTFT_LEDA, OUTPUT);
             digitalWrite(VTFT_LEDA, TFT_BACKLIGHT_ON);
@@ -2282,14 +2286,19 @@ void Screen::increaseBrightness()
 #ifdef SIMPLE_TDECK
 	removeFunctionSymbal(std::string(1, brightnessLevel));
 	// 4 levels we want are 1, 130, 192, 254 
-	if (brightnessLevel == '1') {
-		brightness = 110; brightnessLevel = '2';
-	} else if (brightnessLevel == '2') {
-		brightness = 162; brightnessLevel = '3';
-	} else if (brightnessLevel == '3') {
-		brightness = 254; brightnessLevel = '4';
+	// if (brightnessLevel == '1') {
+	// 	brightness = 110; brightnessLevel = '2';
+	// } else if (brightnessLevel == '2') {
+	// 	brightness = 162; brightnessLevel = '3';
+	// } else if (brightnessLevel == '3') {
+	// 	brightness = 254; brightnessLevel = '4';
+	// } else {
+	// 	brightness = 40; brightnessLevel = '1';
+	// }
+	if (brightnessLevel == 'L') {
+		brightness = 254; brightnessLevel = 'H';
 	} else {
-		brightness = 40; brightnessLevel = '1';
+		brightness = 40; brightnessLevel = 'L';
 	}
 	// brightness = (brightness + 62) % 255;
 	LOG_INFO("Brightness: %d\n", brightness);
