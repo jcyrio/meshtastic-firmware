@@ -152,6 +152,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 #ifdef SIMPLE_TDECK
 		int previousMessageIndex = 0;
 		int totalMessagesSent = 0;
+		bool flashlightOn = 0;
 		bool dontACK = 0;
 		int nodeIndex = 0;
 		bool alreadySentFirstMessage = 0;

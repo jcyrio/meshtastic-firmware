@@ -2644,7 +2644,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
     }
 
 #ifdef SIMPLE_TDECK
-    if (moduleConfig.external_notification.output > 0) {
+    if (moduleConfig.external_notification.output > 0) { // if led pin is greater than 0 then led is being used, so hide the battery display on settings screen
 #endif
     char batStr[20];
     if (powerStatus->getHasBattery()) {

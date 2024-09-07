@@ -757,6 +757,16 @@ int32_t CannedMessageModule::runOnce()
 					// this->cursor--;
 					// might want runOnce here
 					break;
+				case 0x1f: // fake key, testing, want shift-f for toggle flashlight
+					if (this->flashlightOn == 1) {
+						this->flashlightOn = 0;
+						externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+					} else {
+						this->flashlightOn = 1;
+						externalNotificationModule->setExternalOn(0); // this will turn off all GPIO and sounds and idle the loop
+					}
+					break;
+				  
         case 0x1e: // shift-$, toggle brightness
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
         case 0x3e: // > sign
@@ -971,6 +981,7 @@ int32_t CannedMessageModule::runOnce()
             case 0xb7: // right
 #ifdef SIMPLE_TDECK
 						case 0x7e: // mic / 0 key, clear line
+						case 0x1f: // flashlight, change later
 						case 0x1e: // shift-$, toggle brightness
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
