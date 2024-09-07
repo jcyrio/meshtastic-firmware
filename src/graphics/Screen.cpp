@@ -2643,6 +2643,9 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
         display->setColor(BLACK);
     }
 
+#ifdef SIMPLE_TDECK
+    if (moduleConfig.external_notification.output > 0) {
+#endif
     char batStr[20];
     if (powerStatus->getHasBattery()) {
         int batV = powerStatus->getBatteryVoltageMv() / 1000;
@@ -2661,6 +2664,9 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
         if (config.display.heading_bold)
             display->drawString(x + 1, y, String("USB"));
     }
+#ifdef SIMPLE_TDECK
+		}
+#endif
 
 #ifndef SIMPLE_TDECK // hide modem preset
     auto mode = DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, true);
