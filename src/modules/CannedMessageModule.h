@@ -153,6 +153,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int previousMessageIndex = 0;
 		int totalMessagesSent = 0;
 		bool flashlightOn = 0;
+		NodeNum previousDest;
+		String previousFreetext;
 		bool dontACK = 0;
 		int nodeIndex = 0;
 		bool alreadySentFirstMessage = 0;

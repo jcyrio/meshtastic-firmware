@@ -640,6 +640,15 @@ int32_t CannedMessageModule::runOnce()
         if (this->payload == CANNED_MESSAGE_RUN_STATE_FREETEXT) {
             if (this->freetext.length() > 0) {
 #ifdef SIMPLE_TDECK
+							// check if freetext equals "rr" or "RR" to resend last message
+							if (this->freetext == "rr" || this->freetext == "RR") {
+								this->dest = this->previousDest;
+								this->freetext = this->previousFreetext;
+								sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+								showTemporaryMessage("Resending last message");
+							} else {
+
+
 							//if there is a leading '$' char at the start, then remove it
 							// if (this->freetext[0] == '$') {
 							// if (this->freetext[0] == '>') {
@@ -649,6 +658,9 @@ int32_t CannedMessageModule::runOnce()
 							// prevent all broadcast, go just to router node
 							if (this->dest == NODENUM_BROADCAST) sendText(NODENUM_RPI5, 1, this->freetext.c_str(), true);
 							else sendText(this->dest, 1, this->freetext.c_str(), true);
+							this->previousDest = this->dest;
+							this->previousFreetext = this->freetext;
+							}
 #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
 #endif
