@@ -265,7 +265,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #ifdef SIMPLE_TDECK
             // pass the pressed key
 					//FRC TEMP
-					// LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
 #endif
             this->payload = event->kbchar;
         }
@@ -757,14 +757,17 @@ int32_t CannedMessageModule::runOnce()
 					// this->cursor--;
 					// might want runOnce here
 					break;
-				case 0x1f: // fake key, testing, want shift-f for toggle flashlight
+				case 0x66: // alt-f, toggle flashlight
 					if (this->flashlightOn == 1) {
+						LOG_INFO("Flashlight off\n");
 						this->flashlightOn = 0;
 						externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 					} else {
+						LOG_INFO("Flashlight on\n");
 						this->flashlightOn = 1;
 						externalNotificationModule->setExternalOn(0); // this will turn off all GPIO and sounds and idle the loop
 					}
+					delay(100); //debounce
 					break;
 				  
         case 0x1e: // shift-$, toggle brightness
@@ -981,7 +984,7 @@ int32_t CannedMessageModule::runOnce()
             case 0xb7: // right
 #ifdef SIMPLE_TDECK
 						case 0x7e: // mic / 0 key, clear line
-						case 0x1f: // flashlight, change later
+						case 0x66: // flashlight, alt-f
 						case 0x1e: // shift-$, toggle brightness
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
