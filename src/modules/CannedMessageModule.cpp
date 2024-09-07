@@ -767,6 +767,7 @@ int32_t CannedMessageModule::runOnce()
 						this->flashlightOn = 1;
 						externalNotificationModule->setExternalOn(0); // this will turn off all GPIO and sounds and idle the loop
 					}
+					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 					delay(100); //debounce
 					break;
 				  
@@ -778,7 +779,7 @@ int32_t CannedMessageModule::runOnce()
 					screen->increaseBrightness();
 					LOG_INFO("Brightness increased\n");
 					// this->skipNextFreetextMode = true; //this caused a big delay in setting brightness
-					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;  //prevents entering freetext mode
 					break;
      //    case 0x24: // $ sign
      //    // case 0x20: // speaker sign, some tdecks with newer keyboards
