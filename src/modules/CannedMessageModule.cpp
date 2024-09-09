@@ -850,6 +850,16 @@ int32_t CannedMessageModule::runOnce()
 					// this->skipNextFreetextMode = true;
 					// delay(100); //debounce
 					break;
+				case 0x7a: // z, clear LED when there's a notification
+				case 0x78: // x, clear LED when there's a notification
+					if (this->freetext.length() == 0) {
+						LOG_INFO("Got Z or X, Clear LED\n");
+						externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+						this->flashlightOn = 0;
+						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+						this->skipNextFreetextMode = true;
+					}
+					break;
 				case 0x1f: // alt-f, toggle flashlight
 					LOG_INFO("Got ALT-F, Flashlight toggle\n");
 					LOG_INFO("Got ALT-F, Flashlight toggle\n");
