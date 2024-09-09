@@ -642,10 +642,13 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 							// check if freetext equals "rr" or "RR" to resend last message
 							if (this->freetext == "rr" || this->freetext == "RR") {
-								this->dest = this->previousDest;
-								this->freetext = this->previousFreetext;
-								sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
-								showTemporaryMessage("Resending last message");
+								if (this->previousFreetext.length() > 0) {
+									this->dest = this->previousDest;
+									if (this->dest == NODENUM_BROADCAST) this->dest = NODENUM_RPI5;
+									this->freetext = this->previousFreetext;
+									sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+									showTemporaryMessage("Resending last message");
+								}
 							} else {
 
 
@@ -769,7 +772,18 @@ int32_t CannedMessageModule::runOnce()
 					// this->cursor--;
 					// might want runOnce here
 					break;
-				case 0x66: // alt-f, toggle flashlight
+				case 0x72: // alt-r, resend last message
+					if (this->previousFreetext.length() > 0) {
+						this->dest = this->previousDest;
+						if (this->dest == NODENUM_BROADCAST) this->dest = NODENUM_RPI5;
+						this->freetext = this->previousFreetext;
+						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+						showTemporaryMessage("Resending last message");
+					}
+					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+					// delay(100); //debounce
+					break;
+				case 0xf: // alt-f, toggle flashlight
 					if (this->flashlightOn == 1) {
 						LOG_INFO("Flashlight off\n");
 						this->flashlightOn = 0;
@@ -997,10 +1011,11 @@ int32_t CannedMessageModule::runOnce()
             case 0xb7: // right
 #ifdef SIMPLE_TDECK
 						case 0x7e: // mic / 0 key, clear line
-						case 0x66: // flashlight, alt-f
 						case 0x1e: // shift-$, toggle brightness
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
+						case 0xf: // alt-f, flashlight
+						case 0x72: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
