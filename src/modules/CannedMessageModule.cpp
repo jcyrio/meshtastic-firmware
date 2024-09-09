@@ -314,7 +314,27 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         validEvent = false; // If key is normal than it will be set to true.
 
         // Run modifier key code below, (doesnt inturrupt typing or reset to start screen page)
-        switch (event->kbchar) {
+        switch (event->kbchar) { //note: showTemporaryMessage doesn't work here
+				// case 0xf: // alt-f, toggle flashlight
+				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
+				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
+				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
+				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
+				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
+				// 	if (this->flashlightOn == 1) {
+				// 		LOG_INFO("Flashlight off\n");
+				// 		this->flashlightOn = 0;
+				// 		externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+				// 	} else {
+				// 		LOG_INFO("Flashlight on\n");
+				// 		this->flashlightOn = 1;
+				// 		externalNotificationModule->setExternalOn(0); // this will turn off all GPIO and sounds and idle the loop
+				// 	}
+				// 	// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+				// 	this->skipNextFreetextMode = true;
+				// 	this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
+				// 	delay(200); //debounce
+				// 	break;
         case 0x11: // make screen brighter
             if (screen)
                 screen->increaseBrightness();
@@ -370,7 +390,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
 #ifdef SIMPLE_TDECK
-				case 0x24:
+				case 0x24:  // $ sign
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
 									externalNotificationModule->setMute(false);
@@ -414,6 +434,17 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #endif
         default:
             // pass the pressed key
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
             LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
 						// want to display value of skipNextFreetextMode
 						LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
@@ -614,7 +645,7 @@ int32_t CannedMessageModule::runOnce()
         this->freetext = ""; // clear freetext
         this->cursor = 0;
         this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-	this->runState = CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE;
+				this->runState = CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE;
         this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
@@ -643,11 +674,12 @@ int32_t CannedMessageModule::runOnce()
 							// check if freetext equals "rr" or "RR" to resend last message
 							if (this->freetext == "rr" || this->freetext == "RR") {
 								if (this->previousFreetext.length() > 0) {
-									this->dest = this->previousDest;
-									if (this->dest == NODENUM_BROADCAST) this->dest = NODENUM_RPI5;
-									this->freetext = this->previousFreetext;
+									if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
+									LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
 									sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
 									showTemporaryMessage("Resending last message");
+								} else {
+									showTemporaryMessage("No previous \nmessage to resend");
 								}
 							} else {
 
@@ -659,10 +691,33 @@ int32_t CannedMessageModule::runOnce()
 							// }
 							// always goes to St Anthony's channel
 							// prevent all broadcast, go just to router node
-							if (this->dest == NODENUM_BROADCAST) sendText(NODENUM_RPI5, 1, this->freetext.c_str(), true);
-							else sendText(this->dest, 1, this->freetext.c_str(), true);
+							if (this->dest == NODENUM_BROADCAST) { //for some reason the first message, without any side scrolling, defaults to NODENUM_BROADCAST. Afterwards it's fine, or after scrolling
+								LOG_DEBUG("WAS BRODCAST\n");
+								LOG_DEBUG("WAS BRODCAST\n");
+								LOG_DEBUG("WAS BRODCAST\n");
+								LOG_DEBUG("WAS BRODCAST\n");
+								LOG_DEBUG("WAS BRODCAST\n");
+								LOG_DEBUG("WAS BRODCAST\n");
+								this->dest = NODENUM_RPI5;
+							}
+							sendText(this->dest, 1, this->freetext.c_str(), true);
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 							this->previousDest = this->dest;
 							this->previousFreetext = this->freetext;
+							LOG_INFO("previousDest: %x, previousFreetext: %s\n", this->previousDest, this->previousFreetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
 							}
 #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
@@ -772,18 +827,33 @@ int32_t CannedMessageModule::runOnce()
 					// this->cursor--;
 					// might want runOnce here
 					break;
-				case 0x72: // alt-r, resend last message
+				case 0x1a: // alt-w/1, previous Messages1
+					sendText(NODENUM_RPI5, 1, "1", false);
+					showTemporaryMessage("Requesting Previous \nMessages 1");
+					break;
+				case 0x2a: // alt-e/2, previous Messages2
+					sendText(NODENUM_RPI5, 1, "2", false);
+					showTemporaryMessage("Requesting Previous \nMessages 2");
+					break;
+				case 0x2e: // alt-r, resend last message
+					LOG_INFO("Got ALT-R, Resend last message\n");
+					LOG_INFO("Got ALT-R, Resend last message\n");
 					if (this->previousFreetext.length() > 0) {
-						this->dest = this->previousDest;
-						if (this->dest == NODENUM_BROADCAST) this->dest = NODENUM_RPI5;
-						this->freetext = this->previousFreetext;
+						if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
+						LOG_INFO("Resending previous message to %d: %s\n", this->previousDest, this->previousFreetext.c_str());
 						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
 						showTemporaryMessage("Resending last message");
+					} else {
+						showTemporaryMessage("No previous \nmessage to resend");
 					}
-					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+					// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+					// this->skipNextFreetextMode = true;
 					// delay(100); //debounce
 					break;
-				case 0xf: // alt-f, toggle flashlight
+				case 0x1f: // alt-f, toggle flashlight
+					LOG_INFO("Got ALT-F, Flashlight toggle\n");
+					LOG_INFO("Got ALT-F, Flashlight toggle\n");
+					LOG_INFO("Got ALT-F, Flashlight toggle\n");
 					if (this->flashlightOn == 1) {
 						LOG_INFO("Flashlight off\n");
 						this->flashlightOn = 0;
@@ -793,10 +863,12 @@ int32_t CannedMessageModule::runOnce()
 						this->flashlightOn = 1;
 						externalNotificationModule->setExternalOn(0); // this will turn off all GPIO and sounds and idle the loop
 					}
-					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
-					delay(100); //debounce
+					// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+					// this->skipNextFreetextMode = true;
+					// validEvent = true;
+					// this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
+					// delay(500); //debounce
 					break;
-				  
         case 0x1e: // shift-$, toggle brightness
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
         case 0x3e: // > sign
@@ -1014,8 +1086,10 @@ int32_t CannedMessageModule::runOnce()
 						case 0x1e: // shift-$, toggle brightness
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
-						case 0xf: // alt-f, flashlight
-						case 0x72: // alt-r, resend last message
+						case 0x1f: // alt-f, flashlight
+						case 0x1a: // alt-1, previous messages 1
+						case 0x2a: // alt-2, previous messages 2
+						case 0x2e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
