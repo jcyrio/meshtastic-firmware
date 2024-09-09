@@ -1110,47 +1110,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
     }
-		//frc
-		char tempBuf2[235];
-		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
-		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
-		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-		LOG_INFO("tempBuf2: %s\n", tempBuf2);
-		LOG_INFO("tempBuf: %s\n", tempBuf);
-		if (strcmp(lastMessageContent2, tempBuf) != 0) {
-			LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
-			strcpy(lastMessageContent3, lastMessageContent2);
-			strcpy(lastMessageContent2, tempBuf);
-			receivedNewMessage = true;
-		}
-			minutes = lastMessageSeconds / 60;
-			hours = minutes / 60;
-			days = hours / 24;
-			// For timestamp
-			useTimestamp = deltaToTimestamp(lastMessageSeconds, &timestampHours, &timestampMinutes, &daysAgo);
-			strcpy(lastMessageTime, lastMessageTimeTemp);
-			LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
-			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
-			if (strlen(tempBuf2) < 40) {
-				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
-					if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
-					}
-					// Timestamp yesterday (if display is wide enough)
-					else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
-					}
-					// Otherwise, show a time delta
-					else {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s %s",
-																	 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), lastNodeName);
-							//end
-					// display->drawString(xOff + x, y + 105, lastMessageTime);
-				}
-				display->drawStringMaxWidth(0 + x, 0 + y + 135, x + display->getWidth(), lastMessageContent3);
-			}
-			}
-		//end
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
