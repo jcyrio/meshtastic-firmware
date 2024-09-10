@@ -154,6 +154,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int previousMessageIndex = 0;
 		int totalMessagesSent = 0;
 		bool flashlightOn = 0;
+		bool cursorScrollMode = 0;
 		NodeNum previousDest = NODENUM_RPI5;
 		String previousFreetext;
 		bool dontACK = 0;

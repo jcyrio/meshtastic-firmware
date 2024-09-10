@@ -879,6 +879,16 @@ int32_t CannedMessageModule::runOnce()
 					// this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
 					// delay(500); //debounce
 					break;
+				case 0x5f: // _, cursorScrollMode
+					//toggle cursor scroll mode
+					if (this->cursorScrollMode == 0) {
+						this->cursorScrollMode = 1;
+						screen->setFunctionSymbal("S"); // add the S symbol to the bottom right corner
+					} else {
+						this->cursorScrollMode = 0;
+						screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
+					}
+					break;
         case 0x1e: // shift-$, toggle brightness
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
         case 0x3e: // > sign
@@ -977,14 +987,20 @@ int32_t CannedMessageModule::runOnce()
 								
 						// nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
 						// this->dest = nodeList[nodeIndex];
-						do {
-							nodeIndex = (nodeIndex + 1) % nodeList.size();
-						} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
-		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-											// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-						this->dest = nodeList[nodeIndex];
-						// nodeDB->getMeshNode(3664080480));
-						// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+						if (this->cursorScrollMode == 0) {
+							do {
+								nodeIndex = (nodeIndex + 1) % nodeList.size();
+							} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+												// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+							this->dest = nodeList[nodeIndex];
+							// nodeDB->getMeshNode(3664080480));
+							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
+						} else {
+                if (this->cursor > 0) {
+                    this->cursor--;
+                }
+						}
 								
 #endif
             } else {
@@ -1043,10 +1059,16 @@ int32_t CannedMessageModule::runOnce()
            //      }
 						// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
 						// this->dest = nodeList[nodeIndex];
-						do {
-							nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
-						} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
-						this->dest = nodeList[nodeIndex];
+						if (this->cursorScrollMode == 0) {
+							do {
+								nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+							} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+							this->dest = nodeList[nodeIndex];
+						} else {
+								if (this->cursor < this->freetext.length()) {
+										this->cursor++;
+								}
+						}
 #endif
             } else {
                 if (this->cursor < this->freetext.length()) {
@@ -1097,6 +1119,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
 						case 0x1f: // alt-f, flashlight
+						case 0x5f: // _, toggle cursorScrollMode
 						case 0x1a: // alt-1, previous messages 1
 						case 0x2a: // alt-2, previous messages 2
 						case 0x2e: // alt-r, resend last message
