@@ -70,8 +70,11 @@ char lastMessageTime[237];
 char lastMessageTimeTemp[237];
 char lastMessageContent2[237];
 char lastMessageContent3[237];
-uint32_t lastMessageSeconds = 0;
-uint32_t lastMessageSecondsPrev = 0;
+static uint32_t lastMessageSeconds = 0;
+static uint32_t lastMessageSecondsPrev = 0;
+static uint32_t secondLastMessageSeconds = 0;
+static uint32_t lastMessageTimestamp = 0;
+static uint32_t secondLastMessageTimestamp = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5];
 
@@ -1005,7 +1008,12 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #ifdef SIMPLE_TDECK
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-			lastMessageSeconds = lastMessageSecondsPrev;
+			secondLastMessageSeconds = lastMessageSeconds;
+			secondLastMessageTimestamp = lastMessageTimestamp;
+			LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
+			lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+			LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
+			lastMessageSeconds = sinceReceived(&mp);
 			receivedNewMessage = false;
 			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 			else strcpy(lastNodeName, "???");
@@ -1123,11 +1131,14 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			strcpy(lastMessageContent2, tempBuf);
 			receivedNewMessage = true;
 		}
-			minutes = lastMessageSeconds / 60;
+			uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+			uint32_t secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
+			LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
+			minutes = secondsSinceSecondLastMessage / 60;
 			hours = minutes / 60;
 			days = hours / 24;
 			// For timestamp
-			useTimestamp = deltaToTimestamp(lastMessageSeconds, &timestampHours, &timestampMinutes, &daysAgo);
+			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
 			strcpy(lastMessageTime, lastMessageTimeTemp);
 			LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
 			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
@@ -1143,7 +1154,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					// Otherwise, show a time delta
 					else {
 							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s %s",
-																	 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), lastNodeName);
+																	 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), lastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
 				}
