@@ -68,11 +68,14 @@ using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot = 0;
 bool alreadySentFirstMessage = false;
 char lastMessageTime[237];
-char lastMessageTimeTemp[237];
+// char lastMessageTimeTemp[237];
 char lastMessageContent2[237];
 char lastMessageContent3[237];
-uint32_t lastMessageSeconds = 0;
-uint32_t lastMessageSecondsPrev = 0;
+static uint32_t lastMessageSeconds = 0;
+static uint32_t lastMessageSecondsPrev = 0;
+static uint32_t secondLastMessageSeconds = 0;
+static uint32_t lastMessageTimestamp = 0;
+static uint32_t secondLastMessageTimestamp = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5];
 //end
@@ -987,13 +990,18 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		// frc
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-			lastMessageSeconds = lastMessageSecondsPrev;
+            secondLastMessageSeconds = lastMessageSeconds;
+            secondLastMessageTimestamp = lastMessageTimestamp;
+            LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
+            lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+            LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
+            lastMessageSeconds = sinceReceived(&mp);
 			receivedNewMessage = false;
 			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 			else strcpy(lastNodeName, "???");
 		}
 		// lastMessageSeconds = lastMessageSecondsPrev;
-    uint32_t seconds = sinceReceived(&mp);
+        uint32_t seconds = sinceReceived(&mp);
 		lastMessageSecondsPrev = seconds;
 		//end
     uint32_t minutes = seconds / 60;
@@ -1026,7 +1034,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 						//end
         }
 				//frc
-				strcpy(lastMessageTimeTemp, tempBuf);
+                //FIXME: why do you have to save these here now? Shouldn't need to use this
+				// strcpy(lastMessageTimeTemp, tempBuf);
 				// LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
 				//end
     }
@@ -1101,13 +1110,21 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			strcpy(lastMessageContent2, tempBuf);
 			receivedNewMessage = true;
 		}
-			minutes = lastMessageSeconds / 60;
+            uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+            uint32_t secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
+            LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
+			minutes = secondsSinceSecondLastMessage / 60;
+            LOG_INFO("minutes: %u\n", minutes);
 			hours = minutes / 60;
+            LOG_INFO("hours: %u\n", hours);
 			days = hours / 24;
+            LOG_INFO("days: %u\n", days);
 			// For timestamp
-			useTimestamp = deltaToTimestamp(lastMessageSeconds, &timestampHours, &timestampMinutes, &daysAgo);
-			strcpy(lastMessageTime, lastMessageTimeTemp);
-			LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
+			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
+            LOG_INFO("useTimestamp: %u\n", useTimestamp);
+            //FIXME: maybe shouldn't be using lastMessageTimeTemp here
+			// strcpy(lastMessageTime, lastMessageTimeTemp);
+			// LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
 			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
 			if (strlen(tempBuf2) < 40) {
 				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
@@ -1121,7 +1138,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					// Otherwise, show a time delta
 					else {
 							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s %s",
-																	 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), lastNodeName);
+                                                 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), lastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
 				}
