@@ -34,6 +34,8 @@ std::vector<unsigned int> nodeList = {
 	202935032, //tester
 	3734369073, //frc techo
 	2579205344, //fr theoktist
+  667627820, //fr silouanos
+  2579251804, // Geronda Paisios
 };
 #endif
 

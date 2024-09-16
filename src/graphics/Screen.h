@@ -75,7 +75,7 @@ class Screen
 
 // 0 to 255, though particular variants might define different defaults
 #ifndef BRIGHTNESS_DEFAULT
-#define BRIGHTNESS_DEFAULT 150
+#define BRIGHTNESS_DEFAULT 255
 #endif
 
 // Meters to feet conversion
