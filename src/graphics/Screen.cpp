@@ -1153,7 +1153,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					}
 					// Otherwise, show a time delta
 					else {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s %s",
+							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s ago from %s",
 																	 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), lastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
