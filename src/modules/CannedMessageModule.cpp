@@ -823,7 +823,7 @@ int32_t CannedMessageModule::runOnce()
 					sendText(NODENUM_RPI5, 1, "1", false);
 					showTemporaryMessage("Requesting Previous \nMessages 1");
 					break;
-				case 0x9f: // alt-e/2, previous Messages2
+				case 0x2a: // alt-e/2, previous Messages2
 					sendText(NODENUM_RPI5, 1, "2", false);
 					showTemporaryMessage("Requesting Previous \nMessages 2");
 					break;
@@ -1126,7 +1126,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x1f: // alt-f, flashlight
 						case 0x5f: // _, toggle cursorScrollMode
 						case 0x1a: // alt-1, previous messages 1
-						case 0x9f: // alt-2, previous messages 2
+						case 0x2a: // alt-2, previous messages 2
 						case 0x9e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
