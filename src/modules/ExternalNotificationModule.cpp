@@ -458,6 +458,20 @@ ExternalNotificationModule::ExternalNotificationModule()
 
 ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshPacket &mp)
 {
+#ifdef SIMPLE_TDECK
+    if (moduleConfig.external_notification.enabled && isMuted) {
+			if (moduleConfig.external_notification.alert_message) {
+					LOG_INFO("externalNotificationModule - Notification Module\n");
+					isNagging = true;
+					setExternalOn(0);
+					if (moduleConfig.external_notification.nag_timeout) {
+							nagCycleCutoff = millis() + moduleConfig.external_notification.nag_timeout * 1000;
+					} else {
+							nagCycleCutoff = millis() + moduleConfig.external_notification.output_ms;
+					}
+			}
+		}
+#endif
     if (moduleConfig.external_notification.enabled && !isMuted) {
 #ifdef T_WATCH_S3
         drv.setWaveform(0, 75);

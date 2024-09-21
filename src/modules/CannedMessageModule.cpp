@@ -28,10 +28,10 @@ std::vector<unsigned int> nodeList = {
 	3719082304, //router
 	207089188,  //spare1
 	4184751652, //spare2
-	207141012,  //spare5
+	207141012,  //fr jerome
 	4184738532, //spare6
 	2864390690, //dcnmichael
-	202935032, //tester
+	202935032, //fr evgeni
 	3734369073, //frc techo
 	2579205344, //fr theoktist
   667627820, //fr silouanos
