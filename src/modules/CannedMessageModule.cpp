@@ -36,6 +36,11 @@ std::vector<unsigned int> nodeList = {
 	2579205344, //fr theoktist
   667627820, //fr silouanos
   2579251804, // Geronda Paisios
+	// BELOW FOR GERONDA ONLY
+	// birdman is !e0d01b90, rambo is !e0d01c80, chip is !0c572010
+ //  207036432, //chip
+	// 3771734928, //birdman
+	// 3771735168, //rambo
 };
 #endif
 
@@ -373,6 +378,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
                 }
             }
             break;
+#ifndef SIMPLE_TDECK  //FRC used 9e for alt-r resend last message
         case 0x9e: // toggle GPS like triple press does
 #if !MESHTASTIC_EXCLUDE_GPS
             if (gps != nullptr) {
@@ -383,6 +389,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             showTemporaryMessage("GPS Toggled");
 #endif
             break;
+#endif
         case 0xaf: // fn+space send network ping like double press does
             service.refreshLocalMeshNode();
             if (service.trySendPosition(NODENUM_BROADCAST, true)) {
@@ -695,30 +702,13 @@ int32_t CannedMessageModule::runOnce()
 							// prevent all broadcast, go just to router node
 							if (this->dest == NODENUM_BROADCAST) { //for some reason the first message, without any side scrolling, defaults to NODENUM_BROADCAST. Afterwards it's fine, or after scrolling
 								LOG_DEBUG("WAS BRODCAST\n");
-								LOG_DEBUG("WAS BRODCAST\n");
-								LOG_DEBUG("WAS BRODCAST\n");
-								LOG_DEBUG("WAS BRODCAST\n");
-								LOG_DEBUG("WAS BRODCAST\n");
-								LOG_DEBUG("WAS BRODCAST\n");
 								this->dest = NODENUM_RPI5;
 							}
 							sendText(this->dest, 1, this->freetext.c_str(), true);
 							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 							this->previousDest = this->dest;
 							this->previousFreetext = this->freetext;
 							LOG_INFO("previousDest: %x, previousFreetext: %s\n", this->previousDest, this->previousFreetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
 							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
 							}
 #else
@@ -833,11 +823,11 @@ int32_t CannedMessageModule::runOnce()
 					sendText(NODENUM_RPI5, 1, "1", false);
 					showTemporaryMessage("Requesting Previous \nMessages 1");
 					break;
-				case 0x2a: // alt-e/2, previous Messages2
+				case 0x9f: // alt-e/2, previous Messages2
 					sendText(NODENUM_RPI5, 1, "2", false);
 					showTemporaryMessage("Requesting Previous \nMessages 2");
 					break;
-				case 0x2e: // alt-r, resend last message
+				case 0x9e: // alt-r, resend last message
 					LOG_INFO("Got ALT-R, Resend last message\n");
 					LOG_INFO("Got ALT-R, Resend last message\n");
 					if (this->previousFreetext.length() > 0) {
@@ -888,6 +878,7 @@ int32_t CannedMessageModule::runOnce()
 						screen->setFunctionSymbal("S"); // add the S symbol to the bottom right corner
 					} else {
 						this->cursorScrollMode = 0;
+                        this->cursor = this->freetext.length();
 						screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
 					}
 					break;
@@ -990,15 +981,21 @@ int32_t CannedMessageModule::runOnce()
 						// nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
 						// this->dest = nodeList[nodeIndex];
 						if (this->cursorScrollMode == 0) {
+                            LOG_INFO("CursorScrollMode is off\n");
 							do {
+                                LOG_INFO("CursorScrollMode is off, do while\n");
 								nodeIndex = (nodeIndex + 1) % nodeList.size();
+                                LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
 			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 												// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+                            LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							this->dest = nodeList[nodeIndex];
+                            LOG_INFO("Dest: %d\n", this->dest);
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
 						} else {
+                            LOG_INFO("CursorScrollMode is on\n");
                 if (this->cursor > 0) {
                     this->cursor--;
                 }
@@ -1062,11 +1059,17 @@ int32_t CannedMessageModule::runOnce()
 						// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
 						// this->dest = nodeList[nodeIndex];
 						if (this->cursorScrollMode == 0) {
+                            LOG_INFO("CursorScrollMode is off\n");
 							do {
+                                LOG_INFO("CursorScrollMode is off, do while\n");
 								nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+                                LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+                            LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							this->dest = nodeList[nodeIndex];
+                            LOG_INFO("Dest: %d\n", this->dest);
 						} else {
+                            LOG_INFO("CursorScrollMode is on\n");
 								if (this->cursor < this->freetext.length()) {
 										this->cursor++;
 								}
@@ -1123,8 +1126,8 @@ int32_t CannedMessageModule::runOnce()
 						case 0x1f: // alt-f, flashlight
 						case 0x5f: // _, toggle cursorScrollMode
 						case 0x1a: // alt-1, previous messages 1
-						case 0x2a: // alt-2, previous messages 2
-						case 0x2e: // alt-r, resend last message
+						case 0x9f: // alt-2, previous messages 2
+						case 0x9e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
