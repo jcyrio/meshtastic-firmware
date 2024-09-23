@@ -710,6 +710,9 @@ int32_t CannedMessageModule::runOnce()
 							this->previousFreetext = this->freetext;
 							LOG_INFO("previousDest: %x, previousFreetext: %s\n", this->previousDest, this->previousFreetext.c_str());
 							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+							//disable scrolling mode after sending msg
+							this->cursorScrollMode = 0;
+							screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
 							}
 #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
@@ -878,7 +881,7 @@ int32_t CannedMessageModule::runOnce()
 						screen->setFunctionSymbal("S"); // add the S symbol to the bottom right corner
 					} else {
 						this->cursorScrollMode = 0;
-                        this->cursor = this->freetext.length();
+						this->cursor = this->freetext.length();
 						screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
 					}
 					break;
