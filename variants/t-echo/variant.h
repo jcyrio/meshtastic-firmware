@@ -35,6 +35,10 @@ extern "C" {
 #endif // __cplusplus
 
 #define TTGO_T_ECHO
+	//frc
+#define MESHTASTIC_EXCLUDE_GPS 1
+#define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR 1
+	//end frc
 
 // Number of pins defined in PinDescription array
 #define PINS_COUNT (48)
