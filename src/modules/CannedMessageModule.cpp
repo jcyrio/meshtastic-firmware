@@ -19,15 +19,18 @@
 #endif
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
-std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3"};
+// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
+
+// nodeList is the allowed destinations in the scrolling list in freetext mode
 std::vector<unsigned int> nodeList = { 
 	// 3664080480, //my tbeam supreme, broken
 	// 1486348306,  //not sure
 	2864386355,  //kitchen
 	3014898611,  //bookstore
 	3719082304, //router
-	207089188,  //spare1
-	4184751652, //spare2
+	// 207089188,  //spare1
+	// 4184751652, //spare2
+	// 3175760252, //spare5
 	207141012,  //fr jerome
 	4184738532, //spare6
 	2864390690, //dcnmichael
