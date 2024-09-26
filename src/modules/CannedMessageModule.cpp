@@ -1624,15 +1624,11 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setColor(WHITE);
 #ifdef SIMPLE_TDECK
 				display->setFont(FONT_LARGE);
+#endif
         display->drawStringMaxWidth(
             0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(),
             cannedMessageModule->drawWithCursor(cannedMessageModule->freetext, cannedMessageModule->cursor));
-#else
-        display->drawStringMaxWidth(
-            0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(),
-            cannedMessageModule->drawWithCursor(cannedMessageModule->freetext, cannedMessageModule->cursor));
-#endif
-#endif
+#endif  //for t-watch
     } else {
         if (this->messagesCount > 0) {
             display->setTextAlignment(TEXT_ALIGN_LEFT);
