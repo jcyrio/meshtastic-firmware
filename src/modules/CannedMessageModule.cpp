@@ -1625,7 +1625,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #ifdef SIMPLE_TDECK
 				display->setFont(FONT_LARGE);
         display->drawStringMaxWidth(
-            0 + x, 0 + y + FONT_HEIGHT_LARGE * 3, x + display->getWidth(),
+            0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(),
             cannedMessageModule->drawWithCursor(cannedMessageModule->freetext, cannedMessageModule->cursor));
 #else
         display->drawStringMaxWidth(
