@@ -96,7 +96,7 @@ CannedMessageModule::CannedMessageModule()
     }
 #ifdef SIMPLE_TDECK
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-		skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		// skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 // FIXME: remove below later, doesn't do anything
 		// char startupMessage[20];
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));

@@ -77,6 +77,7 @@ static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5];
+char secondLastNodeName[32] = "???";
 
 namespace graphics
 {
@@ -1015,6 +1016,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
 			lastMessageSeconds = sinceReceived(&mp);
 			receivedNewMessage = false;
+			strncpy(secondLastNodeName, lastNodeName, sizeof(secondLastNodeName));
 			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 			else strcpy(lastNodeName, "???");
 		}
@@ -1142,19 +1144,19 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			strcpy(lastMessageTime, lastMessageTimeTemp);
 			LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
 			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
-			if (strlen(tempBuf2) < 40) {
+			if (strlen(tempBuf2) < 50) {
 				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
 					if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
+							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, secondLastNodeName);
 					}
 					// Timestamp yesterday (if display is wide enough)
 					else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
+							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, secondLastNodeName);
 					}
 					// Otherwise, show a time delta
 					else {
 							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s ago from %s",
-																	 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), lastNodeName);
+																	 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), secondLastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
 				}
