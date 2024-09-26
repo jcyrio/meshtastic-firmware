@@ -192,7 +192,11 @@ typedef enum _meshtastic_Constants {
     /* From mesh.options
  note: this payload length is ONLY the bytes that are sent inside of the Data protobuf (excluding protobuf overhead). The 16 byte header is
  outside of this envelope */
+#ifdef SIMPLE_TDECK
+    meshtastic_Constants_DATA_PAYLOAD_LEN = 150
+#else
     meshtastic_Constants_DATA_PAYLOAD_LEN = 237
+#endif
 } meshtastic_Constants;
 
 /* Error codes for critical errors
