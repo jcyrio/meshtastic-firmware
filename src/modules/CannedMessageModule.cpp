@@ -1684,6 +1684,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->setColor(BLACK);
             display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->setColor(WHITE);
             break;
 						//never gets here TODO: remove
         case CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL:
@@ -1716,6 +1717,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->setColor(BLACK);
 							display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->setColor(WHITE);
 #else
                 display->drawStringf(0 + x, 0 + y, buffer, "To: %s@%s", cannedMessageModule->getNodeName(this->dest),
                                      channels.getName(indexChannels[this->channel]));
@@ -1757,6 +1759,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->setColor(BLACK);
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->setColor(WHITE);
             int lines = (display->getHeight() / FONT_HEIGHT_LARGE) - 1;
 #else
             display->setFont(FONT_SMALL);
