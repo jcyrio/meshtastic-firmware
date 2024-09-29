@@ -1062,6 +1062,7 @@ int32_t CannedMessageModule::runOnce()
 							// this->dest = nodeList[nodeIndex];
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
+							LOG_INFO("nodeNameeee: %d\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
 						} else {
@@ -1647,8 +1648,17 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         switch (this->destSelect) {
 #ifdef SIMPLE_TDECK
         case CANNED_MESSAGE_DESTINATION_TYPE_NODE:
-            display->drawStringf(1 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
-            display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+            // display->drawStringf(1 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+            // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+						LOG_INFO("this->dest: %d\n", this->dest);
+						LOG_INFO("this->dest: %d\n", this->dest);
+						LOG_INFO("this->dest: %d\n", this->dest);
+                    // if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
+						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             break;
 						//never gets here TODO: remove
         case CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL:
@@ -1674,8 +1684,9 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         default:
             if (display->getWidth() > 128) {
 #ifdef SIMPLE_TDECK
-                display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
-                // display->drawStringf(0 + x, 0 + y, buffer, "Send Message:");
+                // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+								display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 #else
                 display->drawStringf(0 + x, 0 + y, buffer, "To: %s@%s", cannedMessageModule->getNodeName(this->dest),
                                      channels.getName(indexChannels[this->channel]));
@@ -1710,7 +1721,12 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->setTextAlignment(TEXT_ALIGN_LEFT);
 #ifdef SIMPLE_TDECK
             display->setFont(FONT_LARGE);
-            display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+            // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
+						LOG_INFO("this->dest: %d\n", this->dest);
+						LOG_INFO("this->dest: %d\n", this->dest);
+						LOG_INFO("this->dest: %d\n", this->dest);
+						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             int lines = (display->getHeight() / FONT_HEIGHT_LARGE) - 1;
 #else
             display->setFont(FONT_SMALL);
