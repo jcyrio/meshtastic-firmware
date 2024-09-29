@@ -517,9 +517,14 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
 						// want to display value of skipNextFreetextMode
 						LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
-            this->payload = event->kbchar;
-            this->lastTouchMillis = millis();
-            validEvent = true;
+						LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
+						if (this->skipNextRletter) {
+							this->skipNextRletter = false;
+						} else {
+							this->payload = event->kbchar;
+							this->lastTouchMillis = millis();
+							validEvent = true;
+						}
             break;
         }
         if (screen && (event->kbchar != 0xf1)) {
@@ -897,11 +902,22 @@ int32_t CannedMessageModule::runOnce()
 						if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
 						this->freetext = this->previousFreetext;
 						this->cursor = this->freetext.length();
-						this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-						showTemporaryMessage("Retyping last message");
+						// this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+            this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+            // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+						// this->lastTouchMillis = millis();
+						// this->notifyObservers(&e);
+            this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						this->skipNextRletter = true;
+						requestFocus();
+            // setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
+            // runOnce();
+            // validEvent = true;
+						// showTemporaryMessage("Retyping last message");
 					} else {
 						showTemporaryMessage("No previous \nmessage to retype");
 					}
+					break;
 						
 					// LOG_INFO("Got ALT-R, Resend last message\n");
 					// LOG_INFO("Got ALT-R, Resend last message\n");
@@ -1659,13 +1675,13 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         case CANNED_MESSAGE_DESTINATION_TYPE_NODE:
             // display->drawStringf(1 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
             // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
-						LOG_INFO("this->dest: %d\n", this->dest);
-						LOG_INFO("this->dest: %d\n", this->dest);
-						LOG_INFO("this->dest: %d\n", this->dest);
                     // if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
 						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->setColor(WHITE);
+            display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+            display->setColor(BLACK);
             display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             break;
@@ -1695,7 +1711,11 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #ifdef SIMPLE_TDECK
                 // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
 								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-								display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->setColor(WHITE);
+            display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+            display->setColor(BLACK);
+							display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 #else
                 display->drawStringf(0 + x, 0 + y, buffer, "To: %s@%s", cannedMessageModule->getNodeName(this->dest),
                                      channels.getName(indexChannels[this->channel]));
@@ -1724,18 +1744,19 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->drawStringMaxWidth(
             0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(),
             cannedMessageModule->drawWithCursor(cannedMessageModule->freetext, cannedMessageModule->cursor));
-#endif  //for t-watch
+#endif  //end for t-watch
     } else {
         if (this->messagesCount > 0) {
             display->setTextAlignment(TEXT_ALIGN_LEFT);
 #ifdef SIMPLE_TDECK
             display->setFont(FONT_LARGE);
             // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
-						LOG_INFO("this->dest: %d\n", this->dest);
-						LOG_INFO("this->dest: %d\n", this->dest);
-						LOG_INFO("this->dest: %d\n", this->dest);
 						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->setColor(WHITE);
+            display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+            display->setColor(BLACK);
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             int lines = (display->getHeight() / FONT_HEIGHT_LARGE) - 1;
 #else
             display->setFont(FONT_SMALL);

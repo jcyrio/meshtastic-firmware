@@ -158,6 +158,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		NodeNum previousDest = NODENUM_RPI5;
 		String previousFreetext;
 		bool dontACK = 0;
+		bool skipNextRletter = false;
 		int nodeIndex = 0;
 		bool alreadySentFirstMessage = 0;
 		unsigned long lastTrackballMillis = 0;
