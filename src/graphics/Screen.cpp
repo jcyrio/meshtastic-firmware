@@ -75,6 +75,8 @@ static uint32_t lastMessageSecondsPrev = 0;
 static uint32_t secondLastMessageSeconds = 0;
 static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
+static uint32_t secondsSinceSecondLastMessage = 0;
+static uint32_t secondsSinceLastMessage = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5];
 char secondLastNodeName[32] = "???";
@@ -967,6 +969,10 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
     return validCached;
 }
 
+bool shouldIgnoreMessage(const char* message) {
+    return message[0] == '(';
+}
+
 /// Draw the last text message we received
 static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
@@ -1008,17 +1014,21 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // For time delta
 #ifdef SIMPLE_TDECK
 		if (receivedNewMessage) {
-			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-			secondLastMessageSeconds = lastMessageSeconds;
-			secondLastMessageTimestamp = lastMessageTimestamp;
-			LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
-			lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-			LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
-			lastMessageSeconds = sinceReceived(&mp);
-			receivedNewMessage = false;
-			strncpy(secondLastNodeName, lastNodeName, sizeof(secondLastNodeName));
-			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
-			else strcpy(lastNodeName, "???");
+			const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+			// Only process the message if it doesn't start with '('
+			if (!shouldIgnoreMessage(messageContent)) {
+				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
+				secondLastMessageSeconds = lastMessageSeconds;
+				secondLastMessageTimestamp = lastMessageTimestamp;
+				LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
+				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+				LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
+				lastMessageSeconds = sinceReceived(&mp);
+				receivedNewMessage = false;
+				strncpy(secondLastNodeName, lastNodeName, sizeof(secondLastNodeName));
+				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				else strcpy(lastNodeName, "???");
+			}
 		}
 		// lastMessageSeconds = lastMessageSecondsPrev;
     uint32_t seconds = sinceReceived(&mp);
@@ -1123,18 +1133,21 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		//frc
 		char tempBuf2[235];
 		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
-		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
-		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-		LOG_INFO("tempBuf2: %s\n", tempBuf2);
-		LOG_INFO("tempBuf: %s\n", tempBuf);
-		if (strcmp(lastMessageContent2, tempBuf) != 0) {
-			LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
-			strcpy(lastMessageContent3, lastMessageContent2);
-			strcpy(lastMessageContent2, tempBuf);
-			receivedNewMessage = true;
-		}
-			uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-			uint32_t secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
+		if (!shouldIgnoreMessage(tempBuf2)) {
+			LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
+			LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
+			LOG_INFO("tempBuf2: %s\n", tempBuf2);
+			LOG_INFO("tempBuf: %s\n", tempBuf);
+			if (strcmp(lastMessageContent2, tempBuf) != 0) {
+				LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
+				strcpy(lastMessageContent3, lastMessageContent2);
+				strcpy(lastMessageContent2, tempBuf);
+				receivedNewMessage = true;
+			}
+			secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+			secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
+		// 	const char* messageContentOld = reinterpret_cast<const char*>(lastMessageContent3);
+		// if (!shouldIgnoreMessage(messageContentOld)) {
 			LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
 			minutes = secondsSinceSecondLastMessage / 60;
 			hours = minutes / 60;
@@ -1143,6 +1156,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
 			strcpy(lastMessageTime, lastMessageTimeTemp);
 			LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
+		}
 			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
 			if (strlen(tempBuf2) < 50) {
 				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {

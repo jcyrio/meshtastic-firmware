@@ -45,6 +45,55 @@ std::vector<unsigned int> nodeList = {
 	// 3771734928, //birdman
 	// 3771735168, //rambo
 };
+std::vector<std::string> nodeNames = {
+    "Kitchen",
+    "Bookstore",
+    "Fr Michael",
+    "Router",
+    "Fr Jerome",
+    "Fr Evgeni",
+    "Fr Cyril",
+    "FrTheoktist",
+    "Fr Silouanos",
+		"Geronda Paisios",
+		//Below for Geronda only
+		// "CHIP",
+		// "Birdman",
+		// "RAMBO",
+		
+};
+std::vector<std::pair<unsigned int, std::string>> MYNODES = {
+    {2864386355, "Kitchen"},
+    {3014898611, "Bookstore"},
+    {3719082304, "Router"},
+    {207141012, "Fr Jerome"},
+    {2864390690, "Fr Michael"},
+    {202935032, "Fr Evgeni"},
+    {3734369073, "Fr Cyril"},
+    {2579205344, "Fr Theoktist"},
+    {667627820, "Fr Silouanos"},
+    {2579251804, "Geronda Paisios"},
+		// below for Geronda only
+		// {207036432, "CHIP"}, 
+		// {3771734928, "Birdman"},
+		// {3771735168, "RAMBO"},
+		// 
+		// {NODENUM_BROADCAST, "Broadcast"},
+};
+unsigned int getNodeNumberByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
+    if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
+        return nodes[index].first;
+    } else {
+        return 0;  // Return 0 or another sentinel value to indicate an error
+    }
+}
+std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
+    if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
+        return nodes[index].second;
+    } else {
+        return "";  // Return an empty string or handle the error appropriately
+    }
+}
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -101,7 +150,15 @@ CannedMessageModule::CannedMessageModule()
 		// char startupMessage[20];
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		// sendText(NODENUM_RPI5, 1, startupMessage, false);
-		nodeList.erase(std::remove(nodeList.begin(), nodeList.end(), nodeDB->getNodeNum()), nodeList.end());
+		// nodeList.erase(std::remove(nodeList.begin(), nodeList.end(), nodeDB->getNodeNum()), nodeList.end());
+		// nodeNames.erase(std::remove(nodeNames.begin(), nodeNames.end(), cannedMessageModule->getNodeName(nodeDB->getNodeNum())), nodeNames.end());
+		MYNODES.erase(
+				std::remove_if(MYNODES.begin(), MYNODES.end(), 
+											 [&](const std::pair<unsigned int, std::string>& node) {
+													 return node.first == nodeDB->getNodeNum();  // Compare the first element of the pair
+											 }),
+				MYNODES.end()
+		);
 		screen->showFirstBrightnessLevel();
 #endif
 }
@@ -987,21 +1044,28 @@ int32_t CannedMessageModule::runOnce()
 						// nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
 						// this->dest = nodeList[nodeIndex];
 						if (this->cursorScrollMode == 0) {
-                            LOG_INFO("CursorScrollMode is off\n");
+								LOG_INFO("CursorScrollMode is off\n");
 							do {
-                                LOG_INFO("CursorScrollMode is off, do while\n");
-								nodeIndex = (nodeIndex + 1) % nodeList.size();
-                                LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+								LOG_INFO("CursorScrollMode is off, do while\n");
+								// nodeIndex = (nodeIndex + 1) % nodeList.size();
+								// nodeIndex = (nodeIndex + 1) % nodeNames.size();
+								nodeIndex = (nodeIndex + 1) % MYNODES.size();
+								LOG_INFO("NodeIndex: %d\n", nodeIndex);
+								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// } while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							
 			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-												// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-                            LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							this->dest = nodeList[nodeIndex];
-                            LOG_INFO("Dest: %d\n", this->dest);
+							// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
+							LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
+							// this->dest = nodeList[nodeIndex];
+							this->dest = MYNODES[nodeIndex].first;
+							LOG_INFO("Dest: %d\n", this->dest);
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
 						} else {
-                            LOG_INFO("CursorScrollMode is on\n");
+								LOG_INFO("CursorScrollMode is on\n");
                 if (this->cursor > 0) {
                     this->cursor--;
                 }
@@ -1065,17 +1129,26 @@ int32_t CannedMessageModule::runOnce()
 						// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
 						// this->dest = nodeList[nodeIndex];
 						if (this->cursorScrollMode == 0) {
-                            LOG_INFO("CursorScrollMode is off\n");
+							LOG_INFO("CursorScrollMode is off\n");
 							do {
-                                LOG_INFO("CursorScrollMode is off, do while\n");
-								nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
-                                LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							} while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
-                            LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							this->dest = nodeList[nodeIndex];
-                            LOG_INFO("Dest: %d\n", this->dest);
+								LOG_INFO("CursorScrollMode is off, do while\n");
+								// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
+								nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
+								LOG_INFO("NodeIndex: %d\n", nodeIndex);
+								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// } while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							
+							// } while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
+
+					
+							LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
+							// this->dest = nodeList[nodeIndex];
+							this->dest = MYNODES[nodeIndex].first;
+							LOG_INFO("Dest: %d\n", this->dest);
 						} else {
-                            LOG_INFO("CursorScrollMode is on\n");
+								LOG_INFO("CursorScrollMode is on\n");
 								if (this->cursor < this->freetext.length()) {
 										this->cursor++;
 								}
