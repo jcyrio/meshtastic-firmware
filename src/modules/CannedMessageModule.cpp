@@ -63,16 +63,16 @@ std::vector<std::string> nodeNames = {
 		
 };
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
-    {2864386355, "Kitchen"},
-    {3014898611, "Bookstore"},
     {3719082304, "Router"},
+    {3734369073, "Fr Cyril"},
+    {3014898611, "Bookstore"},
+    {2864386355, "Kitchen"},
     {207141012, "Fr Jerome"},
     {2864390690, "Fr Michael"},
     {202935032, "Fr Evgeni"},
-    {3734369073, "Fr Cyril"},
-    {2579205344, "Fr Theoktist"},
     {667627820, "Fr Silouanos"},
     {2579251804, "Geronda Paisios"},
+    {2579205344, "Fr Theoktist"},
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
 		// {3771734928, "Birdman"},
@@ -890,20 +890,29 @@ int32_t CannedMessageModule::runOnce()
 					sendText(NODENUM_RPI5, 1, "2", false);
 					showTemporaryMessage("Requesting Previous \nMessages 2");
 					break;
-				case 0x9e: // alt-r, resend last message
-					LOG_INFO("Got ALT-R, Resend last message\n");
-					LOG_INFO("Got ALT-R, Resend last message\n");
+				case 0x9e: // alt-r, retype last message
+					LOG_INFO("Got ALT-R, Retype last message\n");
+					LOG_INFO("Got ALT-R, Retype last message\n");
 					if (this->previousFreetext.length() > 0) {
 						if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
-						LOG_INFO("Resending previous message to %d: %s\n", this->previousDest, this->previousFreetext.c_str());
-						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
-						showTemporaryMessage("Resending last message");
+						this->freetext = this->previousFreetext;
+						this->cursor = this->freetext.length();
+						this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						showTemporaryMessage("Retyping last message");
 					} else {
-						showTemporaryMessage("No previous \nmessage to resend");
+						showTemporaryMessage("No previous \nmessage to retype");
 					}
-					// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
-					// this->skipNextFreetextMode = true;
-					// delay(100); //debounce
+						
+					// LOG_INFO("Got ALT-R, Resend last message\n");
+					// LOG_INFO("Got ALT-R, Resend last message\n");
+					// if (this->previousFreetext.length() > 0) {
+					// 	if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
+					// 	LOG_INFO("Resending previous message to %d: %s\n", this->previousDest, this->previousFreetext.c_str());
+					// 	sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+					// 	showTemporaryMessage("Resending last message");
+					// } else {
+					// 	showTemporaryMessage("No previous \nmessage to resend");
+					// }
 					break;
 				case 0x7a: // z, clear LED when there's a notification
 				case 0x78: // x, clear LED when there's a notification
