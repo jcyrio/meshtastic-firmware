@@ -1582,8 +1582,17 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         if (this->ack) {
             displayString = "Delivered\n";
         } else {
+					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
+						this->deliveryFailedCount = 1;
+            // displayString = "Delivery failed\nRetrying...";
+						showTemporaryMessage("Delivery failed\nRetrying...");
+						LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
+						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+					} else {
+						this->deliveryFailedCount = 0;
             displayString = "Delivery failed";
-        }
+					}
+				}
 #else
         if (this->ack) {
             displayString = "Delivered to\n%s";
