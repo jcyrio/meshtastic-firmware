@@ -2,8 +2,8 @@
 #include "MeshService.h"
 #include "NodeDB.h"
 #include "PowerFSM.h"
+#include "buzz.h"
 #include "configuration.h"
-
 TextMessageModule *textMessageModule;
 
 ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp)
@@ -22,7 +22,6 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			return ProcessMessage::STOP;
 		}
 #endif
-
     // We only store/display messages destined for us.
     // Keep a copy of the most recent text message.
     devicestate.rx_text_message = mp;

@@ -108,7 +108,7 @@ void NeighborInfoModule::sendNeighborInfo(NodeNum dest, bool wantReplies)
     p->to = dest;
     p->decoded.want_response = wantReplies;
     printNeighborInfo("SENDING", &neighborInfo);
-    service.sendToMesh(p, RX_SRC_LOCAL, true);
+    service->sendToMesh(p, RX_SRC_LOCAL, true);
 }
 
 /*
@@ -120,8 +120,7 @@ int32_t NeighborInfoModule::runOnce()
     if (airTime->isTxAllowedChannelUtil(true) && airTime->isTxAllowedAirUtil()) {
         sendNeighborInfo(NODENUM_BROADCAST, false);
     }
-    return Default::getConfiguredOrDefaultMsScaled(moduleConfig.neighbor_info.update_interval, default_broadcast_interval_secs,
-                                                   numOnlineNodes);
+    return Default::getConfiguredOrDefaultMs(moduleConfig.neighbor_info.update_interval, default_neighbor_info_broadcast_secs);
 }
 
 /*

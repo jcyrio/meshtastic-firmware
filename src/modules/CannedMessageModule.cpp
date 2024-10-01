@@ -10,6 +10,7 @@
 #include "NodeDB.h"
 #include "PowerFSM.h" // needed for button bypass
 #include "detect/ScanI2C.h"
+#include "input/ScanAndSelect.h"
 #include "mesh/generated/meshtastic/cannedmessages.pb.h"
 
 #include "main.h"                               // for cardkb_found
@@ -17,83 +18,8 @@
 #if !MESHTASTIC_EXCLUDE_GPS
 #include "GPS.h"
 #endif
-#ifdef SIMPLE_TDECK
-// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
-// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
-
-// nodeList is the allowed destinations in the scrolling list in freetext mode
-std::vector<unsigned int> nodeList = { 
-	// 3664080480, //my tbeam supreme, broken
-	// 1486348306,  //not sure
-	2864386355,  //kitchen
-	3014898611,  //bookstore
-	3719082304, //router
-	// 207089188,  //spare1
-	// 4184751652, //spare2
-	// 3175760252, //spare5
-	207141012,  //fr jerome
-	4184738532, //spare6
-	2864390690, //dcnmichael
-	202935032, //fr evgeni
-	3734369073, //frc techo
-	2579205344, //fr theoktist
-  667627820, //fr silouanos
-  2579251804, // Geronda Paisios
-	// BELOW FOR GERONDA ONLY
-	// birdman is !e0d01b90, rambo is !e0d01c80, chip is !0c572010
- //  207036432, //chip
-	// 3771734928, //birdman
-	// 3771735168, //rambo
-};
-std::vector<std::string> nodeNames = {
-    "Kitchen",
-    "Bookstore",
-    "Fr Michael",
-    "Router",
-    "Fr Jerome",
-    "Fr Evgeni",
-    "Fr Cyril",
-    "FrTheoktist",
-    "Fr Silouanos",
-		"Geronda Paisios",
-		//Below for Geronda only
-		// "CHIP",
-		// "Birdman",
-		// "RAMBO",
-		
-};
-std::vector<std::pair<unsigned int, std::string>> MYNODES = {
-    {3719082304, "Router"},
-    {3734369073, "Fr Cyril"},
-    {3014898611, "Bookstore"},
-    {2864386355, "Kitchen"},
-    {207141012, "Fr Jerome"},
-    {2864390690, "Fr Michael"},
-    {202935032, "Fr Evgeni"},
-    {667627820, "Fr Silouanos"},
-    {2579251804, "Geronda Paisios"},
-    {2579205344, "Fr Theoktist"},
-		// below for Geronda only
-		// {207036432, "CHIP"}, 
-		// {3771734928, "Birdman"},
-		// {3771735168, "RAMBO"},
-		// 
-		// {NODENUM_BROADCAST, "Broadcast"},
-};
-unsigned int getNodeNumberByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
-    if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
-        return nodes[index].first;
-    } else {
-        return 0;  // Return 0 or another sentinel value to indicate an error
-    }
-}
-std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
-    if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
-        return nodes[index].second;
-    } else {
-        return "";  // Return an empty string or handle the error appropriately
-    }
-}
+#if defined(USE_EINK) && defined(USE_EINK_DYNAMICDISPLAY)
+#include "graphics/EInkDynamicDisplay.h" // To select between full and fast refresh on E-Ink displays
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -132,7 +58,7 @@ CannedMessageModule::CannedMessageModule()
             LOG_INFO("CannedMessageModule is enabled\n");
 
             // T-Watch interface currently has no way to select destination type, so default to 'node'
-#ifdef T_WATCH_S3
+#if defined(T_WATCH_S3) || defined(RAK14014)
 						//FRC TODO: might want to do the same for SIMPLE_TDECK, test sometime
             this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
 #endif
@@ -451,8 +377,8 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             break;
 #endif
         case 0xaf: // fn+space send network ping like double press does
-            service.refreshLocalMeshNode();
-            if (service.trySendPosition(NODENUM_BROADCAST, true)) {
+            service->refreshLocalMeshNode();
+            if (service->trySendPosition(NODENUM_BROADCAST, true)) {
                 showTemporaryMessage("Position \nUpdate Sent");
             } else {
                 showTemporaryMessage("Node Info \nUpdate Sent");
@@ -656,7 +582,7 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 
     LOG_INFO("Sending message id=%d, dest=%x, msg=%.*s\n", p->id, p->to, p->decoded.payload.size, p->decoded.payload.bytes);
 
-    service.sendToMesh(
+    service->sendToMesh(
         p, RX_SRC_LOCAL,
         true); // send to mesh, cc to phone. Even if there's no phone connected, this stores the message to match ACKs
 }
@@ -1332,7 +1258,20 @@ bool CannedMessageModule::shouldDraw()
     if (!moduleConfig.canned_message.enabled && !CANNED_MESSAGE_MODULE_ENABLE) {
         return false;
     }
+
+    // If using "scan and select" input, don't draw the module frame just to say "disabled"
+    // The scanAndSelectInput class will draw its own temporary alert for user, when the input button is pressed
+    else if (scanAndSelectInput != nullptr && !hasMessages())
+        return false;
+
     return (currentMessageIndex != -1) || (this->runState != CANNED_MESSAGE_RUN_STATE_INACTIVE);
+}
+
+// Has the user defined any canned messages?
+// Expose publicly whether canned message module is ready for use
+bool CannedMessageModule::hasMessages()
+{
+    return (this->messagesCount > 0);
 }
 
 int CannedMessageModule::getNextIndex()
@@ -1355,7 +1294,8 @@ int CannedMessageModule::getPrevIndex()
 void CannedMessageModule::showTemporaryMessage(const String &message)
 {
     temporaryMessage = message;
-		requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
+    //NOTE: below was enabled, frc disabled it when merging 2.4.3, because it wasn't present in newest firmware. Testing
+		//requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
     UIFrameEvent e;
     e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
     notifyObservers(&e);
@@ -1570,36 +1510,22 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setFont(FONT_MEDIUM);
         display->drawString(display->getWidth() / 2 + x, 0 + y + 12, temporaryMessage);
     } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED) {
-        requestFocus(); // Tell Screen::setFrames to move to our module's frame
-        display->setTextAlignment(TEXT_ALIGN_CENTER);
-#ifdef SIMPLE_TDECK
-        display->setFont(FONT_LARGE);
+        requestFocus();                        // Tell Screen::setFrames to move to our module's frame
+        EINK_ADD_FRAMEFLAG(display, COSMETIC); // Clean after this popup. Layout makes ghosting particularly obvious
+
+#ifdef USE_EINK
+        display->setFont(FONT_SMALL); // No chunky text
 #else
-        display->setFont(FONT_MEDIUM);
+        display->setFont(FONT_MEDIUM); // Chunky text
 #endif
+
         String displayString;
-#ifdef SIMPLE_TDECK
-        if (this->ack) {
-            displayString = "Delivered\n";
-        } else {
-					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
-						this->deliveryFailedCount = 1;
-            // displayString = "Delivery failed\nRetrying...";
-						showTemporaryMessage("Delivery failed\nRetrying...");
-						LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
-						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
-					} else {
-						this->deliveryFailedCount = 0;
-            displayString = "Delivery failed";
-					}
-				}
-#else
+        display->setTextAlignment(TEXT_ALIGN_CENTER);
         if (this->ack) {
             displayString = "Delivered to\n%s";
         } else {
             displayString = "Delivery failed\nto %s";
         }
-#endif
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
 #ifdef SIMPLE_TDECK
 				if (this->dontACK == 0) { // I don't think this works
@@ -1614,48 +1540,43 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         String snrString = "Last Rx SNR: %f";
         String rssiString = "Last Rx RSSI: %d";
 
-        if (this->ack) {
-            display->drawStringf(display->getWidth() / 2 + x, y + 100, buffer, snrString, this->lastRxSnr);
-            display->drawStringf(display->getWidth() / 2 + x, y + 130, buffer, rssiString, this->lastRxRssi);
+        // Don't bother drawing snr and rssi for tiny displays
+        if (display->getHeight() > 100) {
+
+            // Original implementation used constants of y = 100 and y = 130. Shrink this if screen is *slightly* small
+            int16_t snrY = 100;
+            int16_t rssiY = 130;
+
+            // If dislay is *slighly* too small for the original consants, squish up a bit
+            if (display->getHeight() < rssiY) {
+                snrY = display->getHeight() - ((1.5) * FONT_HEIGHT_SMALL);
+                rssiY = display->getHeight() - ((2.5) * FONT_HEIGHT_SMALL);
+            }
+
+            if (this->ack) {
+                display->drawStringf(display->getWidth() / 2 + x, snrY + y, buffer, snrString, this->lastRxSnr);
+                display->drawStringf(display->getWidth() / 2 + x, rssiY + y, buffer, rssiString, this->lastRxRssi);
+            }
         }
 #endif
 #ifdef SIMPLE_TDECK
 				}
 #endif
     } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
+        // E-Ink: clean the screen *after* this pop-up
+        EINK_ADD_FRAMEFLAG(display, COSMETIC);
+
         requestFocus(); // Tell Screen::setFrames to move to our module's frame
-        display->setTextAlignment(TEXT_ALIGN_CENTER);
-#ifdef SIMPLE_TDECK
-        display->setFont(FONT_LARGE);
+
+#ifdef USE_EINK
+        display->setFont(FONT_SMALL); // No chunky text
 #else
-        display->setFont(FONT_MEDIUM);
-#endif
-        display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Sending...");
-    }
-
-#ifdef SIMPLE_TDECK
-		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
-        // display->setTextAlignment(TEXT_ALIGN_CENTER);
-        // display->setFont(FONT_LARGE);
-        // display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
-				showTemporaryMessage("Retrieving...");
-    }
-		//TODO: should this be else if below? compare with orig
-		//new 4-24-24 2:25
-		else if ((cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex != 0)) {
-		display->setTextAlignment(TEXT_ALIGN_CENTER);
-		display->setFont(FONT_LARGE);
-		char msgBuffer1[32]; char msgBuffer2[32];
-		snprintf(msgBuffer1, sizeof(msgBuffer1), "View previous");
-		snprintf(msgBuffer2, sizeof(msgBuffer2), "message #%d", this->previousMessageIndex);
-		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y - FONT_HEIGHT_LARGE, msgBuffer1);
-		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y, msgBuffer2);
-}
+        display->setFont(FONT_MEDIUM); // Chunky text
 #endif
 
-
-
-		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
+        display->setTextAlignment(TEXT_ALIGN_CENTER);
+        display->drawString(display->getWidth() / 2 + x, 0 + y + 12, "Sending...");
+    } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
         display->setTextAlignment(TEXT_ALIGN_LEFT);
         display->setFont(FONT_SMALL);
         display->drawString(10 + x, 0 + y + FONT_HEIGHT_SMALL, "Canned Message\nModule disabled.");
@@ -1800,11 +1721,18 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
                     }
 #else
                     if (i == currentMessageIndex - topMsg) {
+#ifdef USE_EINK
+                        // Avoid drawing solid black with fillRect: harder to clear for E-Ink
+                        display->drawString(0 + x, 0 + y + FONT_HEIGHT_SMALL * (i + 1), ">");
+                        display->drawString(12 + x, 0 + y + FONT_HEIGHT_SMALL * (i + 1),
+                                            cannedMessageModule->getCurrentMessage());
+#else
                         display->fillRect(0 + x, 0 + y + FONT_HEIGHT_SMALL * (i + 1), x + display->getWidth(),
                                           y + FONT_HEIGHT_SMALL);
                         display->setColor(BLACK);
                         display->drawString(0 + x, 0 + y + FONT_HEIGHT_SMALL * (i + 1), cannedMessageModule->getCurrentMessage());
                         display->setColor(WHITE);
+#endif
                     } else {
                         display->drawString(0 + x, 0 + y + FONT_HEIGHT_SMALL * (i + 1),
                                             cannedMessageModule->getMessageByIndex(topMsg + i));
@@ -1825,7 +1753,7 @@ ProcessMessage CannedMessageModule::handleReceived(const meshtastic_MeshPacket &
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
             requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
             this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
-            this->incoming = service.getNodenumFromRequestId(mp.decoded.request_id);
+            this->incoming = service->getNodenumFromRequestId(mp.decoded.request_id);
             meshtastic_Routing decoded = meshtastic_Routing_init_default;
             pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, meshtastic_Routing_fields, &decoded);
             this->ack = decoded.error_reason == meshtastic_Routing_Error_NONE;
@@ -1843,7 +1771,7 @@ void CannedMessageModule::loadProtoForModule()
 {
     if (nodeDB->loadProto(cannedMessagesConfigFile, meshtastic_CannedMessageModuleConfig_size,
                           sizeof(meshtastic_CannedMessageModuleConfig), &meshtastic_CannedMessageModuleConfig_msg,
-                          &cannedMessageModuleConfig) != LoadFileResult::SUCCESS) {
+                          &cannedMessageModuleConfig) != LoadFileResult::LOAD_SUCCESS) {
         installDefaultCannedMessageModuleConfig();
     }
 }
