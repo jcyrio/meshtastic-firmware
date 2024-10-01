@@ -159,7 +159,7 @@ CannedMessageModule::CannedMessageModule()
 											 }),
 				MYNODES.end()
 		);
-		screen->showFirstBrightnessLevel();
+		// screen->showFirstBrightnessLevel();
 #endif
 }
 

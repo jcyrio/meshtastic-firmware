@@ -66,20 +66,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
 char brightnessLevel = 'H';
-char lastMessageContent[237];
 // FIXME: time shouldn't be 237
 char lastMessageTime[237];
-char lastMessageTimeTemp[237];
+// char lastMessageTimeTemp[237];
+char lastMessageContent2[237];
+char lastMessageContent3[237];
 static uint32_t lastMessageSeconds = 0;
 static uint32_t lastMessageSecondsPrev = 0;
 static uint32_t secondLastMessageSeconds = 0;
 static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
-static uint32_t secondsSinceSecondLastMessage = 0;
-static uint32_t secondsSinceLastMessage = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5];
-char secondLastNodeName[5] = "???";
+char secondLastNodeName[5];
 
 namespace graphics
 {
@@ -983,6 +982,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
 #ifdef SIMPLE_TDECK
+		// const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp)));
 		// char nodeName[35];
 		// snprintf(nodeName, sizeof(nodeName), "%s", '!da656e60');
@@ -1013,22 +1013,20 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
     // For time delta
 #ifdef SIMPLE_TDECK
+		// TODO: also compare last message sender, which could be different
 		if (receivedNewMessage) {
-			const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-			// Only process the message if it doesn't start with '('
-			if (!shouldIgnoreMessage(messageContent)) {
-				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-				secondLastMessageSeconds = lastMessageSeconds;
-				secondLastMessageTimestamp = lastMessageTimestamp;
-				LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
-				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-				LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
-				lastMessageSeconds = sinceReceived(&mp);
-				receivedNewMessage = false;
-				strncpy(secondLastNodeName, lastNodeName, sizeof(secondLastNodeName));
-				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
-				else strcpy(lastNodeName, "???");
-			}
+			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
+			strcpy(secondLastNodeName, lastNodeName);
+			LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
+            secondLastMessageSeconds = lastMessageSeconds;
+            secondLastMessageTimestamp = lastMessageTimestamp;
+            LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
+            lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+            LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
+            lastMessageSeconds = sinceReceived(&mp);
+			receivedNewMessage = false;
+			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+			else strcpy(lastNodeName, "???");
 		}
 		// lastMessageSeconds = lastMessageSecondsPrev;
     uint32_t seconds = sinceReceived(&mp);
@@ -1065,7 +1063,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         }
 
 #ifdef SIMPLE_TDECK
-				strcpy(lastMessageTimeTemp, tempBuf);
+				// strcpy(lastMessageTimeTemp, tempBuf);
 #endif
     }
 
@@ -1133,45 +1131,47 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		//frc
 		char tempBuf2[235];
 		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
-		if (!shouldIgnoreMessage(tempBuf2)) {
-			LOG_INFO("lastMessageContent: %s\n", lastMessageContent);
-			LOG_INFO("tempBuf2: %s\n", tempBuf2);
-			if (strcmp(lastMessageContent, tempBuf2) != 0) {
-				LOG_INFO("lastMessageContent is different from tempBufaaaaa\n");
-				strcpy(lastMessageContent, tempBuf2);
-				receivedNewMessage = true;
-			}
-			secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-			secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
-		// 	const char* messageContentOld = reinterpret_cast<const char*>(lastMessageContent3);
-		// if (!shouldIgnoreMessage(messageContentOld)) {
-			LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
-			minutes = secondsSinceSecondLastMessage / 60;
-			hours = minutes / 60;
-			days = hours / 24;
+		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
+		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
+		LOG_INFO("tempBuf2: %s\n", tempBuf2);
+		LOG_INFO("tempBuf: %s\n", tempBuf);
+		if (strcmp(lastMessageContent2, tempBuf) != 0) {
+			LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
+			strcpy(lastMessageContent3, lastMessageContent2);
+			strcpy(lastMessageContent2, tempBuf);
+			receivedNewMessage = true;
+		}
+		// uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+		uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageSeconds;
+		uint32_t secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
+		LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
+minutes = secondsSinceSecondLastMessage / 60;
+		LOG_INFO("minutes: %u\n", minutes);
+hours = minutes / 60;
+		LOG_INFO("hours: %u\n", hours);
+days = hours / 24;
+		LOG_INFO("days: %u\n", days);
 			// For timestamp
 			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
-			strcpy(lastMessageTime, lastMessageTimeTemp);
-			LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
-		}
+            LOG_INFO("useTimestamp: %u\n", useTimestamp);
 			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
 			if (strlen(tempBuf2) < 50) {
 				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
 					if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, secondLastNodeName);
+							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
 					}
 					// Timestamp yesterday (if display is wide enough)
 					else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, secondLastNodeName);
+							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
 					}
 					// Otherwise, show a time delta
 					else {
 							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s ago from %s",
-																	 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), secondLastNodeName);
+                                                 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), secondLastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
 				}
-				display->drawStringMaxWidth(0 + x, 0 + y + 135, x + display->getWidth(), lastMessageContent);
+				display->drawStringMaxWidth(0 + x, 0 + y + 135, x + display->getWidth(), lastMessageContent3);
 			}
 			}
 		//end
@@ -1980,6 +1980,7 @@ int32_t Screen::runOnce()
             break;
         case Cmd::SHOW_NEXT_FRAME:
             handleShowNextFrame();
+            break;
         case Cmd::START_ALERT_FRAME: {
             showingBootScreen = false; // this should avoid the edge case where an alert triggers before the boot screen goes away
             showingNormalScreen = false;
@@ -2366,15 +2367,14 @@ void Screen::blink()
 }
 
 #ifdef SIMPLE_TDECK
-void Screen::showFirstBrightnessLevel() {
-	setFunctionSymbal(std::string(1, brightnessLevel));
-}
+// void Screen::showFirstBrightnessLevel() {
+// 	setFunctionSymbal(std::string(1, brightnessLevel));
+// }
 #endif
 
 void Screen::increaseBrightness()
 {
 #ifdef SIMPLE_TDECK
-	removeFunctionSymbal(std::string(1, brightnessLevel));
 	// 4 levels we want are 1, 130, 192, 254 
 	// if (brightnessLevel == '1') {
 	// 	brightness = 110; brightnessLevel = '2';
@@ -2386,13 +2386,14 @@ void Screen::increaseBrightness()
 	// 	brightness = 40; brightnessLevel = '1';
 	// }
 	if (brightnessLevel == 'L') {
+		removeFunctionSymbal(std::string(1, 'L'));
 		brightness = 254; brightnessLevel = 'H';
 	} else {
+		setFunctionSymbal(std::string(1, 'L'));
 		brightness = 40; brightnessLevel = 'L';
 	}
 	// brightness = (brightness + 62) % 255;
 	LOG_INFO("Brightness: %d\n", brightness);
-	setFunctionSymbal(std::string(1, brightnessLevel));
 	// if (brightness < 64) brightnessLevel = '1';
 	// else if (brightness < 128) brightnessLevel = '2';
 	// else if (brightness < 192) brightnessLevel = '3';
