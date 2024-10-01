@@ -67,18 +67,18 @@ using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
 char brightnessLevel = 'H';
 // FIXME: time shouldn't be 237
-char lastMessageTime[237];
+// char lastMessageTime[237];
 // char lastMessageTimeTemp[237];
-char lastMessageContent2[237];
-char lastMessageContent3[237];
-static uint32_t lastMessageSeconds = 0;
-static uint32_t lastMessageSecondsPrev = 0;
-static uint32_t secondLastMessageSeconds = 0;
-static uint32_t lastMessageTimestamp = 0;
-static uint32_t secondLastMessageTimestamp = 0;
-bool receivedNewMessage = false;
-char lastNodeName[5];
-char secondLastNodeName[5];
+// char lastMessageContent2[237];
+// char lastMessageContent3[237];
+// static uint32_t lastMessageSeconds = 0;
+// static uint32_t lastMessageSecondsPrev = 0;
+// static uint32_t secondLastMessageSeconds = 0;
+// static uint32_t lastMessageTimestamp = 0;
+// static uint32_t secondLastMessageTimestamp = 0;
+// bool receivedNewMessage = false;
+// char lastNodeName[5];
+// char secondLastNodeName[5];
 
 namespace graphics
 {
@@ -1012,7 +1012,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #endif
 
     // For time delta
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK2
 		// TODO: also compare last message sender, which could be different
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
@@ -1023,12 +1023,12 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
             LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
             lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
             LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
-            lastMessageSeconds = sinceReceived(&mp);
+            // lastMessageSeconds = sinceReceived(&mp);
 			receivedNewMessage = false;
 			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 			else strcpy(lastNodeName, "???");
 		}
-		// lastMessageSeconds = lastMessageSecondsPrev;
+		lastMessageSeconds = lastMessageSecondsPrev;
     uint32_t seconds = sinceReceived(&mp);
 		lastMessageSecondsPrev = seconds;
 #else
@@ -1037,6 +1037,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
+		LOG_INFO("seconds: %u\n", seconds);
+		LOG_INFO("minutes: %u\n", minutes);
 
     // For timestamp
     uint8_t timestampHours, timestampMinutes;
@@ -1128,6 +1130,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
     }
+#ifdef SIMPLE_TDECK2
 		//frc
 		char tempBuf2[235];
 		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
@@ -1167,7 +1170,7 @@ days = hours / 24;
 					// Otherwise, show a time delta
 					else {
 							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s ago from %s",
-                                                 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), secondLastNodeName);
+                                                 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), secondLastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
 				}
@@ -1175,6 +1178,7 @@ days = hours / 24;
 			}
 			}
 		//end
+#endif
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);

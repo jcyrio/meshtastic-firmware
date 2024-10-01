@@ -288,7 +288,7 @@ class Screen : public concurrency::OSThread
     long getHeading() { return compassHeading; }
     // functions for display brightness
 #ifdef SIMPLE_TDECK
-    void showFirstBrightnessLevel();
+    // void showFirstBrightnessLevel();
 #endif
     void increaseBrightness();
     void decreaseBrightness();
