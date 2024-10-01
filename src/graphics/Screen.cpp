@@ -66,10 +66,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
 char brightnessLevel = 'H';
+char lastMessageContent[237];
+// FIXME: time shouldn't be 237
 char lastMessageTime[237];
 char lastMessageTimeTemp[237];
-char lastMessageContent2[237];
-char lastMessageContent3[237];
 static uint32_t lastMessageSeconds = 0;
 static uint32_t lastMessageSecondsPrev = 0;
 static uint32_t secondLastMessageSeconds = 0;
@@ -79,7 +79,7 @@ static uint32_t secondsSinceSecondLastMessage = 0;
 static uint32_t secondsSinceLastMessage = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5];
-char secondLastNodeName[32] = "???";
+char secondLastNodeName[5] = "???";
 
 namespace graphics
 {
@@ -1134,14 +1134,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		char tempBuf2[235];
 		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
 		if (!shouldIgnoreMessage(tempBuf2)) {
-			LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
-			LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
+			LOG_INFO("lastMessageContent: %s\n", lastMessageContent);
 			LOG_INFO("tempBuf2: %s\n", tempBuf2);
-			LOG_INFO("tempBuf: %s\n", tempBuf);
-			if (strcmp(lastMessageContent2, tempBuf) != 0) {
-				LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
-				strcpy(lastMessageContent3, lastMessageContent2);
-				strcpy(lastMessageContent2, tempBuf);
+			if (strcmp(lastMessageContent, tempBuf2) != 0) {
+				LOG_INFO("lastMessageContent is different from tempBufaaaaa\n");
+				strcpy(lastMessageContent, tempBuf2);
 				receivedNewMessage = true;
 			}
 			secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
@@ -1174,7 +1171,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);
 				}
-				display->drawStringMaxWidth(0 + x, 0 + y + 135, x + display->getWidth(), lastMessageContent3);
+				display->drawStringMaxWidth(0 + x, 0 + y + 135, x + display->getWidth(), lastMessageContent);
 			}
 			}
 		//end
