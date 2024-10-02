@@ -868,7 +868,8 @@ uint32_t sinceReceived(const meshtastic_MeshPacket *p)
     return delta;
 }
 
-#define NUM_ONLINE_SECS (60 * 60 * 2) // 2 hrs to consider someone offline
+//frc changed from 2 to 1 hours
+#define NUM_ONLINE_SECS (60 * 60 * 1) // 2 hrs to consider someone offline
 
 size_t NodeDB::getNumOnlineMeshNodes(bool localOnly)
 {
