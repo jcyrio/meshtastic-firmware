@@ -69,16 +69,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
 char brightnessLevel = 'H';
-// FIXME: time shouldn't be 237
-// char lastMessageTime[237];
-// char lastMessageTimeTemp[237];
 char lastMessageContent2[237] = {'\0'};
 char lastMessageContent3[237] = {'\0'};
 static uint32_t lastMessageSecondsDiff = 0;
 static uint32_t lastMessageSecondsPrev = 0;
 static uint32_t secondLastMessageSeconds = 0;
-static uint32_t lastMessageTimestamp = 0;
-static uint32_t secondLastMessageTimestamp = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5] = {'\0'};
 char secondLastNodeName[5] = {'\0'};
@@ -981,13 +976,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
-#ifdef SIMPLE_TDECK
-		// const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp)));
-		// char nodeName[35];
-		// snprintf(nodeName, sizeof(nodeName), "%s", '!da656e60');
-		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(3664080480));
-#endif
 		
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode('!da656e60'));
     // LOG_DEBUG("drawing text message from 0x%x: %s\n", mp.from,
@@ -1019,21 +1007,14 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 				strcpy(secondLastNodeName, lastNodeName);
 				LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
-				// secondLastMessageSeconds = lastMessageSeconds;
 				secondLastMessageSeconds = lastMessageSecondsPrev + lastMessageSecondsDiff;
-				// secondLastMessageTimestamp = lastMessageTimestamp;
 				LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
-				// lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-				// LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
-				// lastMessageSeconds = sinceReceived(&mp);
 				receivedNewMessage = false;
 				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 				else strcpy(lastNodeName, "???");
 			}
 		}
-		// lastMessageSeconds = lastMessageSecondsPrev;
     uint32_t seconds = sinceReceived(&mp);
-		// lastMessageSeconds = seconds;
 		lastMessageSecondsPrev = seconds;
 #else
     uint32_t seconds = sinceReceived(&mp);
@@ -1135,12 +1116,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #endif
     }
 #ifdef SIMPLE_TDECK
-		//frc
-		// char tempBuf2[235];
-		// snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
 		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
 		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-		// LOG_INFO("tempBuf2: %s\n", tempBuf2);
 		LOG_INFO("tempBuf: %s\n", tempBuf);
 		if (strcmp(lastMessageContent2, tempBuf) != 0) {
 			if (tempBuf[0] != '(') {
@@ -1150,18 +1127,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				LOG_INFO("lastMessageSecondsDiff: %u\n", lastMessageSecondsDiff);
 				strcpy(lastMessageContent3, lastMessageContent2);
 				strcpy(lastMessageContent2, tempBuf);
-				// if (tempBuf[0] != '(') receivedNewMessage = true;
 				receivedNewMessage = true;
 			} else {
 				lastMessageWasPreviousMsgs = true;
 			}
 		}
-		// uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-		// uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageSeconds;
-		// uint32_t secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
-		// currently above shows huge numbers
-		// LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
-		// LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
 		uint32_t secondsSinceSecondLastMessage = lastMessageSecondsDiff + seconds;
 		minutes = secondsSinceSecondLastMessage / 60;
 		LOG_INFO("minutes: %u\n", minutes);
@@ -1169,35 +1139,32 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		LOG_INFO("hours: %u\n", hours);
 		days = hours / 24;
 		LOG_INFO("days: %u\n", days);
-			// For timestamp
-			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
-			LOG_INFO("useTimestamp: %u\n", useTimestamp);
-			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
-			// if ((strlen(tempBuf2) < 50) && (strlen(tempBuf2) > 0) && (tempBuf2[0] != '(')) {
-			LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-			LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
-			if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
-			if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
-			if ((strlen(lastMessageContent3) < 50) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
-				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
-					if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
-					}
-					// Timestamp yesterday (if display is wide enough)
-					else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
-					}
-					// Otherwise, show a time delta
-					else {
-							display->drawStringf(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 4, tempBuf, "%s ago from %s",
-                                                 screen->drawTimeDelta(days, hours, minutes, lastMessageSecondsDiff + seconds).c_str(), secondLastNodeName);
-							//end
-					// display->drawString(xOff + x, y + 105, lastMessageTime);
+		// For timestamp
+		useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
+		// LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
+		// LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
+		if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
+		if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
+		if ((strlen(lastMessageContent3) < 85) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
+			for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
+				if (useTimestamp && minutes >= 15 && daysAgo == 0) {
+						display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
 				}
-				display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 5, x + display->getWidth(), lastMessageContent3);
+				// Timestamp yesterday (if display is wide enough)
+				else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
+						display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
+				}
+				// Otherwise, show a time delta
+				else {
+						display->drawStringf(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 4, tempBuf, "%s ago from %s",
+																							 screen->drawTimeDelta(days, hours, minutes, lastMessageSecondsDiff + seconds).c_str(), secondLastNodeName);
+						//end
+				// display->drawString(xOff + x, y + 105, lastMessageTime);
 			}
-			}
-		//end
+			display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 5, x + display->getWidth(), lastMessageContent3);
+		}
+		}
+	//end
 #endif
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
