@@ -1592,24 +1592,23 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         requestFocus();                        // Tell Screen::setFrames to move to our module's frame
         EINK_ADD_FRAMEFLAG(display, COSMETIC); // Clean after this popup. Layout makes ghosting particularly obvious
 
+#ifdef SIMPLE_TDECK
+        display->setFont(FONT_LARGE);
+#else
 #ifdef USE_EINK
         display->setFont(FONT_SMALL); // No chunky text
 #else
         display->setFont(FONT_MEDIUM); // Chunky text
 #endif
-
-#ifdef SIMPLE_TDECK
-        display->setFont(FONT_LARGE);
-#else
-        display->setFont(FONT_MEDIUM);
 #endif
+
         String displayString;
         display->setTextAlignment(TEXT_ALIGN_CENTER);
 #ifdef SIMPLE_TDECK
         if (this->ack) {
             displayString = "Delivered\n";
         } else {
-					if ((this->deliveryFailedCount == 0) && (this->previousFreetext != "")) {
+					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
 						this->deliveryFailedCount = 1;
             // displayString = "Delivery failed\nRetrying...";
 						showTemporaryMessage("Delivery failed\nRetrying...");
@@ -1668,16 +1667,40 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         EINK_ADD_FRAMEFLAG(display, COSMETIC);
 
         requestFocus(); // Tell Screen::setFrames to move to our module's frame
-
+#ifdef SIMPLE_TDECK
+        display->setFont(FONT_LARGE);
+#else
 #ifdef USE_EINK
         display->setFont(FONT_SMALL); // No chunky text
 #else
         display->setFont(FONT_MEDIUM); // Chunky text
 #endif
+#endif
+        display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Sending...");
+    }
 
-        display->setTextAlignment(TEXT_ALIGN_CENTER);
-        display->drawString(display->getWidth() / 2 + x, 0 + y + 12, "Sending...");
-    } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
+#ifdef SIMPLE_TDECK
+		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
+        // display->setTextAlignment(TEXT_ALIGN_CENTER);
+        // display->setFont(FONT_LARGE);
+        // display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
+				showTemporaryMessage("Retrieving...");
+    }
+		//TODO: should this be else if below? compare with orig
+		//new 4-24-24 2:25
+		else if ((cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex != 0)) {
+		display->setTextAlignment(TEXT_ALIGN_CENTER);
+		display->setFont(FONT_LARGE);
+		char msgBuffer1[32]; char msgBuffer2[32];
+		snprintf(msgBuffer1, sizeof(msgBuffer1), "View previous");
+		snprintf(msgBuffer2, sizeof(msgBuffer2), "message #%d", this->previousMessageIndex);
+		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y - FONT_HEIGHT_LARGE, msgBuffer1);
+		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y, msgBuffer2);
+}
+#endif
+
+			
+    else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
         display->setTextAlignment(TEXT_ALIGN_LEFT);
         display->setFont(FONT_SMALL);
         display->drawString(10 + x, 0 + y + FONT_HEIGHT_SMALL, "Canned Message\nModule disabled.");
