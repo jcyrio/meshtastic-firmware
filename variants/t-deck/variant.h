@@ -42,8 +42,10 @@
 #define BUTTON_PIN 0
 // #define BUTTON_NEED_PULLUP
 
+#ifndef SIMPLE_TDECK
 #define GPS_RX_PIN 44
 #define GPS_TX_PIN 43
+#endif
 
 // Have SPI interface SD card slot
 #define HAS_SDCARD 1
