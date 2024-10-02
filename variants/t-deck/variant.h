@@ -19,7 +19,11 @@
 #define TFT_OFFSET_ROTATION 0
 #define SCREEN_ROTATE
 #define SCREEN_TRANSITION_FRAMERATE 5
+#ifdef SIMPLE_TDECK
+#define BRIGHTNESS_DEFAULT 254 // Medium Low Brightness
+#else
 #define BRIGHTNESS_DEFAULT 130 // Medium Low Brightness
+#endif
 
 #ifdef SIMPLE_TDECK
 #define HAS_TOUCHSCREEN 0

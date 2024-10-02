@@ -72,16 +72,16 @@ char brightnessLevel = 'H';
 // FIXME: time shouldn't be 237
 // char lastMessageTime[237];
 // char lastMessageTimeTemp[237];
-// char lastMessageContent2[237];
-// char lastMessageContent3[237];
-// static uint32_t lastMessageSeconds = 0;
-// static uint32_t lastMessageSecondsPrev = 0;
-// static uint32_t secondLastMessageSeconds = 0;
-// static uint32_t lastMessageTimestamp = 0;
-// static uint32_t secondLastMessageTimestamp = 0;
-// bool receivedNewMessage = false;
-// char lastNodeName[5];
-// char secondLastNodeName[5];
+char lastMessageContent2[237] = {'\0'};
+char lastMessageContent3[237] = {'\0'};
+static uint32_t lastMessageSeconds = 0;
+static uint32_t lastMessageSecondsPrev = 0;
+static uint32_t secondLastMessageSeconds = 0;
+static uint32_t lastMessageTimestamp = 0;
+static uint32_t secondLastMessageTimestamp = 0;
+bool receivedNewMessage = false;
+char lastNodeName[5] = {'\0'};
+char secondLastNodeName[5] = {'\0'};
 
 namespace graphics
 {
@@ -971,10 +971,6 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
     return validCached;
 }
 
-bool shouldIgnoreMessage(const char* message) {
-    return message[0] == '(';
-}
-
 /// Draw the last text message we received
 static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
@@ -1015,9 +1011,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #endif
 
     // For time delta
-#ifdef SIMPLE_TDECK2
+#ifdef SIMPLE_TDECK
 		// TODO: also compare last message sender, which could be different
 		if (receivedNewMessage) {
+            if (lastMessageContent2[0] != '(') {
+                
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			strcpy(secondLastNodeName, lastNodeName);
 			LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
@@ -1030,6 +1028,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			receivedNewMessage = false;
 			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 			else strcpy(lastNodeName, "???");
+            }
 		}
 		lastMessageSeconds = lastMessageSecondsPrev;
     uint32_t seconds = sinceReceived(&mp);
@@ -1133,7 +1132,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
     }
-#ifdef SIMPLE_TDECK2
+#ifdef SIMPLE_TDECK
 		//frc
 		char tempBuf2[235];
 		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
@@ -1145,6 +1144,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
 			strcpy(lastMessageContent3, lastMessageContent2);
 			strcpy(lastMessageContent2, tempBuf);
+			// if (tempBuf[0] != '(') receivedNewMessage = true;
 			receivedNewMessage = true;
 		}
 		// uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
@@ -1161,7 +1161,14 @@ days = hours / 24;
 			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
             LOG_INFO("useTimestamp: %u\n", useTimestamp);
 			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
-			if (strlen(tempBuf2) < 50) {
+			// if ((strlen(tempBuf2) < 50) && (strlen(tempBuf2) > 0) && (tempBuf2[0] != '(')) {
+			LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
+			LOG_INFO("lastMessageContent3[0]: %c\n", lastMessageContent3[0]);
+			LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
+            if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
+            if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
+            LOG_INFO("Length of lastMessageContent3: %u\n", strlen(lastMessageContent3));
+			if ((strlen(lastMessageContent3) < 50) && (secondLastNodeName[0] != '\0') && (lastMessageContent3[0] != '(') && (lastMessageContent2[0] != '(')) {
 				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
 					if (useTimestamp && minutes >= 15 && daysAgo == 0) {
 							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
@@ -1172,7 +1179,7 @@ days = hours / 24;
 					}
 					// Otherwise, show a time delta
 					else {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s ago from %s",
+							display->drawStringf(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 8, tempBuf, "%s ago from %s",
                                                  screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), secondLastNodeName);
 							//end
 					// display->drawString(xOff + x, y + 105, lastMessageTime);

@@ -22,6 +22,85 @@
 #include "graphics/EInkDynamicDisplay.h" // To select between full and fast refresh on E-Ink displays
 #endif
 
+#ifdef SIMPLE_TDECK
+// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
+// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
+
+// nodeList is the allowed destinations in the scrolling list in freetext mode
+std::vector<unsigned int> nodeList = { 
+	// 3664080480, //my tbeam supreme, broken
+	// 1486348306,  //not sure
+	2864386355,  //kitchen
+	3014898611,  //bookstore
+	3719082304, //router
+	// 207089188,  //spare1
+	// 4184751652, //spare2
+	// 3175760252, //spare5
+	207141012,  //fr jerome
+	4184738532, //spare6
+	2864390690, //dcnmichael
+	202935032, //fr evgeni
+	3734369073, //frc techo
+	2579205344, //fr theoktist
+  667627820, //fr silouanos
+  2579251804, // Geronda Paisios
+	// BELOW FOR GERONDA ONLY
+	// birdman is !e0d01b90, rambo is !e0d01c80, chip is !0c572010
+ //  207036432, //chip
+	// 3771734928, //birdman
+	// 3771735168, //rambo
+};
+std::vector<std::string> nodeNames = {
+    "Kitchen",
+    "Bookstore",
+    "Fr Michael",
+    "Router",
+    "Fr Jerome",
+    "Fr Evgeni",
+    "Fr Cyril",
+    "FrTheoktist",
+    "Fr Silouanos",
+		"Geronda Paisios",
+		//Below for Geronda only
+		// "CHIP",
+		// "Birdman",
+		// "RAMBO",
+		
+};
+std::vector<std::pair<unsigned int, std::string>> MYNODES = {
+    {3719082304, "Router"},
+    {3734369073, "Fr Cyril"},
+    {3014898611, "Bookstore"},
+    {2864386355, "Kitchen"},
+    {207141012, "Fr Jerome"},
+    {2864390690, "Fr Michael"},
+    {202935032, "Fr Evgeni"},
+    {667627820, "Fr Silouanos"},
+    {2579251804, "Geronda Paisios"},
+    {2579205344, "Fr Theoktist"},
+		// below for Geronda only
+		// {207036432, "CHIP"}, 
+		// {3771734928, "Birdman"},
+		// {3771735168, "RAMBO"},
+		// 
+		// {NODENUM_BROADCAST, "Broadcast"},
+};
+unsigned int getNodeNumberByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
+    if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
+        return nodes[index].first;
+    } else {
+        return 0;  // Return 0 or another sentinel value to indicate an error
+    }
+}
+std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
+    if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
+        return nodes[index].second;
+    } else {
+        return "";  // Return an empty string or handle the error appropriately
+    }
+}
+#endif
+
 #ifndef INPUTBROKER_MATRIX_TYPE
 #define INPUTBROKER_MATRIX_TYPE 0
 #endif
@@ -1519,13 +1598,35 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setFont(FONT_MEDIUM); // Chunky text
 #endif
 
+#ifdef SIMPLE_TDECK
+        display->setFont(FONT_LARGE);
+#else
+        display->setFont(FONT_MEDIUM);
+#endif
         String displayString;
         display->setTextAlignment(TEXT_ALIGN_CENTER);
+#ifdef SIMPLE_TDECK
+        if (this->ack) {
+            displayString = "Delivered\n";
+        } else {
+					if ((this->deliveryFailedCount == 0) && (this->previousFreetext != "")) {
+						this->deliveryFailedCount = 1;
+            // displayString = "Delivery failed\nRetrying...";
+						showTemporaryMessage("Delivery failed\nRetrying...");
+						LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
+						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+					} else {
+						this->deliveryFailedCount = 0;
+            displayString = "Delivery failed";
+					}
+				}
+#else
         if (this->ack) {
             displayString = "Delivered to\n%s";
         } else {
             displayString = "Delivery failed\nto %s";
         }
+#endif
 // TODO: might want to allow the Delivery Failed msg if dontACK = true
 #ifdef SIMPLE_TDECK
 				if (this->dontACK == 0) { // I don't think this works
