@@ -862,6 +862,7 @@ uint32_t sinceReceived(const meshtastic_MeshPacket *p)
     uint32_t now = getTime();
 
     int delta = (int)(now - p->rx_time);
+    // int delta = (int)(p->rx_time); is always 0
     if (delta < 0) // our clock must be slightly off still - not set from GPS yet
         delta = 0;
 

@@ -1485,6 +1485,7 @@ uint16_t Screen::getCompassDiam(uint32_t displayWidth, uint32_t displayHeight)
     return diam - 20;
 };
 
+#ifndef SIMPLE_TDECK
 static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
     // We only advance our nodeIndex if the frame # has changed - because
@@ -1610,6 +1611,7 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
     // Must be after distStr is populated
     screen->drawColumns(display, x, y, fields);
 }
+#endif
 
 #if defined(ESP_PLATFORM) && defined(USE_ST7789)
 SPIClass SPI1(HSPI);
@@ -2842,8 +2844,12 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 		char totalMsgs[35];
 		snprintf(totalMsgs, sizeof(totalMsgs), "Received Messages: %d", totalReceivedMessagesSinceBoot);
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalMsgs)) / 2, y + 12 + FONT_HEIGHT_LARGE * 3, totalMsgs);
+    // char usersString[10];
+    // snprintf(usersString, sizeof(usersString), "%d/%d", nodeStatus->getNumOnline(), nodeStatus->getNumTotal());
 		char totalNodes[35];
 		snprintf(totalNodes, sizeof(totalNodes), "Total Nodes: %d", nodeDB->getNumMeshNodes());
+		// snprintf(totalNodes, sizeof(totalNodes), "Total Nodes: %d", nodeStatus->getNumTotal());
+		// snprintf(totalNodes, sizeof(totalNodes), "Total Nodes: %s", usersString);
 		display->drawString(x + (SCREEN_WIDTH - display->getStringWidth(totalNodes)) / 2, y + 12 + FONT_HEIGHT_LARGE * 4, totalNodes);
 
   String date = __DATE__; // format: "MMM DD YYYY"
