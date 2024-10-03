@@ -1071,14 +1071,15 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         }
         // Otherwise, show a time delta
         else {
+#ifdef SIMPLE_TDECK
+						display->setColor(WHITE);
+						display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+						display->setColor(BLACK);
+#endif
             display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
                                  screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
                                  (node && node->has_user) ? node->user.short_name : "???");
         }
-
-#ifdef SIMPLE_TDECK
-				// strcpy(lastMessageTimeTemp, tempBuf);
-#endif
     }
 
     display->setColor(WHITE);
@@ -1186,8 +1187,12 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				}
 				// Otherwise, show a time delta
 				else {
+						display->setColor(WHITE);
+						display->fillRect(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 4, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+						display->setColor(BLACK);
 						display->drawStringf(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 4, tempBuf, "%s ago from %s",
 																							 screen->drawTimeDelta(days, hours, minutes, lastMessageSecondsDiff + seconds).c_str(), secondLastNodeName);
+						display->setColor(WHITE);
 						//end
 				// display->drawString(xOff + x, y + 105, lastMessageTime);
 			}

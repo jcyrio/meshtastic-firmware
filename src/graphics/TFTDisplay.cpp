@@ -18,6 +18,8 @@ extern SX1509 gpioExtender;
 #define TFT_MESH COLOR565(0xFF, 0xFF, 0xFF)
 #endif
 
+#define TFT_MESH2 COLOR565(0xFF, 0x00, 0xFF)
+#define TFT_MESH3 COLOR565(0xFF, 0x00, 0x00)
 #if defined(ST7735S)
 #include <LovyanGFX.hpp> // Graphics and font library for ST7735 driver chip
 
