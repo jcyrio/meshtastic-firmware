@@ -246,10 +246,6 @@ void ExternalNotificationModule::setExternalOn(uint8_t index)
             digitalWrite(moduleConfig.external_notification.output_buzzer, true);
         break;
     default:
-#ifdef SIMPLE_TDECK
-        if (output > 0)  //set back to output, whereas it was input for reading battery adc
-					pinMode(output, OUTPUT);
-#endif
         if (output > 0)
             digitalWrite(output, (moduleConfig.external_notification.active ? true : false));
         break;
@@ -302,10 +298,6 @@ void ExternalNotificationModule::setExternalOff(uint8_t index)
 				// FrC here is where you can disable turning the led off, but it does it everywhere
         if (output > 0)
             digitalWrite(output, (moduleConfig.external_notification.active ? false : true));
-#ifdef SIMPLE_TDECK
-        if (output > 0)  // allow to read battery adc again
-					pinMode(output, INPUT);
-#endif
         break;
     }
 
