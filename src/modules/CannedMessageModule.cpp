@@ -44,28 +44,6 @@ std::vector<unsigned int> nodeList = {
 	2579205344, //fr theoktist
   667627820, //fr silouanos
   2579251804, // Geronda Paisios
-	// BELOW FOR GERONDA ONLY
-	// birdman is !e0d01b90, rambo is !e0d01c80, chip is !0c572010
- //  207036432, //chip
-	// 3771734928, //birdman
-	// 3771735168, //rambo
-};
-std::vector<std::string> nodeNames = {
-    "Kitchen",
-    "Bookstore",
-    "Fr Michael",
-    "Router",
-    "Fr Jerome",
-    "Fr Evgeni",
-    "Fr Cyril",
-    "FrTheoktist",
-    "Fr Silouanos",
-		"Geronda Paisios",
-		//Below for Geronda only
-		// "CHIP",
-		// "Birdman",
-		// "RAMBO",
-		
 };
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
@@ -155,8 +133,6 @@ CannedMessageModule::CannedMessageModule()
 		// char startupMessage[20];
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		// sendText(NODENUM_RPI5, 1, startupMessage, false);
-		// nodeList.erase(std::remove(nodeList.begin(), nodeList.end(), nodeDB->getNodeNum()), nodeList.end());
-		// nodeNames.erase(std::remove(nodeNames.begin(), nodeNames.end(), cannedMessageModule->getNodeName(nodeDB->getNodeNum())), nodeNames.end());
 		MYNODES.erase(
 				std::remove_if(MYNODES.begin(), MYNODES.end(), 
 											 [&](const std::pair<unsigned int, std::string>& node) {
@@ -672,7 +648,7 @@ int32_t CannedMessageModule::runOnce()
 	if (alreadySentFirstMessage == 0) {
 		char startupMessage[20];
 		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-		sendText(NODENUM_RPI5, 1, startupMessage, false);
+		sendText(NODENUM_RPI5, 0, startupMessage, false);
 		alreadySentFirstMessage = 1;
 	}
 #endif
@@ -728,7 +704,7 @@ int32_t CannedMessageModule::runOnce()
         this->notifyObservers(&e);
 	char str[6];
 	sprintf(str, "%d", this->previousMessageIndex);
-		sendText(NODENUM_RPI5, 1, str, false);
+		sendText(NODENUM_RPI5, 0, str, false);
 		this->previousMessageIndex = 0;
 		}
 #endif
@@ -755,7 +731,7 @@ int32_t CannedMessageModule::runOnce()
 								if (this->previousFreetext.length() > 0) {
 									if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
 									LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
-									sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+									sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
 									showTemporaryMessage("Resending last message");
 								} else {
 									showTemporaryMessage("No previous \nmessage to resend");
@@ -774,7 +750,7 @@ int32_t CannedMessageModule::runOnce()
 								LOG_DEBUG("WAS BRODCAST\n");
 								this->dest = NODENUM_RPI5;
 							}
-							sendText(this->dest, 1, this->freetext.c_str(), true);
+							sendText(this->dest, 0, this->freetext.c_str(), true);
 							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 							this->previousDest = this->dest;
 							this->previousFreetext = this->freetext;
@@ -805,7 +781,7 @@ int32_t CannedMessageModule::runOnce()
 										// always goes to St Anthony's channel (not sure what it's sending here though)
                     // sendText(NODENUM_BROADCAST, 1, this->messages[this->currentMessageIndex], true);
 										// new 6-17-24, trying make sure never send to broadcast, saw some StA's messages in app
-                    sendText(NODENUM_RPI5, 1, this->messages[this->currentMessageIndex], true);
+                    sendText(NODENUM_RPI5, 0, this->messages[this->currentMessageIndex], true);
 #else
                     sendText(NODENUM_BROADCAST, channels.getPrimaryIndex(), this->messages[this->currentMessageIndex], true);
 #endif
@@ -893,11 +869,11 @@ int32_t CannedMessageModule::runOnce()
 					// might want runOnce here
 					break;
 				case 0x1a: // alt-w/1, previous Messages1
-					sendText(NODENUM_RPI5, 1, "1", false);
+					sendText(NODENUM_RPI5, 0, "1", false);
 					showTemporaryMessage("Requesting Previous \nMessages 1");
 					break;
 				case 0x2a: // alt-e/2, previous Messages2
-					sendText(NODENUM_RPI5, 1, "2", false);
+					sendText(NODENUM_RPI5, 0, "2", false);
 					showTemporaryMessage("Requesting Previous \nMessages 2");
 					break;
 				case 0x9e: // alt-r, retype last message
@@ -1071,25 +1047,19 @@ int32_t CannedMessageModule::runOnce()
            //          }
            //      }
 								
-						// nodeIndex = (nodeIndex + 1) % nodeList.size(); // Increment nodeIndex and wrap around
-						// this->dest = nodeList[nodeIndex];
 						if (this->cursorScrollMode == 0) {
 								LOG_INFO("CursorScrollMode is off\n");
 							do {
 								LOG_INFO("CursorScrollMode is off, do while\n");
-								// nodeIndex = (nodeIndex + 1) % nodeList.size();
-								// nodeIndex = (nodeIndex + 1) % nodeNames.size();
 								nodeIndex = (nodeIndex + 1) % MYNODES.size();
 								LOG_INFO("NodeIndex: %d\n", nodeIndex);
 								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-							// } while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
 							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 							
 			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 							// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
 							LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
-							// this->dest = nodeList[nodeIndex];
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 							LOG_INFO("nodeNameeee: %d\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
@@ -1157,25 +1127,19 @@ int32_t CannedMessageModule::runOnce()
 											// break;
            //          }
            //      }
-						// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
-						// this->dest = nodeList[nodeIndex];
 						if (this->cursorScrollMode == 0) {
 							LOG_INFO("CursorScrollMode is off\n");
 							do {
 								LOG_INFO("CursorScrollMode is off, do while\n");
-								// nodeIndex = (nodeIndex - 1 + nodeList.size()) % nodeList.size(); // Decrement nodeIndex and wrap around
 								nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
 								LOG_INFO("NodeIndex: %d\n", nodeIndex);
 								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-							// } while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
 							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 							
-							// } while (std::string(cannedMessageModule->getNodeName(nodeList[nodeIndex])) == "Unknown");
 
 					
 							LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
-							// this->dest = nodeList[nodeIndex];
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 						} else {
@@ -1613,7 +1577,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             // displayString = "Delivery failed\nRetrying...";
 						showTemporaryMessage("Delivery failed\nRetrying...");
 						LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
-						sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
+						sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
 					} else {
 						this->deliveryFailedCount = 0;
             displayString = "Delivery failed";
@@ -1669,14 +1633,15 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         requestFocus(); // Tell Screen::setFrames to move to our module's frame
 #ifdef SIMPLE_TDECK
         display->setFont(FONT_LARGE);
+        display->drawString(display->getWidth() / 2 - 55, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Sending...");
 #else
 #ifdef USE_EINK
         display->setFont(FONT_SMALL); // No chunky text
 #else
         display->setFont(FONT_MEDIUM); // Chunky text
 #endif
-#endif
         display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Sending...");
+#endif
     }
 
 #ifdef SIMPLE_TDECK

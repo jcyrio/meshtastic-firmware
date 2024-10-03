@@ -1010,7 +1010,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				secondLastMessageSeconds = lastMessageSecondsPrev + lastMessageSecondsDiff;
 				LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
 				receivedNewMessage = false;
-				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				// if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
 				else strcpy(lastNodeName, "???");
 			}
 		}
@@ -1145,7 +1146,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		// LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
 		if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
 		if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
-		if ((strlen(lastMessageContent3) < 85) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
+		if ((strlen(lastMessageContent3) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
 			for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
 				if (useTimestamp && minutes >= 15 && daysAgo == 0) {
 						display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
@@ -2233,14 +2234,8 @@ void Screen::setFrames(FrameFocus focus)
 
     // then all the nodes
     // We only show a few nodes in our scrolling list - because meshes with many nodes would have too many screens
-#ifdef SIMPLE_TDECK
-    size_t numToShow = min(numMeshNodes, 14U);
-    // size_t numToShow = 0;
-#else
-    size_t numToShow = min(numMeshNodes, 4U);
-#endif
 #ifndef SIMPLE_TDECK
-    for (size_t i = 0; i < numToShow; i++)
+    for (size_t i = 0; i < 4U; i++)
 			//want to print the node names
 		{
 			// LOG_DEBUG("Adding node %d\n", i);
