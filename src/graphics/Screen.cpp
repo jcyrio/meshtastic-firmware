@@ -967,6 +967,32 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
     return validCached;
 }
 
+#ifdef SIMPLE_TDECK
+char* filter_parentheses(const char* tempBuf) {
+	static char tempBuf2[237];
+    int in_parentheses = 0;
+    int j = 0; // Index for tempBuf2
+    for (int i = 0; i < strlen(tempBuf); i++) {
+			if (tempBuf[i] == '(') in_parentheses = 1;
+			if (in_parentheses) tempBuf2[j++] = tempBuf[i];  // Copy only the characters inside parentheses
+			else {
+				if (tempBuf[i] == ' ') tempBuf2[j++] = ' ';
+				else tempBuf2[j++] = 'O';  // Replace non-space characters with tilde
+				// else tempBuf2[j++] = tempBuf[i];  // Copy all characters
+			}
+			if (tempBuf[i] == ')') in_parentheses = 0;
+    }
+    tempBuf2[j] = '\0';
+		LOG_INFO("tempBuf: %s\n", tempBuf);
+		LOG_INFO("tempBuf: %s\n", tempBuf);
+		LOG_INFO("tempBuf2: %s\n", tempBuf2);
+		LOG_INFO("tempBuf2: %s\n", tempBuf2);
+		LOG_INFO("tempBuf2: %s\n", tempBuf2);
+    return tempBuf2;
+}
+#endif
+
+
 /// Draw the last text message we received
 static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
@@ -1111,7 +1137,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 #ifdef SIMPLE_TDECK
+				// static char tempBuf2[237];
+				// char* tempBuf2 = filter_parentheses(tempBuf); //for making bold text inside parentheses
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+        // display->drawStringMaxWidth(1 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf2);
 #else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
