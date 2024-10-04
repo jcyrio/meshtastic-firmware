@@ -23,6 +23,7 @@
 #endif
 
 #ifdef SIMPLE_TDECK
+// #include "nimble/NimbleBluetooth.h"
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
 
@@ -406,14 +407,14 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             if (moduleConfig.external_notification.enabled == true) {
                 if (externalNotificationModule->getMute()) {
                     externalNotificationModule->setMute(false);
-                    showTemporaryMessage("Notifications \nEnabled");
+                    showTemporaryMessage("Notifications\nEnabled");
                     if (screen)
                         screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
                 } else {
                     externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
                     externalNotificationModule->setMute(true);
                     externalNotificationModule->setExternalOff(0); // this will turn off the LED if it was on
-                    showTemporaryMessage("Notifications \nDisabled");
+                    showTemporaryMessage("Notifications\nDisabled");
                     if (screen)
                         screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
                 }
@@ -434,9 +435,9 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         case 0xaf: // fn+space send network ping like double press does
             service->refreshLocalMeshNode();
             if (service->trySendPosition(NODENUM_BROADCAST, true)) {
-                showTemporaryMessage("Position \nUpdate Sent");
+                showTemporaryMessage("Position\nUpdate Sent");
             } else {
-                showTemporaryMessage("Node Info \nUpdate Sent");
+                showTemporaryMessage("Node Info\nUpdate Sent");
             }
             break;
 #ifdef SIMPLE_TDECK
@@ -444,13 +445,13 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
 									externalNotificationModule->setMute(false);
-									showTemporaryMessage("Notifications \nEnabled");
+									showTemporaryMessage("Notifications\nEnabled");
 									if (screen)
 											screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
 							} else {
 									externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
 									externalNotificationModule->setMute(true);
-									showTemporaryMessage("Notifications \nDisabled");
+									showTemporaryMessage("Notifications\nDisabled");
 									if (screen)
 											screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
 							}
@@ -734,11 +735,35 @@ int32_t CannedMessageModule::runOnce()
 									sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
 									showTemporaryMessage("Resending last message");
 								} else {
-									showTemporaryMessage("No previous \nmessage to resend");
+									showTemporaryMessage("No previous\nmessage to resend");
 								}
+							// } else if ((this->freetext == "BTon") || (this->freetext == "bton")) {
+							// 	setBluetoothEnable(true);
+							// 	showTemporaryMessage("Bluetooth\nEnabled");
+							// } else if ((this->freetext == "BToff") || (this->freetext == "btoff")) {
+							// 	setBluetoothEnable(false);
+							// 	showTemporaryMessage("Bluetooth\nDisabled");
+							} else if (this->freetext == "rndb") {
+								nodeDB->resetNodes();
+								showTemporaryMessage("Reset NodeDB");
+							} else if ((this->freetext == "restart") || (this->freetext == "reboot")) {
+								screen->startAlert("Rebooting...");
+                rebootAtMsec = millis() + DEFAULT_REBOOT_SECONDS * 1000;
+                runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+							} else if ((this->freetext = "ignore") || (this->freetext = "ig")) {
+									MYNODES.erase(
+											std::remove_if(MYNODES.begin(), MYNODES.end(), 
+																		 [&](const std::pair<unsigned int, std::string>& node) {
+																				 return node.first == this->dest;
+																		 }),
+											MYNODES.end()
+									);
+								do {
+									nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
+								} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+								this->dest = MYNODES[nodeIndex].first;
+								showTemporaryMessage("Ignored\nNode");
 							} else {
-
-
 							//if there is a leading '$' char at the start, then remove it
 							// if (this->freetext[0] == '$') {
 							// if (this->freetext[0] == '>') {
@@ -870,11 +895,11 @@ int32_t CannedMessageModule::runOnce()
 					break;
 				case 0x1a: // alt-w/1, previous Messages1
 					sendText(NODENUM_RPI5, 0, "1", false);
-					showTemporaryMessage("Requesting Previous \nMessages 1");
+					showTemporaryMessage("Requesting Previous\nMessages 1");
 					break;
 				case 0x2a: // alt-e/2, previous Messages2
 					sendText(NODENUM_RPI5, 0, "2", false);
-					showTemporaryMessage("Requesting Previous \nMessages 2");
+					showTemporaryMessage("Requesting Previous\nMessages 2");
 					break;
 				case 0x9e: // alt-r, retype last message
 					LOG_INFO("Got ALT-R, Retype last message\n");
@@ -896,7 +921,7 @@ int32_t CannedMessageModule::runOnce()
             // validEvent = true;
 						// showTemporaryMessage("Retyping last message");
 					} else {
-						showTemporaryMessage("No previous \nmessage to retype");
+						showTemporaryMessage("No previous\nmessage to retype");
 					}
 					break;
 						
@@ -908,7 +933,7 @@ int32_t CannedMessageModule::runOnce()
 					// 	sendText(this->previousDest, 1, this->previousFreetext.c_str(), true);
 					// 	showTemporaryMessage("Resending last message");
 					// } else {
-					// 	showTemporaryMessage("No previous \nmessage to resend");
+					// 	showTemporaryMessage("No previous\nmessage to resend");
 					// }
 					break;
 				case 0x7a: // z, clear LED when there's a notification
@@ -966,13 +991,13 @@ int32_t CannedMessageModule::runOnce()
 					// if (moduleConfig.external_notification.enabled == true) {
 					// 		if (externalNotificationModule->getMute()) {
 					// 				externalNotificationModule->setMute(false);
-					// 				showTemporaryMessage("Notifications \nEnabled");
+					// 				showTemporaryMessage("Notifications\nEnabled");
 					// 				if (screen)
 					// 						screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
 					// 		} else {
 					// 				externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
 					// 				externalNotificationModule->setMute(true);
-					// 				showTemporaryMessage("Notifications \nDisabled");
+					// 				showTemporaryMessage("Notifications\nDisabled");
 					// 				if (screen)
 					// 						screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
 					// 		}
@@ -1135,9 +1160,6 @@ int32_t CannedMessageModule::runOnce()
 								LOG_INFO("NodeIndex: %d\n", nodeIndex);
 								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
-							
-
-					
 							LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
 							this->dest = MYNODES[nodeIndex].first;
