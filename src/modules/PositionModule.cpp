@@ -140,14 +140,19 @@ void PositionModule::trySetRtc(meshtastic_Position p, bool isLocal, bool forceUp
 
 bool PositionModule::hasQualityTimesource()
 {
-	#ifndef SIMPLE_TDECK
+	//#ifndef SIMPLE_TDECK
     bool setFromPhoneOrNtpToday =
         lastSetFromPhoneNtpOrGps == 0 ? false : (millis() - lastSetFromPhoneNtpOrGps) <= (SEC_PER_DAY * 1000UL);
-    bool hasGpsOrRtc = (gps && gps->isConnected()) || (rtc_found.address != ScanI2C::ADDRESS_NONE.address);
+        #ifndef SIMPLE_TDECK
+            bool hasGpsOrRtc = (gps && gps->isConnected()) ||
+            #else
+            bool hasGpsOrRtc = false;
+            #endif
+             (rtc_found.address != ScanI2C::ADDRESS_NONE.address);
     return hasGpsOrRtc || setFromPhoneOrNtpToday;
-    #else
-    return false;
-    #endif
+    //#else
+    //return false;
+    //#endif
 }
 
 meshtastic_MeshPacket *PositionModule::allocReply()

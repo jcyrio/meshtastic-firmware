@@ -1026,7 +1026,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #endif
 
     // For time delta
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK2
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '(') {
@@ -1146,7 +1146,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
     }
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK2
 		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
 		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
 		LOG_INFO("tempBuf: %s\n", tempBuf);
@@ -1176,27 +1176,31 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		// LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
 		if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
 		if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
-		if ((strlen(lastMessageContent3) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
+		if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
+			static uint8_t linePosition = 4;
+			if (strlen(lastMessageContent3) < 65) linePosition = 5;
 			for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
 				if (useTimestamp && minutes >= 15 && daysAgo == 0) {
+					//FIXME: make special display for 2nd line for these cases too
 						display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
 				}
 				// Timestamp yesterday (if display is wide enough)
+					//FIXME: make special display for 2nd line for these cases too
 				else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
 						display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
 				}
 				// Otherwise, show a time delta
 				else {
 						display->setColor(WHITE);
-						display->fillRect(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 4, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+						display->fillRect(xOff + x, 0 + y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
 						display->setColor(BLACK);
-						display->drawStringf(xOff + x, 0 + y + FONT_HEIGHT_LARGE * 4, tempBuf, "%s ago from %s",
+						display->drawStringf(xOff + x, 0 + y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%s ago from %s",
 																							 screen->drawTimeDelta(days, hours, minutes, lastMessageSecondsDiff + seconds).c_str(), secondLastNodeName);
 						display->setColor(WHITE);
 						//end
 				// display->drawString(xOff + x, y + 105, lastMessageTime);
 			}
-			display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * 5, x + display->getWidth(), lastMessageContent3);
+			display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), lastMessageContent3);
 		}
 		}
 	//end

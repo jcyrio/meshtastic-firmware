@@ -750,7 +750,7 @@ int32_t CannedMessageModule::runOnce()
 								screen->startAlert("Rebooting...");
                 rebootAtMsec = millis() + DEFAULT_REBOOT_SECONDS * 1000;
                 runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
-							} else if ((this->freetext = "ignore") || (this->freetext = "ig")) {
+							} else if ((this->freetext == "ignore") || (this->freetext == "ig")) {
 									MYNODES.erase(
 											std::remove_if(MYNODES.begin(), MYNODES.end(), 
 																		 [&](const std::pair<unsigned int, std::string>& node) {
