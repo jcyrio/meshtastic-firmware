@@ -36,7 +36,7 @@ extern "C" {
 
 #define TTGO_T_ECHO
 	//frc
-#define MESHTASTIC_EXCLUDE_GPS 1
+// #define MESHTASTIC_EXCLUDE_GPS 1 //messes up network time
 #define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR 1
 	//end frc
 
