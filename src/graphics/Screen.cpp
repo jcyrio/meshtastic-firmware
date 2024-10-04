@@ -1026,7 +1026,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #endif
 
     // For time delta
-#ifdef SIMPLE_TDECK2
+#ifdef SIMPLE_TDECK
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '(') {
@@ -1146,7 +1146,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
     }
-#ifdef SIMPLE_TDECK2
+#ifdef SIMPLE_TDECK
 		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
 		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
 		LOG_INFO("tempBuf: %s\n", tempBuf);
