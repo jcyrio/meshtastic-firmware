@@ -1036,7 +1036,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #ifdef SIMPLE_TDECK
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '(') {
+			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
 				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 				strcpy(thirdLastNodeName, secondLastNodeName);
 				strcpy(secondLastNodeName, lastNodeName);
@@ -1147,7 +1147,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 #ifdef SIMPLE_TDECK
 				uint8_t linePosition = 1;
-				if (strlen(tempBuf) < 120) linePosition = 2;
+				if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePosition = 2;
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), tempBuf);
 #else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
@@ -1158,7 +1158,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
 		LOG_INFO("tempBuf: %s\n", tempBuf);
 		if (strcmp(lastMessageContent2, tempBuf) != 0) {
-			if (tempBuf[0] != '(') {
+			if (tempBuf[0] != '*') {
 				lastMessageWasPreviousMsgs = false;
 				LOG_INFO("lastMessageContent2 is different from tempBuf\n");
 				lastMessageSecondsDiff = lastMessageSecondsPrev;
@@ -1184,7 +1184,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		//new, if there are 3 messages and they're all not too long
     if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
         (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
-        (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
+        (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '*')) {
         // Display time and sender for 2nd last message
         uint8_t linePosition = 3;
         uint32_t secondsSinceSecondLastMessage = lastMessageSecondsDiff + seconds;
@@ -1195,7 +1195,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         uint32_t secondsSinceThirdLastMessage = thirdLastMessageSeconds + secondsSinceSecondLastMessage;
         displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4);
 				// if there are 2 messages and the top one isn't too long
-    } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '(')) {
+    } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '*')) {
 			uint8_t linePosition = 5;
 			if (strlen(lastMessageContent2) < 30) linePosition = 4;
 			displayTimeAndMessage(display, x, y, linePosition, seconds, secondLastNodeName, lastMessageContent3);

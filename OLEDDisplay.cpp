@@ -621,7 +621,7 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
         drawInternal(xPos, yPos, currentCharWidth, textHeight, fontData, charDataPosition, charByteSize);
 
         // If in parentheses, draw the character again shifted by 1 pixel for bold effect
-        if (!this->inParentheses) {
+        if (this->inParentheses == false) {
           drawInternal(xPos + 1, yPos, currentCharWidth, textHeight, fontData, charDataPosition, charByteSize);
         }
       }
@@ -630,7 +630,7 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
     }
 
     // Check for ')' to end bold text
-    if (code == '[') {
+    if (code == ']') {
       this->inParentheses = false;
     }
   }
