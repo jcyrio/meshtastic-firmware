@@ -769,7 +769,11 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
 
     // Always break on newline
     if (text[i] == '\n') {
-      drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight , &text[lastDrawnPos], i - lastDrawnPos, strWidth, true);
+      // Remove leading spaces before drawing
+      uint16_t startPos = lastDrawnPos;
+      while (startPos < i && text[startPos] == ' ') startPos++;
+      
+      drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight, &text[startPos], i - startPos, getStringWidth(&text[startPos], i - startPos, true), true);
       if (firstLineChars == 0)
         firstLineChars = i;
 
@@ -790,7 +794,12 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
         preferredBreakpoint = i;
         widthAtBreakpoint = strWidth;
       }
-      drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight , &text[lastDrawnPos], preferredBreakpoint - lastDrawnPos, widthAtBreakpoint, true);
+      
+      // Remove leading spaces before drawing
+      uint16_t startPos = lastDrawnPos;
+      while (startPos < preferredBreakpoint && text[startPos] == ' ') startPos++;
+      
+      drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight, &text[startPos], preferredBreakpoint - startPos, getStringWidth(&text[startPos], preferredBreakpoint - startPos, true), true);
       if (firstLineChars == 0)
         firstLineChars = preferredBreakpoint;
       lastDrawnPos = preferredBreakpoint;
@@ -806,7 +815,11 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
 
   // Draw last part if needed
   if (drawStringResult != 0 && lastDrawnPos < length) {
-    drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight , &text[lastDrawnPos], length - lastDrawnPos, getStringWidth(&text[lastDrawnPos], length - lastDrawnPos, true), true);
+    // Remove leading spaces before drawing the last part
+    uint16_t startPos = lastDrawnPos;
+    while (startPos < length && text[startPos] == ' ') startPos++;
+    
+    drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight, &text[startPos], length - startPos, getStringWidth(&text[startPos], length - startPos, true), true);
   }
 
   if (drawStringResult == 0 || (yMove + lineNumber * lineHeight) >= this->height()) // text did not fit on screen

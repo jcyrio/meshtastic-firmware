@@ -88,6 +88,10 @@ static uint32_t lastMessageTime = 0;
 static uint32_t secondLastMessageTime = 0;
 static uint32_t thirdLastMessageTime = 0;
 
+static uint32_t lastMessageSeconds = 0;
+static uint32_t lastMessageTimestamp = 0;
+static uint32_t secondLastMessageTimestamp = 0;
+
 namespace graphics
 {
 
@@ -1044,6 +1048,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
+            secondLastMessageSeconds = lastMessageSeconds;
+            secondLastMessageTimestamp = lastMessageTimestamp;
+            lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+            lastMessageSeconds = sinceReceived(&mp);
         thirdLastMessageTime = secondLastMessageTime;
         secondLastMessageTime = lastMessageTime;
         lastMessageTime = currentMessageTime;
@@ -1159,9 +1167,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 #ifdef SIMPLE_TDECK
-				uint8_t linePos = 1;
-				if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
-        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * linePos, x + display->getWidth(), tempBuf);
+				// uint8_t linePos = 1;
+				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
+        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
 #else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
@@ -1185,7 +1193,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				lastMessageWasPreviousMsgs = true;
 			}
 		}
-		uint32_t secondsSinceSecondLastMessage = lastMessageSecondsDiff + seconds;
+		// uint32_t secondsSinceSecondLastMessage = lastMessageSecondsDiff + seconds;
+					uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
 		uint8_t linePosition;
 		minutes = secondsSinceSecondLastMessage / 60;
 		hours = minutes / 60;
