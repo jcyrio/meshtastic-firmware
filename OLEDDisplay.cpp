@@ -51,6 +51,7 @@ OLEDDisplay::OLEDDisplay() {
 #ifdef OLEDDISPLAY_DOUBLE_BUFFER
 	buffer_back = NULL;
 #endif
+  inParentheses = false;
 }
 
 OLEDDisplay::~OLEDDisplay() {
@@ -581,8 +582,6 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
   if (xMove + textWidth  < 0 || xMove >= this->width() ) {return 0;}
   if (yMove + textHeight < 0 || yMove >= this->height()) {return 0;}
 
-  bool inParentheses = false;
-
   for (uint16_t j = 0; j < textLength; j++) {
     int16_t xPos = xMove + cursorX;
     int16_t yPos = yMove + cursorY;
@@ -600,8 +599,8 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
     }
 
     // Check for '(' to start bold text
-    if (code == '(') {
-      inParentheses = true;
+    if (code == '[') {
+      this->inParentheses = true;
     }
 
     if (code >= firstChar) {
@@ -622,7 +621,7 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
         drawInternal(xPos, yPos, currentCharWidth, textHeight, fontData, charDataPosition, charByteSize);
 
         // If in parentheses, draw the character again shifted by 1 pixel for bold effect
-        if (inParentheses) {
+        if (!this->inParentheses) {
           drawInternal(xPos + 1, yPos, currentCharWidth, textHeight, fontData, charDataPosition, charByteSize);
         }
       }
@@ -631,8 +630,8 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
     }
 
     // Check for ')' to end bold text
-    if (code == ')') {
-      inParentheses = false;
+    if (code == '[') {
+      this->inParentheses = false;
     }
   }
   return charCount;
@@ -748,6 +747,7 @@ void OLEDDisplay::drawStringf( int16_t x, int16_t y, char* buffer, String format
 uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t maxLineWidth, const String &strUser) {
   uint16_t firstChar  = pgm_read_byte(fontData + FIRST_CHAR_POS);
   uint16_t lineHeight = pgm_read_byte(fontData + HEIGHT_POS);
+  this->inParentheses = false;
 
   const char* text = strUser.c_str();
 

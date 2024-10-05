@@ -1146,7 +1146,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 #ifdef SIMPLE_TDECK
-        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+				uint8_t linePosition = 1;
+				if (strlen(tempBuf) < 120) linePosition = 2;
+        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), tempBuf);
 #else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
