@@ -1036,8 +1036,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				secondLastMessageSeconds = lastMessageSecondsPrev + lastMessageSecondsDiff;
 				LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
 				receivedNewMessage = false;
-				// if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
-				if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
+				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				// if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
 				else strcpy(lastNodeName, "???");
 			}
 		}

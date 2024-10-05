@@ -764,6 +764,14 @@ int32_t CannedMessageModule::runOnce()
 								this->dest = MYNODES[nodeIndex].first;
 								showTemporaryMessage("Ignored\nNode");
 							} else {
+								// check for q , ai, ait, aif, aiff, aih, aid, make sure can only go to router node
+								// if ((this->freetext.find("ai") == 0) || (this->freetext.find("q ") == 0) || (this->freetext.find("ait") == 0) || (this->freetext.find("aif") == 0) || (this->freetext.find("aiff") == 0) || (this->freetext.find("aih") == 0) || (this->freetext.find("aid") == 0)) {
+								// change above to compare
+								// if ((this->freetext.compare(0, 2, "ai") == 0) || (this->freetext.compare(0, 2, "q ") == 0) || (this->freetext.compare(0, 3, "ait") == 0) || (this->freetext.compare(0, 3, "aif") == 0) || (this->freetext.compare(0, 4, "aiff") == 0) || (this->freetext.compare(0, 3, "aih") == 0) || (this->freetext.compare(0, 3, "aid") == 0)) {
+								// make strncmp
+								if ((strncmp(this->freetext.c_str(), "ai", 2) == 0) || (strncmp(this->freetext.c_str(), "q ", 2) == 0) || (strncmp(this->freetext.c_str(), "ait", 3) == 0) || (strncmp(this->freetext.c_str(), "aif", 3) == 0) || (strncmp(this->freetext.c_str(), "aiff", 4) == 0) || (strncmp(this->freetext.c_str(), "aih", 3) == 0) || (strncmp(this->freetext.c_str(), "aid", 3) == 0)) {
+									this->dest = this->previousDest = NODENUM_RPI5;
+								}
 							//if there is a leading '$' char at the start, then remove it
 							// if (this->freetext[0] == '$') {
 							// if (this->freetext[0] == '>') {
