@@ -72,25 +72,22 @@ char brightnessLevel = 'H';
 char lastMessageContent2[237] = {'\0'};
 char lastMessageContent3[237] = {'\0'};
 char lastMessageContent4[237] = {'\0'};
-static uint32_t lastMessageSecondsDiff = 0;
-static uint32_t secondLastMessageSecondsDiff = 0;
-static uint32_t thirdLastMessageSecondsDiff = 0;
 static uint32_t lastMessageSecondsPrev = 0;
-static uint32_t secondLastMessageSeconds = 0;
-static uint32_t thirdLastMessageSeconds = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5] = {'\0'};
 char secondLastNodeName[5] = {'\0'};
 char thirdLastNodeName[5] = {'\0'};
 bool lastMessageWasPreviousMsgs = false;
+bool firstRunThroughMessages = true;
+char firstMessageToIgnore[237] = {'\0'};
 
 static uint32_t lastMessageTime = 0;
 static uint32_t secondLastMessageTime = 0;
 static uint32_t thirdLastMessageTime = 0;
 
-static uint32_t lastMessageSeconds = 0;
 static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
+static uint32_t thirdLastMessageTimestamp = 0;
 
 namespace graphics
 {
@@ -1048,10 +1045,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
-            secondLastMessageSeconds = lastMessageSeconds;
+						thirdLastMessageTimestamp = secondLastMessageTimestamp;
             secondLastMessageTimestamp = lastMessageTimestamp;
             lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-            lastMessageSeconds = sinceReceived(&mp);
         thirdLastMessageTime = secondLastMessageTime;
         secondLastMessageTime = lastMessageTime;
         lastMessageTime = currentMessageTime;
@@ -1060,8 +1056,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				strcpy(thirdLastNodeName, secondLastNodeName);
 				strcpy(secondLastNodeName, lastNodeName);
 				LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
-				secondLastMessageSeconds = lastMessageSecondsPrev + lastMessageSecondsDiff;
-				LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
 				receivedNewMessage = false;
 				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 				// if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
@@ -1069,9 +1063,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			}
 		}
     uint32_t seconds = sinceReceived(&mp);
-		thirdLastMessageSeconds = secondLastMessageSeconds;
-		secondLastMessageSeconds = lastMessageSecondsPrev;
-		lastMessageSecondsPrev = seconds;
 #else
     uint32_t seconds = sinceReceived(&mp);
 #endif
@@ -1170,6 +1161,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				// uint8_t linePos = 1;
 				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+				if (firstRunThroughMessages) {
+					strcpy(firstMessageToIgnore, tempBuf);
+					firstRunThroughMessages = false;
+				}
 #else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
@@ -1178,49 +1173,49 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
 		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
 		LOG_INFO("tempBuf: %s\n", tempBuf);
-		if (strcmp(lastMessageContent2, tempBuf) != 0) {
-			if (tempBuf[0] != '*') {
-				lastMessageWasPreviousMsgs = false;
-				LOG_INFO("lastMessageContent2 is different from tempBuf\n");
-				// secondLastMessageSecondsDiff = secondLastMessageSeconds;
-				lastMessageSecondsDiff = lastMessageSecondsPrev;
-				LOG_INFO("lastMessageSecondsDiff: %u\n", lastMessageSecondsDiff);
-				strcpy(lastMessageContent4, lastMessageContent3);
-				strcpy(lastMessageContent3, lastMessageContent2);
-				strcpy(lastMessageContent2, tempBuf);
-				receivedNewMessage = true;
-			} else {
-				lastMessageWasPreviousMsgs = true;
-			}
+		if ((strcmp(lastMessageContent2, tempBuf) != 0) && (strcmp(firstMessageToIgnore, tempBuf) != 0)) {
+			if (strcmp(firstMessageToIgnore, tempBuf) != 0) {
+				if (tempBuf[0] != '*') {
+					lastMessageWasPreviousMsgs = false;
+					LOG_INFO("lastMessageContent2 is different from tempBuf\n");
+					strcpy(lastMessageContent4, lastMessageContent3);
+					strcpy(lastMessageContent3, lastMessageContent2);
+					strcpy(lastMessageContent2, tempBuf);
+					receivedNewMessage = true;
+				} else lastMessageWasPreviousMsgs = true;
+			} else strcpy(firstMessageToIgnore, "");
 		}
-		// uint32_t secondsSinceSecondLastMessage = lastMessageSecondsDiff + seconds;
-					uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+		uint32_t secondsSinceThirdLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - thirdLastMessageTimestamp;
+		uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
+		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
+		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
+		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
+		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
+		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
+		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
+		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
+		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
 		uint8_t linePosition;
-		minutes = secondsSinceSecondLastMessage / 60;
-		hours = minutes / 60;
-		days = hours / 24;
-		// For timestamp
-		useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
-		// LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-		// LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
 		if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
 		if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
-		//new, if there are 3 messages and they're all not too long
+
+		//if there are 3 messages and they're all not too long
     if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
         (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
-        (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '*')) {
+        (lastMessageContent2[0] != '*')) {
         // Display time and sender for 2nd last message
         linePosition = 3;
-        uint32_t secondLastTimeDelta = currentMessageTime - secondLastMessageTime;
-        displayTimeAndMessage(display, x, y, linePosition, secondLastTimeDelta, secondLastNodeName, lastMessageContent3);
+        // uint32_t secondLastTimeDelta = currentMessageTime - secondLastMessageTime;
+        displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3);
         // Display time and sender for 3rd last message
 				if (strlen(lastMessageContent4) < 30) linePosition = 6;
 				else linePosition = 5;
-        // uint32_t secondsSinceThirdLastMessage = thirdLastMessageSeconds + seconds;
-        uint32_t thirdLastTimeDelta = currentMessageTime - thirdLastMessageTime;
-        displayTimeAndMessage(display, x, y, linePosition, thirdLastTimeDelta, thirdLastNodeName, lastMessageContent4);
-				// if there are 2 messages and the top one isn't too long
-    } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageWasPreviousMsgs == false) && (lastMessageContent2[0] != '*')) {
+        // uint32_t thirdLastTimeDelta = currentMessageTime - thirdLastMessageTime;
+        displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4);
+
+		// if there are 2 messages and the top one isn't too long
+    } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {
 			linePosition = 5;
 			if (strlen(lastMessageContent2) < 30) linePosition = 4;
 			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3);
