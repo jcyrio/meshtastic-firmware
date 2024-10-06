@@ -81,10 +81,6 @@ bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
 char firstMessageToIgnore[237] = {'\0'};
 
-static uint32_t lastMessageTime = 0;
-static uint32_t secondLastMessageTime = 0;
-static uint32_t thirdLastMessageTime = 0;
-
 static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
 static uint32_t thirdLastMessageTimestamp = 0;
@@ -1045,12 +1041,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
-						thirdLastMessageTimestamp = secondLastMessageTimestamp;
-            secondLastMessageTimestamp = lastMessageTimestamp;
-            lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-        thirdLastMessageTime = secondLastMessageTime;
-        secondLastMessageTime = lastMessageTime;
-        lastMessageTime = currentMessageTime;
+				thirdLastMessageTimestamp = secondLastMessageTimestamp;
+				secondLastMessageTimestamp = lastMessageTimestamp;
+				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
 				
 				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 				strcpy(thirdLastNodeName, secondLastNodeName);
@@ -1206,12 +1199,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         (lastMessageContent2[0] != '*')) {
         // Display time and sender for 2nd last message
         linePosition = 3;
-        // uint32_t secondLastTimeDelta = currentMessageTime - secondLastMessageTime;
         displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3);
         // Display time and sender for 3rd last message
 				if (strlen(lastMessageContent4) < 30) linePosition = 6;
 				else linePosition = 5;
-        // uint32_t thirdLastTimeDelta = currentMessageTime - thirdLastMessageTime;
         displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4);
 
 		// if there are 2 messages and the top one isn't too long
