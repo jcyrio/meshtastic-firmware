@@ -72,7 +72,6 @@ char brightnessLevel = 'H';
 char lastMessageContent2[237] = {'\0'};
 char lastMessageContent3[237] = {'\0'};
 char lastMessageContent4[237] = {'\0'};
-static uint32_t lastMessageSecondsPrev = 0;
 bool receivedNewMessage = false;
 char lastNodeName[5] = {'\0'};
 char secondLastNodeName[5] = {'\0'};
@@ -84,6 +83,7 @@ char firstMessageToIgnore[237] = {'\0'};
 static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
 static uint32_t thirdLastMessageTimestamp = 0;
+uint32_t totalMessageCount = 0;
 
 namespace graphics
 {
@@ -1041,6 +1041,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
+				totalMessageCount++;
 				thirdLastMessageTimestamp = secondLastMessageTimestamp;
 				secondLastMessageTimestamp = lastMessageTimestamp;
 				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
@@ -1153,7 +1154,19 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #ifdef SIMPLE_TDECK
 				// uint8_t linePos = 1;
 				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
-        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+				// LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
+				if (strlen(tempBuf) < 160) {
+					display->setFont(FONT_LARGE);
+					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
+				} else if (strlen(tempBuf) < 190) {
+					display->setFont(FONT_MEDIUM);
+					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_MEDIUM, x + display->getWidth(), tempBuf);
+					display->setFont(FONT_LARGE);
+				} else {
+					display->setFont(FONT_SMALL);
+					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+					display->setFont(FONT_LARGE);
+				}
 				if (firstRunThroughMessages) {
 					strcpy(firstMessageToIgnore, tempBuf);
 					firstRunThroughMessages = false;
@@ -1163,14 +1176,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #endif
     }
 #ifdef SIMPLE_TDECK
-		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
-		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-		LOG_INFO("tempBuf: %s\n", tempBuf);
 		if ((strcmp(lastMessageContent2, tempBuf) != 0) && (strcmp(firstMessageToIgnore, tempBuf) != 0)) {
 			if (strcmp(firstMessageToIgnore, tempBuf) != 0) {
 				if (tempBuf[0] != '*') {
 					lastMessageWasPreviousMsgs = false;
-					LOG_INFO("lastMessageContent2 is different from tempBuf\n");
 					strcpy(lastMessageContent4, lastMessageContent3);
 					strcpy(lastMessageContent3, lastMessageContent2);
 					strcpy(lastMessageContent2, tempBuf);
@@ -1180,19 +1189,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		}
 		uint32_t secondsSinceThirdLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - thirdLastMessageTimestamp;
 		uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
-		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
-		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
-		LOG_INFO("secondsSinceThirdLastMessage: %u\n", secondsSinceThirdLastMessage);
-		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
-		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
-		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
-		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
-		LOG_INFO("secondsSinceSecondLastMessage: %u\n", secondsSinceSecondLastMessage);
 		uint8_t linePosition;
-		if (secondLastNodeName[0] == '\0') LOG_INFO("secondLastNodeName is empty\n");
-		if (lastMessageContent3[0] == '\0') LOG_INFO("lastMessageContent3 is empty\n");
-
 		//if there are 3 messages and they're all not too long
     if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
         (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
