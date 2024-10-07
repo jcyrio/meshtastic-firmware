@@ -975,7 +975,7 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
 
 #ifdef SIMPLE_TDECK
 // Helper function to display time delta and sender
-void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent)
+void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount)
 {
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
@@ -990,14 +990,15 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     display->fillRect(x, y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
     display->setColor(BLACK);
 
-    if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-        display->drawStringf(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, nodeName);
-    } else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-        display->drawStringf(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, nodeName);
-    } else {
-        display->drawStringf(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%s ago from %s",
-                             screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
-    }
+    for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
+			if (useTimestamp && minutes >= 15 && daysAgo == 0) {
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) At %02hu:%02hu %s", msgCount, timestampHours, timestampMinutes, nodeName);
+			} else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) Yest %02hu:%02hu %s", msgCount,  timestampHours, timestampMinutes, nodeName);
+			} else {
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) %s ago from %s", msgCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
+			}
+		}
     display->setColor(WHITE);
 		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
 }
@@ -1071,28 +1072,40 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
 
+#ifdef SIMPLE_TDECK //top line has white background
+		display->setColor(WHITE);
+		display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+		display->setColor(BLACK);
+#endif
     // If bold, draw twice, shifting right by one pixel
     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
         // Show a timestamp if received today, but longer than 15 minutes ago
         if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes,
-                                 (node && node->has_user) ? node->user.short_name : "???");
+					if (totalMessageCount > 0) {
+							display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					} else {
+							display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s", totalMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), (node && node->has_user) ? node->user.short_name : "???");
+					}
         }
         // Timestamp yesterday (if display is wide enough)
         else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "Yesterday %02hu:%02hu from %s", timestampHours, timestampMinutes,
-                                 (node && node->has_user) ? node->user.short_name : "???");
+					if (totalMessageCount > 0) {
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) Yest %02hu:%02hu from %s", totalMessageCount, timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					} else {
+						display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					}
         }
         // Otherwise, show a time delta
         else {
-#ifdef SIMPLE_TDECK
-						display->setColor(WHITE);
-						display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
-						display->setColor(BLACK);
-#endif
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
-                                 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+					if (totalMessageCount > 0) {
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s",
+                                 totalMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
                                  (node && node->has_user) ? node->user.short_name : "???");
+					} else {
+						display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
+																 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+																 (node && node->has_user) ? node->user.short_name : "???");
+					}
         }
     }
 
@@ -1154,7 +1167,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #ifdef SIMPLE_TDECK
 				// uint8_t linePos = 1;
 				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
-				LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
+				// LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
 				if (strlen(tempBuf) < 200) {
 					display->setFont(FONT_LARGE);
 					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
@@ -1192,17 +1205,20 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         (lastMessageContent2[0] != '*')) {
         // Display time and sender for 2nd last message
         linePosition = 3;
-        displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3);
+				uint32_t msgCount = totalMessageCount - 1;
+        displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
         // Display time and sender for 3rd last message
 				if (strlen(lastMessageContent4) < 30) linePosition = 6;
 				else linePosition = 5;
-        displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4);
+				msgCount = totalMessageCount - 2;
+        displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
 
 		// if there are 2 messages and the top one isn't too long
     } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {
 			linePosition = 5;
 			if (strlen(lastMessageContent2) < 30) linePosition = 4;
-			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3);
+			uint32_t msgCount = totalMessageCount - 1;
+			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
 		} // end 2 messages
 	//end
 #endif
@@ -2903,9 +2919,8 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 	else if (month == "Nov") monthNumber = 11;
 	else if (month == "Dec") monthNumber = 12;
 	int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
-	int hour = time.substring(0, 2).toInt(); // Extract hour and remove leading zero
 	// Construct the final string in M.DD.H format
-	String title = "Monastery Messenger v" + String(monthNumber) + "." + String(day) + "." + String(hour);
+	String title = "Monastery Messenger (" + String(monthNumber) + "." + String(day) + ")";
 	// Serial.println(dateTimeString);
 		
     // const char *title = "Monastery Messenger  v4.29a";
