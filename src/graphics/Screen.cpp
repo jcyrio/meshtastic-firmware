@@ -67,19 +67,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace meshtastic; /** @todo remove */
 //frc
-int totalReceivedMessagesSinceBoot = 0;
 bool alreadySentFirstMessage = false;
-char lastMessageTime[237];
-// char lastMessageTimeTemp[237];
-char lastMessageContent2[237];
-char lastMessageContent3[237];
-static uint32_t lastMessageSeconds = 0;
-static uint32_t lastMessageSecondsPrev = 0;
-static uint32_t secondLastMessageSeconds = 0;
+int totalReceivedMessagesSinceBoot;
+char lastMessageContent2[237] = {'\0'};
+char lastMessageContent3[237] = {'\0'};
+char lastMessageContent4[237] = {'\0'};
+bool receivedNewMessage = false;
+char lastNodeName[5] = {'\0'};
+char secondLastNodeName[5] = {'\0'};
+char thirdLastNodeName[5] = {'\0'};
+bool lastMessageWasPreviousMsgs = false;
+bool firstRunThroughMessages = true;
+char firstMessageToIgnore[237] = {'\0'};
 static uint32_t lastMessageTimestamp = 0;
 static uint32_t secondLastMessageTimestamp = 0;
-bool receivedNewMessage = false;
-char lastNodeName[5];
+static uint32_t thirdLastMessageTimestamp = 0;
+uint32_t totalMessageCount = 0;
 //end
 
 namespace graphics
@@ -967,6 +970,35 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
     return validCached;
 }
 
+//frc
+void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount)
+{
+    uint32_t minutes = seconds / 60;
+    uint32_t hours = minutes / 60;
+    uint32_t days = hours / 24;
+    
+    char tempBuf[64];
+    uint8_t timestampHours, timestampMinutes;
+    int32_t daysAgo;
+    bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
+
+    display->setColor(WHITE);
+    display->fillRect(x, y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+    display->setColor(BLACK);
+
+    for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
+			if (useTimestamp && minutes >= 15 && daysAgo == 0) {
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) At %02hu:%02hu %s", msgCount, timestampHours, timestampMinutes, nodeName);
+			} else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) Yest %02hu:%02hu %s", msgCount,  timestampHours, timestampMinutes, nodeName);
+			} else {
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) %s %s", msgCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
+			}
+		}
+    display->setColor(WHITE);
+		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
+}
+
 /// Draw the last text message we received
 static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
@@ -975,6 +1007,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
+    uint32_t currentMessageTime = sinceReceived(&mp);
     // LOG_DEBUG("drawing text message from 0x%x: %s\n", mp.from,
     // mp.decoded.variant.data.decoded.bytes);
 
@@ -992,19 +1025,23 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		// frc
 		if (receivedNewMessage) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-            secondLastMessageSeconds = lastMessageSeconds;
-            secondLastMessageTimestamp = lastMessageTimestamp;
-            LOG_INFO("secondLastMessageSeconds: %u\n", secondLastMessageSeconds);
-            lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-            LOG_INFO("lastMessageTimestamp: %u\n", lastMessageTimestamp);
-            lastMessageSeconds = sinceReceived(&mp);
-			receivedNewMessage = false;
-			if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
-			else strcpy(lastNodeName, "???");
+			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
+				totalMessageCount++;
+				thirdLastMessageTimestamp = secondLastMessageTimestamp;
+				secondLastMessageTimestamp = lastMessageTimestamp;
+				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+				
+				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
+				strcpy(thirdLastNodeName, secondLastNodeName);
+				strcpy(secondLastNodeName, lastNodeName);
+				LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
+				receivedNewMessage = false;
+				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				// if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
+				else strcpy(lastNodeName, "???");
+			}
 		}
-		// lastMessageSeconds = lastMessageSecondsPrev;
-        uint32_t seconds = sinceReceived(&mp);
-		lastMessageSecondsPrev = seconds;
+		uint32_t seconds = sinceReceived(&mp);
 		//end
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
@@ -1018,28 +1055,33 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // If bold, draw twice, shifting right by one pixel
     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
         // Show a timestamp if received today, but longer than 15 minutes ago
-				// frc
         if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes,
-                                 (node && node->has_user) ? node->user.short_name : "???");
+					if (totalMessageCount > 0) {
+							display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					} else {
+							display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s %s", totalMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), (node && node->has_user) ? node->user.short_name : "???");
+					}
         }
         // Timestamp yesterday (if display is wide enough)
         else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes,
-                                 (node && node->has_user) ? node->user.short_name : "???");
+					if (totalMessageCount > 0) {
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) Yest %02hu:%02hu from %s", totalMessageCount, timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					} else {
+						display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					}
         }
         // Otherwise, show a time delta
         else {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%s %s",
-                                 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+					if (totalMessageCount > 0) {
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s %s",
+                                 totalMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
                                  (node && node->has_user) ? node->user.short_name : "???");
-						//end
+					} else {
+						display->drawStringf(xOff + x, 0 + y, tempBuf, "%s %s",
+																 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+																 (node && node->has_user) ? node->user.short_name : "???");
+					}
         }
-				//frc
-                //FIXME: why do you have to save these here now? Shouldn't need to use this
-				// strcpy(lastMessageTimeTemp, tempBuf);
-				// LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
-				//end
     }
 
     display->setColor(WHITE);
@@ -1100,54 +1142,42 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
     }
 		//frc
-		char tempBuf2[235];
-		snprintf(tempBuf2, sizeof(tempBuf2), "%s", reinterpret_cast<const char*>(mp.decoded.payload.bytes));
-		LOG_INFO("lastMessageContent2: %s\n", lastMessageContent2);
-		LOG_INFO("lastMessageContent3: %s\n", lastMessageContent3);
-		LOG_INFO("tempBuf2: %s\n", tempBuf2);
-		LOG_INFO("tempBuf: %s\n", tempBuf);
-		if (strcmp(lastMessageContent2, tempBuf) != 0) {
-			LOG_INFO("lastMessageContent2 is different from tempBufaaaaa\n");
-			strcpy(lastMessageContent3, lastMessageContent2);
-			strcpy(lastMessageContent2, tempBuf);
-			receivedNewMessage = true;
+		if ((strcmp(lastMessageContent2, tempBuf) != 0) && (strcmp(firstMessageToIgnore, tempBuf) != 0)) {
+			if (strcmp(firstMessageToIgnore, tempBuf) != 0) {
+				if (tempBuf[0] != '*') {
+					lastMessageWasPreviousMsgs = false;
+					strcpy(lastMessageContent4, lastMessageContent3);
+					strcpy(lastMessageContent3, lastMessageContent2);
+					strcpy(lastMessageContent2, tempBuf);
+					receivedNewMessage = true;
+				} else lastMessageWasPreviousMsgs = true;
+			} else strcpy(firstMessageToIgnore, "");
 		}
-            uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-            uint32_t secondsSinceLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - lastMessageTimestamp;
-            LOG_INFO("secondsSinceLastMessage: %u\n", secondsSinceSecondLastMessage);
-			minutes = secondsSinceSecondLastMessage / 60;
-            LOG_INFO("minutes: %u\n", minutes);
-			hours = minutes / 60;
-            LOG_INFO("hours: %u\n", hours);
-			days = hours / 24;
-            LOG_INFO("days: %u\n", days);
-			// For timestamp
-			useTimestamp = deltaToTimestamp(secondsSinceSecondLastMessage, &timestampHours, &timestampMinutes, &daysAgo);
-            LOG_INFO("useTimestamp: %u\n", useTimestamp);
-            //FIXME: maybe shouldn't be using lastMessageTimeTemp here
-			// strcpy(lastMessageTime, lastMessageTimeTemp);
-			// LOG_INFO("lastMessageTime: %s\n", lastMessageTime);
-			//FIXME: below, why tempBuf2? what are you checking? why not lastMessageContent3
-			if (strlen(tempBuf2) < 40) {
-				for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
-					if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
-					}
-					// Timestamp yesterday (if display is wide enough)
-					else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "Yest %02hu:%02hu %s", timestampHours, timestampMinutes, lastNodeName);
-					}
-					// Otherwise, show a time delta
-					else {
-							display->drawStringf(xOff + x, 0 + y + 105, tempBuf, "%s %s",
-                                                 screen->drawTimeDelta(days, hours, minutes, secondsSinceSecondLastMessage).c_str(), lastNodeName);
-							//end
-					// display->drawString(xOff + x, y + 105, lastMessageTime);
-				}
-				display->drawStringMaxWidth(0 + x, 0 + y + 135, x + display->getWidth(), lastMessageContent3);
-			}
-			}
-		//end
+		uint32_t secondsSinceThirdLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - thirdLastMessageTimestamp;
+		uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
+		uint8_t linePosition;
+		//if there are 3 messages and they're all not too long
+    if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
+        (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
+        (lastMessageContent2[0] != '*')) {
+        // Display time and sender for 2nd last message
+        linePosition = 3;
+				uint32_t msgCount = totalMessageCount - 1;
+        displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
+        // Display time and sender for 3rd last message
+				if (strlen(lastMessageContent4) < 30) linePosition = 6;
+				else linePosition = 5;
+				msgCount = totalMessageCount - 2;
+        displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
+
+		// if there are 2 messages and the top one isn't too long
+    } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {
+			linePosition = 5;
+			if (strlen(lastMessageContent2) < 30) linePosition = 4;
+			uint32_t msgCount = totalMessageCount - 1;
+			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
+		} // end 2 messages
+	//end
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
