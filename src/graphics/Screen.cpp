@@ -1154,17 +1154,13 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #ifdef SIMPLE_TDECK
 				// uint8_t linePos = 1;
 				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
-				// LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
-				if (strlen(tempBuf) < 160) {
+				LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
+				if (strlen(tempBuf) < 200) {
 					display->setFont(FONT_LARGE);
 					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
-				} else if (strlen(tempBuf) < 190) {
-					display->setFont(FONT_MEDIUM);
-					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_MEDIUM, x + display->getWidth(), tempBuf);
-					display->setFont(FONT_LARGE);
 				} else {
 					display->setFont(FONT_SMALL);
-					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+					display->drawStringMaxWidth(0 + x, 13 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 					display->setFont(FONT_LARGE);
 				}
 				if (firstRunThroughMessages) {

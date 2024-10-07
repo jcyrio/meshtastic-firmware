@@ -51,7 +51,8 @@ OLEDDisplay::OLEDDisplay() {
 #ifdef OLEDDISPLAY_DOUBLE_BUFFER
 	buffer_back = NULL;
 #endif
-  inParentheses = false;
+  // it's not actually true, but we start at true to make sure that messages without brackets are not bold
+  inParentheses = true;
 }
 
 OLEDDisplay::~OLEDDisplay() {
@@ -747,7 +748,8 @@ void OLEDDisplay::drawStringf( int16_t x, int16_t y, char* buffer, String format
 uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t maxLineWidth, const String &strUser) {
   uint16_t firstChar  = pgm_read_byte(fontData + FIRST_CHAR_POS);
   uint16_t lineHeight = pgm_read_byte(fontData + HEIGHT_POS);
-  this->inParentheses = false;
+  // it's not actually true, but we start at true to make sure that messages without brackets are not bold
+  this->inParentheses = true;
 
   const char* text = strUser.c_str();
 
@@ -772,7 +774,7 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
       // Remove leading spaces before drawing
       uint16_t startPos = lastDrawnPos;
       while (startPos < i && text[startPos] == ' ') startPos++;
-      
+
       drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight, &text[startPos], i - startPos, getStringWidth(&text[startPos], i - startPos, true), true);
       if (firstLineChars == 0)
         firstLineChars = i;
@@ -794,11 +796,11 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
         preferredBreakpoint = i;
         widthAtBreakpoint = strWidth;
       }
-      
+
       // Remove leading spaces before drawing
       uint16_t startPos = lastDrawnPos;
       while (startPos < preferredBreakpoint && text[startPos] == ' ') startPos++;
-      
+
       drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight, &text[startPos], preferredBreakpoint - startPos, getStringWidth(&text[startPos], preferredBreakpoint - startPos, true), true);
       if (firstLineChars == 0)
         firstLineChars = preferredBreakpoint;
@@ -818,7 +820,7 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
     // Remove leading spaces before drawing the last part
     uint16_t startPos = lastDrawnPos;
     while (startPos < length && text[startPos] == ' ') startPos++;
-    
+
     drawStringResult = drawStringInternal(xMove, yMove + (lineNumber++) * lineHeight, &text[startPos], length - startPos, getStringWidth(&text[startPos], length - startPos, true), true);
   }
 
