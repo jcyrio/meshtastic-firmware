@@ -52,7 +52,7 @@ OLEDDisplay::OLEDDisplay() {
 	buffer_back = NULL;
 #endif
   // it's not actually true, but we start at true to make sure that messages without brackets are not bold
-  inParentheses = true;
+  boldText = false;
 }
 
 OLEDDisplay::~OLEDDisplay() {
@@ -600,8 +600,8 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
     }
 
     // Check for '(' to start bold text
-    if (code == '[') {
-      this->inParentheses = true;
+    if (code == ']') {
+      this->boldText = true;
     }
 
     if (code >= firstChar) {
@@ -622,7 +622,7 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
         drawInternal(xPos, yPos, currentCharWidth, textHeight, fontData, charDataPosition, charByteSize);
 
         // If in parentheses, draw the character again shifted by 1 pixel for bold effect
-        if (this->inParentheses == false) {
+        if (this->boldText == true) {
           drawInternal(xPos + 1, yPos, currentCharWidth, textHeight, fontData, charDataPosition, charByteSize);
         }
       }
@@ -631,10 +631,11 @@ uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const cha
     }
 
     // Check for ')' to end bold text
-    if (code == ']') {
-      this->inParentheses = false;
+    if (code == '[') {
+      this->boldText = false;
     }
   }
+  this->boldText = false;
   return charCount;
 }
 // uint16_t OLEDDisplay::drawStringInternal(int16_t xMove, int16_t yMove, const char* text, uint16_t textLength, uint16_t textWidth, bool utf8) {
@@ -749,7 +750,7 @@ uint16_t OLEDDisplay::drawStringMaxWidth(int16_t xMove, int16_t yMove, uint16_t 
   uint16_t firstChar  = pgm_read_byte(fontData + FIRST_CHAR_POS);
   uint16_t lineHeight = pgm_read_byte(fontData + HEIGHT_POS);
   // it's not actually true, but we start at true to make sure that messages without brackets are not bold
-  this->inParentheses = true;
+  this->boldText = false;
 
   const char* text = strUser.c_str();
 
