@@ -1805,18 +1805,6 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
             display->setColor(BLACK);
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
-						LOG_INFO("Drew To:");
             // display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->setColor(WHITE);
             int lines = (display->getHeight() / FONT_HEIGHT_LARGE) - 1;
