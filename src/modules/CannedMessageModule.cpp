@@ -780,13 +780,13 @@ int32_t CannedMessageModule::runOnce()
 								bool sendToRouterOnly = false;
 								// check if string starts with router prefixes
 								for (const auto& command : commandsForRouterOnlyStarting) {
-										if (strncmp(input.c_str(), command.c_str(), command.size()) == 0) {
+										if (strncmp(this->freetext.c_str(), command.c_str(), command.size()) == 0) {
 												sendToRouterOnly = true; break;
 										}
 								}
 								// Check for exact matches
 								for (const auto& command : commandsForRouterOnlyExact) {
-										if (input == command) { sendToRouterOnly = true; break; }
+										if (this->freetext.c_str() == command) { sendToRouterOnly = true; break; }
 								}
 								if (sendToRouterOnly) this->dest = this->previousDest = NODENUM_RPI5;
 							//if there is a leading '$' char at the start, then remove it
