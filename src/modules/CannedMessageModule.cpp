@@ -27,6 +27,8 @@
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
 
+std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "aif", "aiff", "aih", "aid", "frcs", "wa "};
+std::vector<std::string> commandsForRouterOnlyExact = {"sgo", "ygo", "go", "f", "w", "k", "rp", "s"};
 // nodeList is the allowed destinations in the scrolling list in freetext mode
 std::vector<unsigned int> nodeList = { 
 	// 3664080480, //my tbeam supreme, broken
@@ -769,9 +771,24 @@ int32_t CannedMessageModule::runOnce()
 								// change above to compare
 								// if ((this->freetext.compare(0, 2, "ai") == 0) || (this->freetext.compare(0, 2, "q ") == 0) || (this->freetext.compare(0, 3, "ait") == 0) || (this->freetext.compare(0, 3, "aif") == 0) || (this->freetext.compare(0, 4, "aiff") == 0) || (this->freetext.compare(0, 3, "aih") == 0) || (this->freetext.compare(0, 3, "aid") == 0)) {
 								// make strncmp
-								if ((strncmp(this->freetext.c_str(), "ai", 2) == 0) || (strncmp(this->freetext.c_str(), "q ", 2) == 0) || (strncmp(this->freetext.c_str(), "ait", 3) == 0) || (strncmp(this->freetext.c_str(), "aif", 3) == 0) || (strncmp(this->freetext.c_str(), "aiff", 4) == 0) || (strncmp(this->freetext.c_str(), "aih", 3) == 0) || (strncmp(this->freetext.c_str(), "aid", 3) == 0)) {
-									this->dest = this->previousDest = NODENUM_RPI5;
+								// if ((strncmp(this->freetext.c_str(), "ai", 2) == 0) || (strncmp(this->freetext.c_str(), "q ", 2) == 0) || (strncmp(this->freetext.c_str(), "ait", 3) == 0) || (strncmp(this->freetext.c_str(), "aif", 3) == 0) || (strncmp(this->freetext.c_str(), "aiff", 4) == 0) || (strncmp(this->freetext.c_str(), "aih", 3) == 0) || (strncmp(this->freetext.c_str(), "aid", 3) == 0)) {
+								// for (const auto& prefix : commandsForRouterOnly) {
+								// 	if (strncmp(this->freetext.c_str(), prefix.c_str(), prefix.size()) == 0) {
+								// 		this->dest = this->previousDest = NODENUM_RPI5; break;
+								// 	}
+								// }
+								bool sendToRouterOnly = false;
+								// check if string starts with router prefixes
+								for (const auto& command : commandsForRouterOnlyStarting) {
+										if (strncmp(input.c_str(), command.c_str(), command.size()) == 0) {
+												sendToRouterOnly = true; break;
+										}
 								}
+								// Check for exact matches
+								for (const auto& command : commandsForRouterOnlyExact) {
+										if (input == command) { sendToRouterOnly = true; break; }
+								}
+								if (sendToRouterOnly) this->dest = this->previousDest = NODENUM_RPI5;
 							//if there is a leading '$' char at the start, then remove it
 							// if (this->freetext[0] == '$') {
 							// if (this->freetext[0] == '>') {
