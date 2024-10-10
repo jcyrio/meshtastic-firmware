@@ -28,7 +28,7 @@
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
 
 std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "aif", "aiff", "aih", "aid", "frcs", "wa "};
-std::vector<std::string> commandsForRouterOnlyExact = {"sgo", "ygo", "go", "f", "w", "k", "rp", "s"};
+std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", "f", "w", "k", "rp", "s"};
 // nodeList is the allowed destinations in the scrolling list in freetext mode
 std::vector<unsigned int> nodeList = { 
 	// 3664080480, //my tbeam supreme, broken
