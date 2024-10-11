@@ -54,6 +54,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3014898611, "Bookstore"},
     {2864386355, "Kitchen"},
     {207141012, "Fr Jerome"},
+    {NODENUM_BROADCAST, "BROADCAST"},
     {2864390690, "Fr Michael"},
     {202935032, "Fr Evgeni"},
     {667627820, "Fr Silouanos"},
@@ -796,10 +797,11 @@ int32_t CannedMessageModule::runOnce()
 							// }
 							// always goes to St Anthony's channel
 							// prevent all broadcast, go just to router node
-							if (this->dest == NODENUM_BROADCAST) { //for some reason the first message, without any side scrolling, defaults to NODENUM_BROADCAST. Afterwards it's fine, or after scrolling
-								LOG_DEBUG("WAS BRODCAST\n");
-								this->dest = NODENUM_RPI5;
-							}
+							// Below was disabled on 10-11-24, when enabling broadcast for new StA 4th channel
+							// if (this->dest == NODENUM_BROADCAST) { //for some reason the first message, without any side scrolling, defaults to NODENUM_BROADCAST. Afterwards it's fine, or after scrolling
+							// 	LOG_DEBUG("WAS BRODCAST\n");
+							// 	this->dest = NODENUM_RPI5;
+							// }
 							sendText(this->dest, 0, this->freetext.c_str(), true);
 							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 							this->previousDest = this->dest;
