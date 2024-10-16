@@ -23,31 +23,9 @@
 #endif
 
 #ifdef SIMPLE_TDECK
-// #include "nimble/NimbleBluetooth.h"
-// std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
-
 std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "aif", "aiff", "aih", "aid", "frcs", "wa "};
 std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", "f", "w", "k", "rp", "s"};
-// nodeList is the allowed destinations in the scrolling list in freetext mode
-std::vector<unsigned int> nodeList = { 
-	// 3664080480, //my tbeam supreme, broken
-	// 1486348306,  //not sure
-	2864386355,  //kitchen
-	3014898611,  //bookstore
-	3719082304, //router
-	// 207089188,  //spare1
-	// 4184751652, //spare2
-	// 3175760252, //spare5
-	207141012,  //fr jerome
-	4184738532, //spare6
-	2864390690, //dcnmichael
-	202935032, //fr evgeni
-	3734369073, //frc techo
-	2579205344, //fr theoktist
-  667627820, //fr silouanos
-  2579251804, // Geronda Paisios
-};
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
     {3734369073, "Fr Cyril"},
@@ -133,10 +111,6 @@ CannedMessageModule::CannedMessageModule()
 #ifdef SIMPLE_TDECK
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		// skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-// FIXME: remove below later, doesn't do anything
-		// char startupMessage[20];
-		// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-		// sendText(NODENUM_RPI5, 1, startupMessage, false);
 		MYNODES.erase(
 				std::remove_if(MYNODES.begin(), MYNODES.end(), 
 											 [&](const std::pair<unsigned int, std::string>& node) {
@@ -144,7 +118,6 @@ CannedMessageModule::CannedMessageModule()
 											 }),
 				MYNODES.end()
 		);
-		// screen->showFirstBrightnessLevel();
 #endif
 }
 
@@ -706,10 +679,10 @@ int32_t CannedMessageModule::runOnce()
         this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 				this->runState = CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE;
         this->notifyObservers(&e);
-	char str[6];
-	sprintf(str, "%d", this->previousMessageIndex);
-		sendText(NODENUM_RPI5, 0, str, false);
-		this->previousMessageIndex = 0;
+				char str[6];
+				sprintf(str, "%d", this->previousMessageIndex);
+				sendText(NODENUM_RPI5, 0, str, false);
+				this->previousMessageIndex = 0;
 		}
 #endif
     } else if (((this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT)) &&
@@ -730,8 +703,8 @@ int32_t CannedMessageModule::runOnce()
         if (this->payload == CANNED_MESSAGE_RUN_STATE_FREETEXT) {
             if (this->freetext.length() > 0) {
 #ifdef SIMPLE_TDECK
-							// check if freetext equals "rr" or "RR" to resend last message
-							if (this->freetext == "rr" || this->freetext == "RR") {
+							// check if freetext equals "rr" to resend last message
+							if (this->freetext == "rr") {
 								if (this->previousFreetext.length() > 0) {
 									if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
 									LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
@@ -767,17 +740,6 @@ int32_t CannedMessageModule::runOnce()
 								this->dest = MYNODES[nodeIndex].first;
 								showTemporaryMessage("Ignored\nNode");
 							} else {
-								// check for q , ai, ait, aif, aiff, aih, aid, make sure can only go to router node
-								// if ((this->freetext.find("ai") == 0) || (this->freetext.find("q ") == 0) || (this->freetext.find("ait") == 0) || (this->freetext.find("aif") == 0) || (this->freetext.find("aiff") == 0) || (this->freetext.find("aih") == 0) || (this->freetext.find("aid") == 0)) {
-								// change above to compare
-								// if ((this->freetext.compare(0, 2, "ai") == 0) || (this->freetext.compare(0, 2, "q ") == 0) || (this->freetext.compare(0, 3, "ait") == 0) || (this->freetext.compare(0, 3, "aif") == 0) || (this->freetext.compare(0, 4, "aiff") == 0) || (this->freetext.compare(0, 3, "aih") == 0) || (this->freetext.compare(0, 3, "aid") == 0)) {
-								// make strncmp
-								// if ((strncmp(this->freetext.c_str(), "ai", 2) == 0) || (strncmp(this->freetext.c_str(), "q ", 2) == 0) || (strncmp(this->freetext.c_str(), "ait", 3) == 0) || (strncmp(this->freetext.c_str(), "aif", 3) == 0) || (strncmp(this->freetext.c_str(), "aiff", 4) == 0) || (strncmp(this->freetext.c_str(), "aih", 3) == 0) || (strncmp(this->freetext.c_str(), "aid", 3) == 0)) {
-								// for (const auto& prefix : commandsForRouterOnly) {
-								// 	if (strncmp(this->freetext.c_str(), prefix.c_str(), prefix.size()) == 0) {
-								// 		this->dest = this->previousDest = NODENUM_RPI5; break;
-								// 	}
-								// }
 								bool sendToRouterOnly = false;
 								// check if string starts with router prefixes
 								for (const auto& command : commandsForRouterOnlyStarting) {
@@ -790,19 +752,19 @@ int32_t CannedMessageModule::runOnce()
 										if (this->freetext.c_str() == command) { sendToRouterOnly = true; break; }
 								}
 								if (sendToRouterOnly) this->dest = this->previousDest = NODENUM_RPI5;
-							//if there is a leading '$' char at the start, then remove it
-							// if (this->freetext[0] == '$') {
-							// if (this->freetext[0] == '>') {
-							// 	this->freetext = this->freetext.substring(1);
-							// }
-							// always goes to St Anthony's channel
 							// prevent all broadcast, go just to router node
 							// Below was disabled on 10-11-24, when enabling broadcast for new StA 4th channel
 							// if (this->dest == NODENUM_BROADCAST) { //for some reason the first message, without any side scrolling, defaults to NODENUM_BROADCAST. Afterwards it's fine, or after scrolling
 							// 	LOG_DEBUG("WAS BRODCAST\n");
 							// 	this->dest = NODENUM_RPI5;
 							// }
-							sendText(this->dest, 0, this->freetext.c_str(), true);
+							if (this->dest == NODENUM_BROADCAST) {
+								LOG_DEBUG("WAS BROADCAST\n");
+								char allMessage[this->freetext.length() + 6];
+								strcpy(allMessage, "ALL: ");
+								strcat(allMessage, this->freetext.c_str());
+								sendText(this->dest, 3, allMessage, true); //goes to StA channel
+							} else sendText(this->dest, 0, this->freetext.c_str(), true); //goes to StA channel
 							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 							this->previousDest = this->dest;
 							this->previousFreetext = this->freetext;
