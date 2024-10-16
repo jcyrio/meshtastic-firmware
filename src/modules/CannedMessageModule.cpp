@@ -962,7 +962,7 @@ int32_t CannedMessageModule::runOnce()
 					// } else {
 					// 	showTemporaryMessage("No previous\nmessage to resend");
 					// }
-					break;
+					// break;
 				case 0x7a: // z, clear LED when there's a notification
 				case 0x78: // x, clear LED when there's a notification
 					if (this->freetext.length() == 0) {
