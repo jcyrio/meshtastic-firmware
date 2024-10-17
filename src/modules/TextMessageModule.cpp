@@ -17,8 +17,10 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 		// snprintf(channelName, sizeof(channelName), "%s", channels.getName(mp.channel));
 		// LOG_DEBUG("Channel Name: %s\n", channelName);
 		// Ignore all broadcasts or DMs from LongFast
-		if (strcmp(channels.getName(mp.channel), "LongFast") == 0) {
-			LOG_DEBUG("Channel Name is LongFast\n");
+		// if (strcmp(channels.getName(mp.channel), "LongFast") == 0) {
+			// LOG_INFO("Channel Name is LongFast\n");
+		if ((strcmp(channels.getName(mp.channel), "StA") != 0) && (mp.to == 0xffffffff)) {
+			LOG_INFO("Was Broadcast message, but Channel Name is not StA, ignoring\n");
 			return ProcessMessage::STOP;
 		}
 #endif

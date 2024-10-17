@@ -752,27 +752,21 @@ int32_t CannedMessageModule::runOnce()
 										if (this->freetext.c_str() == command) { sendToRouterOnly = true; break; }
 								}
 								if (sendToRouterOnly) this->dest = this->previousDest = NODENUM_RPI5;
-							// prevent all broadcast, go just to router node
-							// Below was disabled on 10-11-24, when enabling broadcast for new StA 4th channel
-							// if (this->dest == NODENUM_BROADCAST) { //for some reason the first message, without any side scrolling, defaults to NODENUM_BROADCAST. Afterwards it's fine, or after scrolling
-							// 	LOG_DEBUG("WAS BRODCAST\n");
-							// 	this->dest = NODENUM_RPI5;
-							// }
-							if (this->dest == NODENUM_BROADCAST) {
-								LOG_DEBUG("WAS BROADCAST\n");
-								char allMessage[this->freetext.length() + 6];
-								strcpy(allMessage, "ALL: ");
-								strcat(allMessage, this->freetext.c_str());
-								sendText(this->dest, 3, allMessage, true); //goes to StA channel
-							} else sendText(this->dest, 0, this->freetext.c_str(), true); //goes to StA channel
-							LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
-							this->previousDest = this->dest;
-							this->previousFreetext = this->freetext;
-							LOG_INFO("previousDest: %x, previousFreetext: %s\n", this->previousDest, this->previousFreetext.c_str());
-							LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
-							//disable scrolling mode after sending msg
-							this->cursorScrollMode = 0;
-							screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
+								if (this->dest == NODENUM_BROADCAST) {
+									LOG_DEBUG("WAS BROADCAST\n");
+									char allMessage[this->freetext.length() + 6];
+									strcpy(allMessage, "ALL: ");
+									strcat(allMessage, this->freetext.c_str());
+									sendText(this->dest, 3, allMessage, true); //goes to StA channel
+								} else sendText(this->dest, 0, this->freetext.c_str(), true); //goes to StA channel
+								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
+								this->previousDest = this->dest;
+								this->previousFreetext = this->freetext;
+								LOG_INFO("previousDest: %x, previousFreetext: %s\n", this->previousDest, this->previousFreetext.c_str());
+								LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
+								//disable scrolling mode after sending msg
+								this->cursorScrollMode = 0;
+								screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
 							}
 #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);

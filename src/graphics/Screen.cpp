@@ -1012,7 +1012,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
-    uint32_t currentMessageTime = sinceReceived(&mp);
+    // uint32_t currentMessageTime = sinceReceived(&mp);
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
 		
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode('!da656e60'));
