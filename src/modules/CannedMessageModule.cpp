@@ -36,7 +36,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {2864390690, "Fr Michael"},
     {202935032, "Fr Evgeni"},
     {667627820, "Fr Silouanos"},
-    {2579251804, "Geronda Paisios"},
+    {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
