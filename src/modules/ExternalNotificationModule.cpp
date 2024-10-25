@@ -531,7 +531,13 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
             if (moduleConfig.external_notification.alert_message) {
                 LOG_INFO("externalNotificationModule - Notification Module\n");
                 isNagging = true;
+#ifdef SIMPLE_TDECK
+								if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
+#endif
                 setExternalOn(0);
+#ifdef SIMPLE_TDECK
+								}
+#endif
                 if (moduleConfig.external_notification.nag_timeout) {
                     nagCycleCutoff = millis() + moduleConfig.external_notification.nag_timeout * 1000;
                 } else {
@@ -565,11 +571,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
 #endif
                 }
                 if (moduleConfig.external_notification.nag_timeout) {
-#ifdef SIMPLE_TDECK
-										tdeckBuzzerCutoff = millis() + tdeckBuzzerTimeout * 1000;
-#else
                     nagCycleCutoff = millis() + moduleConfig.external_notification.nag_timeout * 1000;
-#endif
                 } else {
                     nagCycleCutoff = millis() + moduleConfig.external_notification.output_ms;
                 }
