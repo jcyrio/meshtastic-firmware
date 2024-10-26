@@ -466,8 +466,8 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						// LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
 						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
 #ifdef SIMPLE_TDECK
-						// if ((this->keyboardLockMode == false) && (event->kbchar != 0x22)) {
-						if (this->keyboardLockMode == false) {
+						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
+						if (screen->keyboardLockMode == false) {
 #endif
 							if (this->skipNextRletter) {
 								this->skipNextRletter = false;
@@ -478,10 +478,9 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 							}
 #ifdef SIMPLE_TDECK
 						}
-						else if ((this->keyboardLockMode == true) && (event->kbchar == 0x22)) {
-							this->keyboardLockMode = false;
+						else if ((screen->keyboardLockMode == true) && (event->kbchar == 0x22)) {
+							screen->keyboardLockMode = false;
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
-							this->skipNextFreetextMode = true;
 							screen->removeFunctionSymbal("L");
 						}
 #endif
@@ -934,15 +933,15 @@ int32_t CannedMessageModule::runOnce()
 				case 0x22: // " , toggle new keyboard lock mode
 					if (this->freetext.length() > 0) break;
 					LOG_INFO("Got \", Toggle Keyboard Lock Mode\n");
-					if (this->keyboardLockMode == false) {
+					if (screen->keyboardLockMode == false) {
 						LOG_INFO("Keyboard Lock Mode on\n");
-						this->keyboardLockMode = true;
+						screen->keyboardLockMode = true;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->setFunctionSymbal("L");
 					} else {
 						LOG_INFO("Keyboard Lock Mode off\n");
-						this->keyboardLockMode = false;
+						screen->keyboardLockMode = false;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->removeFunctionSymbal("L");
@@ -1023,10 +1022,11 @@ int32_t CannedMessageModule::runOnce()
 					// break;
 #endif
         case 0xb4: // left
+			    if (screen->keyboardLockMode == true) break;
 #ifndef SIMPLE_TDECK
           if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
 #else  // this always allows to change the destination with scrolling
-          if ((1 == 1) && (this->keyboardLockMode == false)) {
+          if (1 == 1) {
 #endif
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
@@ -1059,21 +1059,6 @@ int32_t CannedMessageModule::runOnce()
                     this->channel--;
                 }
 #else  // SIMPLE_TDECK
-           //      for (unsigned int i = 0; i < numMeshNodes; i++) {
-           //          if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
-											// unsigned int nextNode = i;
-											// const char* nodeName;
-											// do {
-											// 	nextNode = (nextNode > 0) ? nextNode - 1 : numMeshNodes - 1;
-											// 	nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-											// } while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
-											// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
-											// // LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-											// // LOG_INFO("Next node: %s\n", nodeName);
-											// break;
-           //          }
-           //      }
-								
 						if (this->cursorScrollMode == 0) {
 								LOG_INFO("CursorScrollMode is off\n");
 							do {
@@ -1107,10 +1092,11 @@ int32_t CannedMessageModule::runOnce()
             }
             break;
         case 0xb7: // right
+			    if (screen->keyboardLockMode == true) break;
 #ifndef SIMPLE_TDECK
           if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
 #else  // this always allows to change the destination with scrolling
-          if ((1 == 1) && (this->keyboardLockMode == false)) {
+          if (1 == 1) {
 #endif
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
@@ -1141,19 +1127,6 @@ int32_t CannedMessageModule::runOnce()
                     this->channel++;
                 }
 #else  // SIMPLE_TDECK
-           //      for (unsigned int i = 0; i < numMeshNodes; i++) {
-           //          if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
-											// unsigned int nextNode = i;
-											// const char* nodeName;
-											// do {
-											// 		nextNode = (nextNode < numMeshNodes - 1) ? nextNode + 1 : 0;
-											// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-											// } while (std::find(skipNodes.begin(), skipNodes.end(), nodeName) != skipNodes.end());
-											// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
-											// LOG_INFO("Next node: %s\n", nodeName);
-											// break;
-           //          }
-           //      }
 						if (this->cursorScrollMode == 0) {
 							LOG_INFO("CursorScrollMode is off\n");
 							do {

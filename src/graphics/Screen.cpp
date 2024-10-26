@@ -3043,12 +3043,16 @@ int Screen::handleInputEvent(const InputEvent *event)
     if (showingNormalScreen && moduleFrames.size() == 0) {
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
+					if (this->keyboardLockMode == false) {
             showPrevFrame();
+					}
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 #ifndef SIMPLE_TDECK
             showNextFrame();
 #else
+					if (this->keyboardLockMode == false) {
             showPrevFrame();  // for some reason it freezes if do nextFrame. Not sure why. Either way don't need it now, since only have 2 screens. 7-25-24
+					}
 #endif
         }
     }
