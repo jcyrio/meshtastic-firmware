@@ -165,6 +165,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		bool alreadySentFirstMessage = 0;
 		unsigned long lastTrackballMillis = 0;
 		bool skipNextFreetextMode = false;
+		bool keyboardLockMode = false;
 #endif
     unsigned long lastTouchMillis = 0;
     String temporaryMessage;

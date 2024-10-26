@@ -462,27 +462,29 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         default:
             // pass the pressed key
             LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
-            LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
 						// want to display value of skipNextFreetextMode
-						LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
-						LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
-						if (this->skipNextRletter) {
-							this->skipNextRletter = false;
-						} else {
-							this->payload = event->kbchar;
-							this->lastTouchMillis = millis();
-							validEvent = true;
+						// LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
+						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
+#ifdef SIMPLE_TDECK
+						// if ((this->keyboardLockMode == false) && (event->kbchar != 0x22)) {
+						if (this->keyboardLockMode == false) {
+#endif
+							if (this->skipNextRletter) {
+								this->skipNextRletter = false;
+							} else {
+								this->payload = event->kbchar;
+								this->lastTouchMillis = millis();
+								validEvent = true;
+							}
+#ifdef SIMPLE_TDECK
 						}
+						else if ((this->keyboardLockMode == true) && (event->kbchar == 0x22)) {
+							this->keyboardLockMode = false;
+							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+							this->skipNextFreetextMode = true;
+							screen->removeFunctionSymbal("L");
+						}
+#endif
             break;
         }
         if (screen && (event->kbchar != 0xf1)) {
@@ -929,6 +931,23 @@ int32_t CannedMessageModule::runOnce()
 						this->skipNextFreetextMode = true;
 					}
 					break;
+				case 0x22: // " , toggle new keyboard lock mode
+					if (this->freetext.length() > 0) break;
+					LOG_INFO("Got \", Toggle Keyboard Lock Mode\n");
+					if (this->keyboardLockMode == false) {
+						LOG_INFO("Keyboard Lock Mode on\n");
+						this->keyboardLockMode = true;
+						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+						// this->skipNextFreetextMode = true;
+						screen->setFunctionSymbal("L");
+					} else {
+						LOG_INFO("Keyboard Lock Mode off\n");
+						this->keyboardLockMode = false;
+						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+						// this->skipNextFreetextMode = true;
+						screen->removeFunctionSymbal("L");
+					}
+					break;
 				case 0x1f: // alt-f, toggle flashlight
 					LOG_INFO("Got ALT-F, Flashlight toggle\n");
 					LOG_INFO("Got ALT-F, Flashlight toggle\n");
@@ -1007,7 +1026,7 @@ int32_t CannedMessageModule::runOnce()
 #ifndef SIMPLE_TDECK
           if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
 #else  // this always allows to change the destination with scrolling
-          if (1 == 1) {
+          if ((1 == 1) && (this->keyboardLockMode == false)) {
 #endif
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
@@ -1091,7 +1110,7 @@ int32_t CannedMessageModule::runOnce()
 #ifndef SIMPLE_TDECK
           if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
 #else  // this always allows to change the destination with scrolling
-          if (1 == 1) {
+          if ((1 == 1) && (this->keyboardLockMode == false)) {
 #endif
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
