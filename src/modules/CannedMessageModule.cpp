@@ -178,6 +178,10 @@ int CannedMessageModule::splitConfiguredMessages()
 
 int CannedMessageModule::handleInputEvent(const InputEvent *event)
 {
+				// below added temp frc trying make lock mode work
+				// FIXME: maybe don't want to check for 0x22 here, might be irrelevant
+				// I think this helped, but not positive
+				if ((screen->keyboardLockMode == true) && (event->kbchar != 0x22)) return 0;
     if ((strlen(moduleConfig.canned_message.allow_input_source) > 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, event->source) != 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, "_any") != 0)) {
@@ -482,7 +486,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						else if ((screen->keyboardLockMode == true) && (event->kbchar == 0x22)) {
 							screen->keyboardLockMode = false;
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
-							screen->removeFunctionSymbal("L");
+							screen->removeFunctionSymbal("KL");
 						}
 #endif
             break;
@@ -939,7 +943,7 @@ int32_t CannedMessageModule::runOnce()
 						screen->keyboardLockMode = true;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
-						screen->setFunctionSymbal("L");
+						screen->setFunctionSymbal("KL");
 					} else {
 						LOG_INFO("Keyboard Lock Mode off\n");
 						screen->keyboardLockMode = false;
@@ -971,11 +975,11 @@ int32_t CannedMessageModule::runOnce()
 					//toggle cursor scroll mode
 					if (this->cursorScrollMode == 0) {
 						this->cursorScrollMode = 1;
-						screen->setFunctionSymbal("S"); // add the S symbol to the bottom right corner
+						screen->setFunctionSymbal("Scrl"); // add the S symbol to the bottom right corner
 					} else {
 						this->cursorScrollMode = 0;
 						this->cursor = this->freetext.length();
-						screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
+						screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
 					}
 					break;
         case 0x1e: // shift-$, toggle brightness

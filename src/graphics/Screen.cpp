@@ -2452,10 +2452,10 @@ void Screen::increaseBrightness()
 	// 	brightness = 40; brightnessLevel = '1';
 	// }
 	if (brightnessLevel == 'L') {
-		removeFunctionSymbal(std::string(1, 'L'));
+		removeFunctionSymbal("Lo");
 		brightness = 254; brightnessLevel = 'H';
 	} else {
-		setFunctionSymbal(std::string(1, 'L'));
+		setFunctionSymbal("Lo");
 		brightness = 40; brightnessLevel = 'L';
 	}
 	// brightness = (brightness + 62) % 255;
