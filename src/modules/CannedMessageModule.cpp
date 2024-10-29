@@ -30,7 +30,8 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
     {3734369073, "Fr Cyril"},
     {3014898611, "Bookstore"},
-    {2864386355, "Kitchen"},
+    // {2864386355, "Kitchen"}, // was old virtual node
+    {4184738532, "Kitchen"},
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {2864390690, "Fr Michael"},
