@@ -22,6 +22,9 @@
 #include "graphics/EInkDynamicDisplay.h" // To select between full and fast refresh on E-Ink displays
 #endif
 
+// OPTIONAL
+// #define FOR_GUESTS
+
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
 std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "aif", "aiff", "aih", "aid", "frcs", "wa "};
@@ -29,6 +32,7 @@ std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", 
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
     {3734369073, "Fr Cyril"},
+#ifndef FOR_GUESTS
     {3014898611, "Bookstore"},
     // {2864386355, "Kitchen"}, // was old virtual node
     {4184738532, "Kitchen"},
@@ -39,6 +43,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
+#endif
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
 		// {3771734928, "Birdman"},
