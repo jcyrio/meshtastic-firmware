@@ -730,7 +730,7 @@ int32_t CannedMessageModule::runOnce()
 							// } else if ((this->freetext == "BToff") || (this->freetext == "btoff")) {
 							// 	setBluetoothEnable(false);
 							// 	showTemporaryMessage("Bluetooth\nDisabled");
-							} else if (this->freetext == "rndb") {
+							} else if ((this->freetext == "rndb") || (this->freetext == "ndbr")) {
 								nodeDB->resetNodes();
 								showTemporaryMessage("Reset NodeDB");
 							} else if ((this->freetext == "restart") || (this->freetext == "reboot")) {
