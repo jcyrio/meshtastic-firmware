@@ -1064,8 +1064,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
-		LOG_INFO("seconds: %u\n", seconds);
-		LOG_INFO("minutes: %u\n", minutes);
+		// LOG_INFO("seconds: %u\n", seconds);
+		// LOG_INFO("minutes: %u\n", minutes);
 
     // For timestamp
     uint8_t timestampHours, timestampMinutes;
@@ -1751,6 +1751,7 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 
     if (on != screenOn) {
         if (on) {
+						if (screen->keyboardLockMode == true) return;
             LOG_INFO("Turning on screen\n");
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3
