@@ -35,7 +35,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #ifndef FOR_GUESTS
     {3014898611, "Bookstore"},
     // {2864386355, "Kitchen"}, // was old virtual node
-    {4184738532, "Kitchen"},
+    {4184751652, "Kitchen"},
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {2864390690, "Fr Michael"},
@@ -737,19 +737,20 @@ int32_t CannedMessageModule::runOnce()
 								screen->startAlert("Rebooting...");
                 rebootAtMsec = millis() + DEFAULT_REBOOT_SECONDS * 1000;
                 runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
-							} else if ((this->freetext == "ignore") || (this->freetext == "ig")) {
-									MYNODES.erase(
-											std::remove_if(MYNODES.begin(), MYNODES.end(), 
-																		 [&](const std::pair<unsigned int, std::string>& node) {
-																				 return node.first == this->dest;
-																		 }),
-											MYNODES.end()
-									);
-								do {
-									nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
-								} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
-								this->dest = MYNODES[nodeIndex].first;
-								showTemporaryMessage("Ignored\nNode");
+								//below could be useful in future
+							// } else if ((this->freetext == "ignore") || (this->freetext == "ig")) {
+							// 		MYNODES.erase(
+							// 				std::remove_if(MYNODES.begin(), MYNODES.end(), 
+							// 											 [&](const std::pair<unsigned int, std::string>& node) {
+							// 													 return node.first == this->dest;
+							// 											 }),
+							// 				MYNODES.end()
+							// 		);
+							// 	do {
+							// 		nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
+							// 	} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							// 	this->dest = MYNODES[nodeIndex].first;
+							// 	showTemporaryMessage("Ignored\nNode");
 							} else {
 								bool sendToRouterOnly = false;
 								// check if string starts with router prefixes
@@ -1071,20 +1072,23 @@ int32_t CannedMessageModule::runOnce()
 #else  // SIMPLE_TDECK
 						if (this->cursorScrollMode == 0) {
 								LOG_INFO("CursorScrollMode is off\n");
-							do {
-								LOG_INFO("CursorScrollMode is off, do while\n");
-								nodeIndex = (nodeIndex + 1) % MYNODES.size();
-								LOG_INFO("NodeIndex: %d\n", nodeIndex);
-								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							// do {
+							// 	LOG_INFO("CursorScrollMode is off, do while\n");
+							// 	nodeIndex = (nodeIndex + 1) % MYNODES.size();
+							// 	LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							nodeIndex = (nodeIndex + 1) % MYNODES.size();
+							LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							
 			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 							// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
 							LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
+							LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
-							LOG_INFO("nodeNameeee: %d\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// LOG_INFO("nodeNameeee: %d\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
 						} else {
@@ -1139,14 +1143,15 @@ int32_t CannedMessageModule::runOnce()
 #else  // SIMPLE_TDECK
 						if (this->cursorScrollMode == 0) {
 							LOG_INFO("CursorScrollMode is off\n");
-							do {
-								LOG_INFO("CursorScrollMode is off, do while\n");
-								nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
-								LOG_INFO("NodeIndex: %d\n", nodeIndex);
-								LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-							} while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							// do {
+							// 	LOG_INFO("CursorScrollMode is off, do while\n");
+							// 	nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
+							// 	LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
+							nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
 							LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							LOG_INFO("NodeName: %s\n", MYNODES[nodeIndex].second);
+							LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 						} else {
@@ -1706,8 +1711,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             display->setColor(WHITE);
             display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
             display->setColor(BLACK);
-            // display->drawStringf(1 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+            // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->setColor(WHITE);
             break;
 						//never gets here TODO: remove
