@@ -766,6 +766,7 @@ int32_t CannedMessageModule::runOnce()
 								if (sendToRouterOnly) this->dest = this->previousDest = NODENUM_RPI5;
 								if (this->dest == NODENUM_BROADCAST) {
 									LOG_DEBUG("WAS BROADCAST\n");
+									if (this->freetext.length() < 4) return 0;
 									char allMessage[this->freetext.length() + 6];
 									strcpy(allMessage, "ALL: ");
 									strcat(allMessage, this->freetext.c_str());
