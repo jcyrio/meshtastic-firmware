@@ -124,6 +124,7 @@ CannedMessageModule::CannedMessageModule()
 											 }),
 				MYNODES.end()
 		);
+		this->dest = NODENUM_RPI5;
 #endif
 }
 
@@ -1035,15 +1036,16 @@ int32_t CannedMessageModule::runOnce()
 #endif
         case 0xb4: // left
 			    if (screen->keyboardLockMode == true) break;
-#ifndef SIMPLE_TDECK
-          if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
-#else  // this always allows to change the destination with scrolling
+#ifdef SIMPLE_TDECK
+// this always allows to change the destination with scrolling
           if (1 == 1) {
-#endif
+#else
+          if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
                 }
+#endif
 #ifndef SIMPLE_TDECK
                 for (unsigned int i = 0; i < numMeshNodes; i++) {
                     if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
@@ -1108,15 +1110,16 @@ int32_t CannedMessageModule::runOnce()
             break;
         case 0xb7: // right
 			    if (screen->keyboardLockMode == true) break;
-#ifndef SIMPLE_TDECK
-          if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
-#else  // this always allows to change the destination with scrolling
+#ifdef SIMPLE_TDECK
           if (1 == 1) {
-#endif
+// this always allows to change the destination with scrolling
+#else
+          if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
                 size_t numMeshNodes = nodeDB->getNumMeshNodes();
                 if (this->dest == NODENUM_BROADCAST) {
                     this->dest = nodeDB->getNodeNum();
                 }
+#endif
 #ifndef SIMPLE_TDECK
                 for (unsigned int i = 0; i < numMeshNodes; i++) {
                     if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
