@@ -27,7 +27,7 @@
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
-std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "aif", "aiff", "aih", "aid", "frcs", "wa "};
+std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "qt", "qm", "qd", "qh", "aim", "aif", "aiff", "aih", "aid", "frcs", "wa "};
 std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", "f", "w", "k", "rp", "s"};
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
