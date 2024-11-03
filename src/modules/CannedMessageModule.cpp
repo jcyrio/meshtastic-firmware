@@ -601,6 +601,10 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 #ifdef SIMPLE_TDECK
 		this->totalMessagesSent++;
 		LOG_INFO("Total messages sent: %d\n", this->totalMessagesSent);
+		if (strcmp(message, " ") == 0) {
+			LOG_INFO("Message is only a space, not sending\n");
+			return;
+		}
 		// below was for enabling number count before every message, for testing
 		// char totalMessagesSent[8];
 		// memset(totalMessagesSent, 0, sizeof(totalMessagesSent)); // clear the string, first send has junk data
@@ -717,7 +721,7 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 							// check if freetext equals "rr" to resend last message
 							if (this->freetext == "rr") {
-								if (this->previousFreetext.length() > 0) {
+								if (this->previousFreetext.length() > 1) {
 									if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
 									LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
 									sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
@@ -772,7 +776,7 @@ int32_t CannedMessageModule::runOnce()
 									strcpy(allMessage, "ALL: ");
 									strcat(allMessage, this->freetext.c_str());
 									sendText(this->dest, 3, allMessage, true); //goes to StA channel
-								} else sendText(this->dest, 0, this->freetext.c_str(), true); //goes to StA channel
+								} else sendText(this->dest, 0, this->freetext.c_str(), true);
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								this->previousDest = this->dest;
 								this->previousFreetext = this->freetext;
