@@ -77,12 +77,12 @@ void CannedMessageModule::setDeliveryStatus(uint8_t status) {
 	switch (status) {
 		case 0:
 			screen->removeFunctionSymbal("(D)");
-			screen->removeFunctionSymbal(">"); break;
+			screen->removeFunctionSymbal(">>>"); break;
 		case 1:
 			screen->removeFunctionSymbal("(D)");
-			screen->setFunctionSymbal(">"); break;
+			screen->setFunctionSymbal(">>>"); break;
 		case 2:
-			screen->removeFunctionSymbal(">");
+			screen->removeFunctionSymbal(">>>");
 			screen->setFunctionSymbal("(D)"); break;
 	}
 	deliveryStatus = status;
