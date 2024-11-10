@@ -91,6 +91,9 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
             return false;
         }
     }
+#ifdef SIMPLE_TDECK
+		void setDeliveryStatus(uint8_t status);
+#endif
 
   protected:
     virtual int32_t runOnce() override;

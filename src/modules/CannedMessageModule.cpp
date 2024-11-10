@@ -70,7 +70,23 @@ std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::st
         return "";  // Return an empty string or handle the error appropriately
     }
 }
-// PacketId lastMessageID = 0;
+uint8_t keyCountLoopForDeliveryStatus = 0;
+uint8_t deliveryStatus = 0;
+
+void CannedMessageModule::setDeliveryStatus(uint8_t status) {
+	switch (status) {
+		case 0:
+			screen->removeFunctionSymbal("(D)");
+			screen->removeFunctionSymbal(">"); break;
+		case 1:
+			screen->removeFunctionSymbal("(D)");
+			screen->setFunctionSymbal(">"); break;
+		case 2:
+			screen->removeFunctionSymbal(">");
+			screen->setFunctionSymbal("(D)"); break;
+	}
+	deliveryStatus = status;
+}
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -130,7 +146,7 @@ CannedMessageModule::CannedMessageModule()
 											 }),
 				MYNODES.end()
 		);
-		screen->removeFunctionSymbal("ACK");
+		// screen->removeFunctionSymbal("ACK");
 		this->dest = NODENUM_RPI5;
 #endif
 }
@@ -485,8 +501,14 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
 #ifdef SIMPLE_TDECK
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
-						// TODO: does this slow anything down? should I have a check first to see if the symbol is already there?
-						screen->removeFunctionSymbal("ACK");
+						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
+						if (deliveryStatus == 2) { // means ACKed, showing (D)
+							keyCountLoopForDeliveryStatus++;
+							if (keyCountLoopForDeliveryStatus > 2) {
+								setDeliveryStatus(0);
+								keyCountLoopForDeliveryStatus = 0;
+							}
+						}
 						if (screen->keyboardLockMode == false) {
 #endif
 							if (this->skipNextRletter) {
@@ -608,6 +630,7 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     p->want_ack = true;
 // add totalMessagesSent to beginning of message
 #ifdef SIMPLE_TDECK
+		setDeliveryStatus(0);
 		this->totalMessagesSent++;
 		LOG_INFO("Total messages sent: %d\n", this->totalMessagesSent);
 		if (strcmp(message, " ") == 0) {
@@ -1606,7 +1629,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setTextAlignment(TEXT_ALIGN_CENTER);
 #ifdef SIMPLE_TDECK
         if (this->ack) {
-            displayString = "Delivered\n";
+            // displayString = "En route...\n";
+						setDeliveryStatus(1);
         } else {
 					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
 						this->deliveryFailedCount = 1;
@@ -1616,6 +1640,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 						sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
 					} else {
 						this->deliveryFailedCount = 0;
+						setDeliveryStatus(0);
             displayString = "Delivery failed";
 					}
 				}

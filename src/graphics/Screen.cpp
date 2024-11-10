@@ -1171,7 +1171,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				if (strlen(tempBuf) < 200) {
 					display->setFont(FONT_LARGE);
 					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
-				} else {
+				} else { // smaller font for long messages
 					display->setFont(FONT_SMALL);
 					display->drawStringMaxWidth(0 + x, 13 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 					display->setFont(FONT_LARGE);
@@ -1200,11 +1200,13 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
 		uint8_t linePosition;
 		//if there are 3 messages and they're all not too long
+		// counting 60 as 2 lines, 82 as 3 lines
     if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
         (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
         (lastMessageContent2[0] != '*')) {
         // Display time and sender for 2nd last message
-        linePosition = 3;
+				if (strlen(lastMessageContent2) < 82) linePosition = 3; // 82 is about 3 lines
+				else linePosition = 4;
 				uint32_t msgCount = totalMessageCount - 1;
         displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
         // Display time and sender for 3rd last message
@@ -1214,9 +1216,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
 
 		// if there are 2 messages and the top one isn't too long
-    } else if ((strlen(lastMessageContent2) < 65) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {
-			linePosition = 5;
+    } else if ((strlen(lastMessageContent2) < 82) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {  // 82 should be 3 lines
 			if (strlen(lastMessageContent2) < 30) linePosition = 4;
+			else linePosition = 5;
 			uint32_t msgCount = totalMessageCount - 1;
 			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
 		} // end 2 messages
@@ -2487,6 +2489,27 @@ void Screen::decreaseBrightness()
 
     /* TO DO: add little popup in center of screen saying what brightness level it is set to*/
 }
+
+#ifdef SIMPLE_TDECK
+// void Screen::setDeliveryStatus(uint8_t status) {
+// 	if (status == 0) {
+// 		LOG_INFO("none");
+// 		// removeFunctionSymbal("(D)");
+// 		// removeFunctionSymbal("A");
+// 	} else if (status == 1) {
+// 		// removeFunctionSymbal("(D)");
+// 		setFunctionSymbal("A");
+// 	} else if (status == 2) {
+// 		removeFunctionSymbal("A");
+// 		// setFunctionSymbal("(D)");
+// 	}
+// 	deliveryStatus = status;
+// }
+//
+// uint8_t Screen::getDeliveryStatus() {
+// 	return deliveryStatus;
+// }
+#endif
 
 void Screen::setFunctionSymbal(std::string sym)
 {

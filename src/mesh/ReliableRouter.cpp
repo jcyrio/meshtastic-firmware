@@ -5,12 +5,14 @@
 #include "configuration.h"
 #include "mesh-pb-constants.h"
 #ifdef SIMPLE_TDECK
-#include "graphics/Screen.h"
-#include "main.h"
+// #include "graphics/Screen.h"  // for setDeliveryStatus
+#include "modules/CannedMessageModule.h" // for setDeliveryStatus
+// #include "main.h"
 // extern PacketId lastMessageID;
 PacketId lastMessageID = 0;
 NodeNum lastNodeFrom = 0;
 NodeNum lastNodeTo = 0;
+extern CannedMessageModule* cannedMessageModule;
 #endif
 
 // ReliableRouter::ReliableRouter() {}
@@ -163,8 +165,9 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
 							// I think the next thing you have to do is to save the ID of the packet you're sending and then compare it here. Needs some extra code
 							// if (ackId == p->decoded.request_id) {
 							if ((ackId == lastMessageID) && (lastNodeFrom == p->to) && (lastNodeTo == getFrom(p))) {
-								screen->setFunctionSymbal("ACK");
-								LOG_INFO("FOUND IT\n");
+								// screen->setFunctionSymbal("(A)");
+								cannedMessageModule->setDeliveryStatus(2);
+								// screen->setFunctionSymbal("(F)");
 							}
 							
 
@@ -176,6 +179,9 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
             } else {
                 LOG_DEBUG("Received a nak for 0x%x, stopping retransmissions\n", nakId);
                 stopRetransmission(p->to, nakId);
+#ifdef SIMPLE_TDECK
+								cannedMessageModule->setDeliveryStatus(0);
+#endif
             }
         }
     }
