@@ -2490,27 +2490,6 @@ void Screen::decreaseBrightness()
     /* TO DO: add little popup in center of screen saying what brightness level it is set to*/
 }
 
-#ifdef SIMPLE_TDECK
-// void Screen::setDeliveryStatus(uint8_t status) {
-// 	if (status == 0) {
-// 		LOG_INFO("none");
-// 		// removeFunctionSymbal("(D)");
-// 		// removeFunctionSymbal("A");
-// 	} else if (status == 1) {
-// 		// removeFunctionSymbal("(D)");
-// 		setFunctionSymbal("A");
-// 	} else if (status == 2) {
-// 		removeFunctionSymbal("A");
-// 		// setFunctionSymbal("(D)");
-// 	}
-// 	deliveryStatus = status;
-// }
-//
-// uint8_t Screen::getDeliveryStatus() {
-// 	return deliveryStatus;
-// }
-#endif
-
 void Screen::setFunctionSymbal(std::string sym)
 {
     if (std::find(functionSymbals.begin(), functionSymbals.end(), sym) == functionSymbals.end()) {

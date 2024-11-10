@@ -1630,6 +1630,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #ifdef SIMPLE_TDECK
         if (this->ack) {
             // displayString = "En route...\n";
+						// if (this->previousDest != NODENUM_RPI5) setDeliveryStatus(1);
 						setDeliveryStatus(1);
         } else {
 					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {

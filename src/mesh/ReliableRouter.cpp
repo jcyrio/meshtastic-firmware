@@ -157,22 +157,11 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
 							LOG_INFO("p->id: %x\n", p->id); //this is not the number we want
 							LOG_INFO("LastMessageFrom: %x\n", lastNodeFrom);
 							LOG_INFO("LastMessageTo: %x\n", lastNodeTo);
-							// LOG_INFO("p->id: %x\n", p->id); //this is not the number we want
-							// NOW: most likely need to match the "enqueued local" local packet id, which is the one that you sent with
-							// sniffReceived gets that number! it's in the id
-							// I think you're comparing it to the wrong number
-							// the request_id isn't the correct match here
-							// I think the next thing you have to do is to save the ID of the packet you're sending and then compare it here. Needs some extra code
-							// if (ackId == p->decoded.request_id) {
+							//TODO: check make sure in logs lastNodeTo is not NODENUM_RPI5 (might want From instead)
 							if ((ackId == lastMessageID) && (lastNodeFrom == p->to) && (lastNodeTo == getFrom(p))) {
-								// screen->setFunctionSymbal("(A)");
+								// if (lastNodeTo != NODENUM_RPI5) cannedMessageModule->setDeliveryStatus(2);
 								cannedMessageModule->setDeliveryStatus(2);
-								// screen->setFunctionSymbal("(F)");
 							}
-							
-
-
-							
 #endif
                 LOG_DEBUG("Received an ack for 0x%x, stopping retransmissions\n", ackId);
                 stopRetransmission(p->to, ackId);
