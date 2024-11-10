@@ -8,11 +8,11 @@
 // #include "graphics/Screen.h"  // for setDeliveryStatus
 #include "modules/CannedMessageModule.h" // for setDeliveryStatus
 // #include "main.h"
-// extern PacketId lastMessageID;
 PacketId lastMessageID = 0;
 NodeNum lastNodeFrom = 0;
 NodeNum lastNodeTo = 0;
 extern CannedMessageModule* cannedMessageModule;
+extern uint8_t deliveryStatus;
 #endif
 
 // ReliableRouter::ReliableRouter() {}
@@ -136,21 +136,6 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
         if (ackId || nakId) {
             if (ackId) {
 #ifdef SIMPLE_TDECK
-									// auto key = GlobalPacketId(getFrom(p), ackId);
-									// auto key = GlobalPacketId(getFrom(p), p->id);
-									// auto old = findPendingPacket(key);
-									// if (old) {
-									// 	LOG_DEBUG("Found pending packet with ID 0x%x, stopping retransmission.\n", p->id);
-									// }
-									// LOG_INFO("Found pending message: %s\n", old->packet->decoded.payload.bytes);
-									// LOG_INFO("Old PacketID: %x\n", old->packet->id);
-							//this one does see it, but it sees many other things too. question is how to filter
-							//log p->decoded.request_id
-							// LOG_INFO("ackID: %x\n", ackId);
-							// 	screen->setFunctionSymbal("ACK");
-
-
-							LOG_INFO("THIS IS ME HERE\n");
 							LOG_INFO("p->decoded.request_id: %x\n", p->decoded.request_id); //this is the id of the packet we sent
 						  LOG_INFO("lastMessageID: %h\n", lastMessageID); //this is the id of the packet we sent	
 							LOG_INFO("ackId: %x\n", ackId); //this is the id of the packet we setNextTx
@@ -159,7 +144,6 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
 							LOG_INFO("LastMessageTo: %x\n", lastNodeTo);
 							//TODO: check make sure in logs lastNodeTo is not NODENUM_RPI5 (might want From instead)
 							if ((ackId == lastMessageID) && (lastNodeFrom == p->to) && (lastNodeTo == getFrom(p))) {
-								// if (lastNodeTo != NODENUM_RPI5) cannedMessageModule->setDeliveryStatus(2);
 								cannedMessageModule->setDeliveryStatus(2);
 							}
 #endif

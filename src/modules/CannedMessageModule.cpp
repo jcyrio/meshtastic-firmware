@@ -74,6 +74,11 @@ uint8_t keyCountLoopForDeliveryStatus = 0;
 uint8_t deliveryStatus = 0;
 
 void CannedMessageModule::setDeliveryStatus(uint8_t status) {
+	LOG_INFO("setDeliveryStatus(%d)\n", status);
+	LOG_INFO("setDeliveryStatus(%d)\n", status);
+	LOG_INFO("setDeliveryStatus(%d)\n", status);
+	LOG_INFO("setDeliveryStatus(%d)\n", status);
+	LOG_INFO("setDeliveryStatus(%d)\n", status);
 	switch (status) {
 		case 0:
 			screen->removeFunctionSymbal("(D)");
@@ -503,6 +508,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
 						if (deliveryStatus == 2) { // means ACKed, showing (D)
+						 LOG_INFO("deliveryStatus == 2\n");
+						 LOG_INFO("deliveryStatus == 2\n");
+						 LOG_INFO("deliveryStatus == 2\n");
+						 LOG_INFO("deliveryStatus == 2\n");
 							keyCountLoopForDeliveryStatus++;
 							if (keyCountLoopForDeliveryStatus > 2) {
 								setDeliveryStatus(0);
@@ -1630,8 +1639,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #ifdef SIMPLE_TDECK
         if (this->ack) {
             // displayString = "En route...\n";
-						// if (this->previousDest != NODENUM_RPI5) setDeliveryStatus(1);
-						setDeliveryStatus(1);
+						if (deliveryStatus != 2) setDeliveryStatus(1);  // this prevents problem where if you're sending to a nearby node, right after getting set to 2 it gets immediately set back to 1 and so the (D) doesn't show at all
         } else {
 					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
 						this->deliveryFailedCount = 1;
