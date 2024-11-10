@@ -44,6 +44,10 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
+    {2217306826, "79"}, // for testing
+    {279520186, "CF"}, // for testing
+    {219520199, "test"}, // for testing
+    {2297825467, "W3"}, // for testing
 #endif
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
@@ -66,6 +70,7 @@ std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::st
         return "";  // Return an empty string or handle the error appropriately
     }
 }
+// PacketId lastMessageID = 0;
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -125,6 +130,7 @@ CannedMessageModule::CannedMessageModule()
 											 }),
 				MYNODES.end()
 		);
+		screen->removeFunctionSymbal("ACK");
 		this->dest = NODENUM_RPI5;
 #endif
 }
@@ -479,6 +485,8 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
 #ifdef SIMPLE_TDECK
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
+						// TODO: does this slow anything down? should I have a check first to see if the symbol is already there?
+						screen->removeFunctionSymbal("ACK");
 						if (screen->keyboardLockMode == false) {
 #endif
 							if (this->skipNextRletter) {
@@ -628,6 +636,13 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     // Prevents the canned message module from regenerating the screen's frameset at unexpected times,
     // or raising a UIFrameEvent before another module has the chance
     this->waitingForAck = true;
+#ifdef SIMPLE_TDECK  // don't need acks from "Router" node because the auto response is the ack
+		if (p->to == NODENUM_RPI5) {
+			p->want_ack = false;
+			this->waitingForAck = false;
+		}
+		// lastMessageID = p->id;
+#endif
 
     LOG_INFO("Sending message id=%d, dest=%x, msg=%.*s\n", p->id, p->to, p->decoded.payload.size, p->decoded.payload.bytes);
 

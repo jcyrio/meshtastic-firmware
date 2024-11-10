@@ -4,6 +4,14 @@
 #include "MeshTypes.h"
 #include "configuration.h"
 #include "mesh-pb-constants.h"
+#ifdef SIMPLE_TDECK
+#include "graphics/Screen.h"
+#include "main.h"
+// extern PacketId lastMessageID;
+PacketId lastMessageID = 0;
+NodeNum lastNodeFrom = 0;
+NodeNum lastNodeTo = 0;
+#endif
 
 // ReliableRouter::ReliableRouter() {}
 
@@ -125,6 +133,44 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
         // We intentionally don't check wasSeenRecently, because it is harmless to delete non existent retransmission records
         if (ackId || nakId) {
             if (ackId) {
+#ifdef SIMPLE_TDECK
+									// auto key = GlobalPacketId(getFrom(p), ackId);
+									// auto key = GlobalPacketId(getFrom(p), p->id);
+									// auto old = findPendingPacket(key);
+									// if (old) {
+									// 	LOG_DEBUG("Found pending packet with ID 0x%x, stopping retransmission.\n", p->id);
+									// }
+									// LOG_INFO("Found pending message: %s\n", old->packet->decoded.payload.bytes);
+									// LOG_INFO("Old PacketID: %x\n", old->packet->id);
+							//this one does see it, but it sees many other things too. question is how to filter
+							//log p->decoded.request_id
+							// LOG_INFO("ackID: %x\n", ackId);
+							// 	screen->setFunctionSymbal("ACK");
+
+
+							LOG_INFO("THIS IS ME HERE\n");
+							LOG_INFO("p->decoded.request_id: %x\n", p->decoded.request_id); //this is the id of the packet we sent
+						  LOG_INFO("lastMessageID: %h\n", lastMessageID); //this is the id of the packet we sent	
+							LOG_INFO("ackId: %x\n", ackId); //this is the id of the packet we setNextTx
+							LOG_INFO("p->id: %x\n", p->id); //this is not the number we want
+							LOG_INFO("LastMessageFrom: %x\n", lastNodeFrom);
+							LOG_INFO("LastMessageTo: %x\n", lastNodeTo);
+							// LOG_INFO("p->id: %x\n", p->id); //this is not the number we want
+							// NOW: most likely need to match the "enqueued local" local packet id, which is the one that you sent with
+							// sniffReceived gets that number! it's in the id
+							// I think you're comparing it to the wrong number
+							// the request_id isn't the correct match here
+							// I think the next thing you have to do is to save the ID of the packet you're sending and then compare it here. Needs some extra code
+							// if (ackId == p->decoded.request_id) {
+							if ((ackId == lastMessageID) && (lastNodeFrom == p->to) && (lastNodeTo == getFrom(p))) {
+								screen->setFunctionSymbal("ACK");
+								LOG_INFO("FOUND IT\n");
+							}
+							
+
+
+							
+#endif
                 LOG_DEBUG("Received an ack for 0x%x, stopping retransmissions\n", ackId);
                 stopRetransmission(p->to, ackId);
             } else {
@@ -256,5 +302,10 @@ void ReliableRouter::setNextTx(PendingPacket *pending)
     pending->nextTxMsec = millis() + d;
     LOG_DEBUG("Setting next retransmission in %u msecs: ", d);
     printPacket("", pending->packet);
+#ifdef SIMPLE_TDECK
+		lastMessageID = pending->packet->id;
+		lastNodeFrom = getFrom(pending->packet);
+		lastNodeTo = pending->packet->to;
+#endif
     setReceivedMessage(); // Run ASAP, so we can figure out our correct sleep time
 }
