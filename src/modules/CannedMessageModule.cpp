@@ -44,10 +44,10 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
-    {2217306826, "79"}, // for testing
-    {279520186, "CF"}, // for testing
-    {219520199, "test"}, // for testing
-    {2297825467, "W3"}, // for testing
+    // {2217306826, "79"}, // for testing
+    // {279520186, "CF"}, // for testing
+    // {219520199, "test"}, // for testing
+    // {2297825467, "W3"}, // for testing
 #endif
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
@@ -673,7 +673,6 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 			p->want_ack = false;
 			this->waitingForAck = false;
 		}
-		// lastMessageID = p->id;
 #endif
 
     LOG_INFO("Sending message id=%d, dest=%x, msg=%.*s\n", p->id, p->to, p->decoded.payload.size, p->decoded.payload.bytes);

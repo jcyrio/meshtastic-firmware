@@ -8,9 +8,15 @@
 // #include "graphics/Screen.h"  // for setDeliveryStatus
 #include "modules/CannedMessageModule.h" // for setDeliveryStatus
 // #include "main.h"
-PacketId lastMessageID = 0;
-NodeNum lastNodeFrom = 0;
-NodeNum lastNodeTo = 0;
+struct Message {
+    PacketId id;
+    NodeNum fromNode;
+    NodeNum toNode;
+};
+Message* lastSentMessage = new Message();
+// PacketId lastMessageID = 0;
+// NodeNum lastNodeFrom = 0;
+// NodeNum lastNodeTo = 0;
 extern CannedMessageModule* cannedMessageModule;
 extern uint8_t deliveryStatus;
 #endif
@@ -137,13 +143,13 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
             if (ackId) {
 #ifdef SIMPLE_TDECK
 							LOG_INFO("p->decoded.request_id: %x\n", p->decoded.request_id); //this is the id of the packet we sent
-						  LOG_INFO("lastMessageID: %h\n", lastMessageID); //this is the id of the packet we sent	
+						  LOG_INFO("lastMessageID: %h\n", lastSentMessage->id); //this is the id of the packet we sent
 							LOG_INFO("ackId: %x\n", ackId); //this is the id of the packet we setNextTx
 							LOG_INFO("p->id: %x\n", p->id); //this is not the number we want
-							LOG_INFO("LastMessageFrom: %x\n", lastNodeFrom);
-							LOG_INFO("LastMessageTo: %x\n", lastNodeTo);
+							LOG_INFO("LastMessageFrom: %x\n", lastSentMessage->fromNode);
+							LOG_INFO("LastMessageTo: %x\n", lastSentMessage->toNode);
 							//TODO: check make sure in logs lastNodeTo is not NODENUM_RPI5 (might want From instead)
-							if ((ackId == lastMessageID) && (lastNodeFrom == p->to) && (lastNodeTo == getFrom(p))) {
+							if ((ackId == lastSentMessage->id) && (lastSentMessage->fromNode == p->to) && (lastSentMessage->toNode == getFrom(p))) {
 								cannedMessageModule->setDeliveryStatus(2);
 							}
 #endif
@@ -282,9 +288,9 @@ void ReliableRouter::setNextTx(PendingPacket *pending)
     LOG_DEBUG("Setting next retransmission in %u msecs: ", d);
     printPacket("", pending->packet);
 #ifdef SIMPLE_TDECK
-		lastMessageID = pending->packet->id;
-		lastNodeFrom = getFrom(pending->packet);
-		lastNodeTo = pending->packet->to;
+		lastSentMessage->id = pending->packet->id;
+		lastSentMessage->fromNode = getFrom(pending->packet);
+		lastSentMessage->toNode = pending->packet->to;
 #endif
     setReceivedMessage(); // Run ASAP, so we can figure out our correct sleep time
 }
