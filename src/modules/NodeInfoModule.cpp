@@ -7,6 +7,9 @@
 #include "configuration.h"
 #include "main.h"
 
+#ifdef SIMPLE_TDECK
+bool skippedFirstStartupRequest = 0;
+#endif
 NodeInfoModule *nodeInfoModule;
 
 bool NodeInfoModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, meshtastic_User *pptr)
@@ -98,8 +101,17 @@ int32_t NodeInfoModule::runOnce()
     currentGeneration = radioGeneration;
 
     if (airTime->isTxAllowedAirUtil() && config.device.role != meshtastic_Config_DeviceConfig_Role_CLIENT_HIDDEN) {
+#ifdef SIMPLE_TDECK
+			if (skippedFirstStartupRequest == 0) {
+				skippedFirstStartupRequest = 1;
+			} else {
         LOG_INFO("Sending our nodeinfo to mesh (wantReplies=%d)\n", requestReplies);
         sendOurNodeInfo(NODENUM_BROADCAST, requestReplies); // Send our info (don't request replies)
+			}
+#else
+        LOG_INFO("Sending our nodeinfo to mesh (wantReplies=%d)\n", requestReplies);
+        sendOurNodeInfo(NODENUM_BROADCAST, requestReplies); // Send our info (don't request replies)
+#endif
     }
     return Default::getConfiguredOrDefaultMs(config.device.node_info_broadcast_secs, default_node_info_broadcast_secs);
 }
