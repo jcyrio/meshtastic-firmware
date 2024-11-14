@@ -15,6 +15,9 @@
 #include "main.h"
 #include "sleep.h"
 #include "target_specific.h"
+#ifdef SIMPLE_TDECK
+#include "modules/ExternalNotificationModule.h"
+#endif
 
 #ifdef ARCH_ESP32
 #include "esp32/pm.h"
@@ -179,6 +182,10 @@ static void waitEnterSleep(bool skipPreflight = false)
     // Code that still needs to be moved into notifyObservers
     console->flush();          // send all our characters before we stop cpu clock
     setBluetoothEnable(false); // has to be off before calling light sleep
+#ifdef SIMPLE_TDECK
+		//want to turn off notification led
+		externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+#endif
 
     notifySleep.notifyObservers(NULL);
 }

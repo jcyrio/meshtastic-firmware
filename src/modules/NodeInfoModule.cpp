@@ -65,7 +65,7 @@ meshtastic_MeshPacket *NodeInfoModule::allocReply()
     }
     uint32_t now = millis();
     // If we sent our NodeInfo less than 5 min. ago, don't send it again as it may be still underway.
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK //minimum 3 hours instead of 5 minutes
     if (lastSentToMesh && (now - lastSentToMesh) < (3 * 60 * 60 * 1000)) {
 #else
     if (lastSentToMesh && (now - lastSentToMesh) < (5 * 60 * 1000)) {
