@@ -75,10 +75,6 @@ uint8_t deliveryStatus = 0;
 
 void CannedMessageModule::setDeliveryStatus(uint8_t status) {
 	LOG_INFO("setDeliveryStatus(%d)\n", status);
-	LOG_INFO("setDeliveryStatus(%d)\n", status);
-	LOG_INFO("setDeliveryStatus(%d)\n", status);
-	LOG_INFO("setDeliveryStatus(%d)\n", status);
-	LOG_INFO("setDeliveryStatus(%d)\n", status);
 	switch (status) {
 		case 0:
 			screen->removeFunctionSymbal("(D) ");

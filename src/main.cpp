@@ -1050,7 +1050,11 @@ void setup()
     // This must be _after_ service.init because we need our preferences loaded from flash to have proper timeout values
     PowerFSM_setup(); // we will transition to ON in a couple of seconds, FIXME, only do this for cold boots, not waking from SDS
     powerFSMthread = new PowerFSMThread();
+#ifdef SIMPLE_TDECK
+    setCPUFast(true); // 240MHz is much smoother!
+#else
     setCPUFast(false); // 80MHz is fine for our slow peripherals
+#endif
 }
 
 uint32_t rebootAtMsec;   // If not zero we will reboot at this time (used to reboot shortly after the update completes)

@@ -1755,6 +1755,9 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
         if (on) {
 						if (screen->keyboardLockMode == true) return;
             LOG_INFO("Turning on screen\n");
+#ifdef SIMPLE_TDECK
+					setCPUFast(true);
+#endif
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3
             PMU->enablePowerOutput(XPOWERS_ALDO2);
@@ -1794,6 +1797,9 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             setScreensaverFrames(einkScreensaver);
 #endif
             LOG_INFO("Turning off screen\n");
+#ifdef SIMPLE_TDECK
+					setCPUFast(false);
+#endif
             dispdev->displayOff();
 #ifdef USE_ST7789
             SPI1.end();
