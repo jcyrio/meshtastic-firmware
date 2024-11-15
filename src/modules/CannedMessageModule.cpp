@@ -246,8 +246,9 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 				UIFrameEvent e;
 				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
         this->currentMessageIndex = -1;
-        this->freetext = ""; // clear freetext
-        this->cursor = 0;
+				// removed below on 11/14/24, I don't think there's a reason to clear the text here. Let them restore it if wanted
+        // this->freetext = ""; // clear freetext
+        // this->cursor = 0;
         this->notifyObservers(&e);
 			validEvent = true;
 			} // end trackballEnabled
@@ -295,8 +296,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         this->currentMessageIndex = -1;
 
 #if !defined(T_WATCH_S3) && !defined(RAK14014)
+#ifndef SIMPLE_TDECK //just testing, maybe this will cause to not lose text while typing and screen flips...
         this->freetext = ""; // clear freetext
         this->cursor = 0;
+#endif
         this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 #endif
 
@@ -912,10 +915,6 @@ int32_t CannedMessageModule::runOnce()
 					this->lastTouchMillis = millis();
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
             requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
-        // this->currentMessageIndex = -1;
-        // this->freetext = ""; // clear freetext
-        // this->cursor = 0;
-				// validEvent = true;
 					this->notifyObservers(&e);
 					break;
 				case 0x7e: // mic / 0 key, clear line

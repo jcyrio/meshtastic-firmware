@@ -1757,6 +1757,11 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             LOG_INFO("Turning on screen\n");
 #ifdef SIMPLE_TDECK
 					setCPUFast(true);
+					// LOG_INFO("Allowing LED to be turned off\n");
+					// gpio_reset_pin((gpio_num_t)43);
+					if (externalNotificationModule->getExternal(0) == 1) gpio_hold_dis((gpio_num_t)43);
+					// pinMode(GPIO_NUM_43, OUTPUT);
+					// digitalWrite((gpio_num_t)43, LOW);
 #endif
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3

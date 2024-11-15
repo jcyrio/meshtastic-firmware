@@ -188,8 +188,12 @@ static void waitEnterSleep(bool skipPreflight = false)
     setBluetoothEnable(false); // has to be off before calling light sleep
 #ifdef SIMPLE_TDECK
 		//want to turn off notification led
-		LOG_INFO("Turning off external notification module before sleeping\n");
-		externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+		// LOG_INFO("Turning off external notification module before sleeping\n");
+		// externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+		if (externalNotificationModule->getExternal(0) == 1) {
+			LOG_INFO("LED was previously on, enabling gpio_hold_en\n");
+			gpio_hold_en((gpio_num_t)43);
+		}
 #endif
 
     notifySleep.notifyObservers(NULL);
