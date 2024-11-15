@@ -100,7 +100,7 @@ namespace graphics
 FrameCallback *normalFrames;
 static uint32_t targetFramerate = IDLE_FRAMERATE;
 
-uint32_t logo_timeout = 5000; // 4 seconds for EACH logo
+uint32_t logo_timeout = 2500; // 4 seconds for EACH logo
 
 uint32_t hours_in_month = 730;
 
@@ -1757,11 +1757,8 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             LOG_INFO("Turning on screen\n");
 #ifdef SIMPLE_TDECK
 					setCPUFast(true);
-					// LOG_INFO("Allowing LED to be turned off\n");
-					// gpio_reset_pin((gpio_num_t)43);
+					// if just woke from light sleep and led was on, turn off LED
 					if (externalNotificationModule->getExternal(0) == 1) gpio_hold_dis((gpio_num_t)43);
-					// pinMode(GPIO_NUM_43, OUTPUT);
-					// digitalWrite((gpio_num_t)43, LOW);
 #endif
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3
@@ -2304,23 +2301,9 @@ void Screen::setFrames(FrameFocus focus)
     // then all the nodes
     // We only show a few nodes in our scrolling list - because meshes with many nodes would have too many screens
 #ifndef SIMPLE_TDECK
-    for (size_t i = 0; i < 4U; i++)
-			//want to print the node names
-		{
-			// LOG_DEBUG("Adding node %d\n", i);
-			// LOG_DEBUG("Node name: %s\n", nodeDB->getMeshNode(i));
-				meshtastic_NodeInfoLite *node = nodeDB->getMeshNodeByIndex(i);
-				const char *username = node->has_user ? node->user.long_name : "Unknown Name";
-				// make sure username is not in skipNodes
-				// if (skipNodes.find(username) != skipNodes.end())
-				// frc NOTE: this might not be nessary. This is just having less frames, but they still show
-				// if (std::find(skipNodes2.begin(), skipNodes2.end(), username) != skipNodes2.end()) {
-				// 	LOG_DEBUG("HEY HEY Skipping node %s\n", username);
-				// } else {
-				// LOG_DEBUG("** HERE HERE HERE Node name: %s\n", username);
+		size_t numToShow = min(numMeshNodes, 4U);
+    for (size_t i = 0; i < numToShow; i++)
         normalFrames[numframes++] = drawNodeInfo;
-				// }
-		}
 #endif
 
     // then the debug info
@@ -2571,6 +2554,10 @@ void Screen::handleShowPrevFrame()
 {
     // If screen was off, just wake it, otherwise go back to previous frame
     // If we are in a transition, the press must have bounced, drop it.
+#ifdef SIMPLE_TDECK
+	LOG_INFO("Prev frame: %d\n", this->ui->getUiState()->currentFrame);
+	// NOTE it's the same if you do it after this block. I think the frame logic has already changed, just it hasn't shown it yet. 0 is main screen, 1 is previous msg
+#endif
     if (ui->getUiState()->frameState == FIXED) {
         ui->previousFrame();
         lastScreenTransition = millis();

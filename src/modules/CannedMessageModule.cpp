@@ -23,7 +23,7 @@
 #endif
 
 // OPTIONAL
-// #define FOR_GUESTS
+#define FOR_GUESTS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -952,11 +952,11 @@ int32_t CannedMessageModule::runOnce()
 					showTemporaryMessage("Requesting Previous\nMessages 1");
 					break;
 				case 0x2a: // alt-e/2, previous Messages2
+				// case 0x9d: // alt-e/2, previous Messages2
 					sendText(NODENUM_RPI5, 0, "2", false);
 					showTemporaryMessage("Requesting Previous\nMessages 2");
 					break;
 				case 0x9e: // alt-r, retype last message
-					LOG_INFO("Got ALT-R, Retype last message\n");
 					LOG_INFO("Got ALT-R, Retype last message\n");
 					if (this->previousFreetext.length() > 0) {
 						if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
