@@ -23,7 +23,7 @@
 #endif
 
 // OPTIONAL
-// #define FOR_GUESTS
+#define FOR_GUESTS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -56,6 +56,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		// 
 		// {NODENUM_BROADCAST, "Broadcast"},
 };
+
 unsigned int getNodeNumberByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
     if (index >= 0 && static_cast<size_t>(index) < nodes.size()) {
         return nodes[index].first;

@@ -85,6 +85,101 @@ static uint32_t secondLastMessageTimestamp = 0;
 static uint32_t thirdLastMessageTimestamp = 0;
 uint32_t totalMessageCount = 0;
 
+constexpr size_t MAX_MESSAGE_HISTORY = 10;  // Easily adjustable number of messages to store
+constexpr size_t MAX_MESSAGE_LENGTH = 237;
+constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+
+struct MessageRecord {
+    char content[MAX_MESSAGE_LENGTH];
+    char nodeName[MAX_NODE_NAME_LENGTH];
+    uint32_t timestamp;
+    
+    MessageRecord() {
+        clear();
+    }
+    
+    void clear() {
+        content[0] = '\0';
+        nodeName[0] = '\0';
+        timestamp = 0;
+    }
+};
+
+class MessageHistory {
+private:
+    std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
+    size_t currentIndex = 0;
+    uint32_t totalMessageCount = 0;
+    bool firstRunThrough = true;
+    char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
+    bool lastMessageWasPreviousMsgs = false;
+
+public:
+    MessageHistory() {
+        for (auto& msg : messages) {
+            msg.clear();
+        }
+    }
+
+    void addMessage(const char* content, const char* nodeName, uint32_t currentTime) {
+        if (!content || content[0] == '*') {
+            lastMessageWasPreviousMsgs = (content && content[0] == '*');
+            return;
+        }
+
+        // Check if this is a message to ignore
+        if (strcmp(firstMessageToIgnore, content) == 0) {
+            memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
+            return;
+        }
+
+        // Check if this is a duplicate of the last message
+        if (currentIndex < messages.size() && 
+            strcmp(messages[currentIndex].content, content) == 0) {
+            return;
+        }
+
+        // Update index for circular buffer
+        currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
+        
+        // Store the new message
+        MessageRecord& record = messages[currentIndex];
+        strncpy(record.content, content, MAX_MESSAGE_LENGTH - 1);
+        record.content[MAX_MESSAGE_LENGTH - 1] = '\0';
+        
+				strncpy(record.nodeName, nodeName, MAX_NODE_NAME_LENGTH - 1);
+        record.nodeName[MAX_NODE_NAME_LENGTH - 1] = '\0';
+        
+        record.timestamp = currentTime;
+        totalMessageCount++;
+        lastMessageWasPreviousMsgs = false;
+    }
+
+    // Helper methods to access message history
+    const MessageRecord* getMessageAt(size_t position) const {
+        if (position >= MAX_MESSAGE_HISTORY) return nullptr;
+        size_t index = (currentIndex + MAX_MESSAGE_HISTORY - position) % MAX_MESSAGE_HISTORY;
+        return &messages[index];
+    }
+
+    uint32_t getSecondsSince(size_t position, uint32_t currentTime) const {
+        const MessageRecord* record = getMessageAt(position);
+        if (!record || record->timestamp == 0) return 0;
+        return currentTime - record->timestamp;
+    }
+
+    // Getter methods
+    uint32_t getTotalMessageCount() const { return totalMessageCount; }
+    bool wasLastMessagePreviousMsgs() const { return lastMessageWasPreviousMsgs; }
+    
+    void setFirstMessageToIgnore(const char* msg) {
+        strncpy(firstMessageToIgnore, msg, MAX_MESSAGE_LENGTH - 1);
+        firstMessageToIgnore[MAX_MESSAGE_LENGTH - 1] = '\0';
+    }
+};
+
+MessageHistory history;
+
 namespace graphics
 {
 
@@ -1043,18 +1138,36 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
 				totalMessageCount++;
-				thirdLastMessageTimestamp = secondLastMessageTimestamp;
-				secondLastMessageTimestamp = lastMessageTimestamp;
-				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+				// thirdLastMessageTimestamp = secondLastMessageTimestamp;
+				// secondLastMessageTimestamp = lastMessageTimestamp;
+				// lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
+				// if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				// else strcpy(lastNodeName, "???");
+char currentNodeName[5] = {'\0'};
+if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+else strcpy(currentNodeName, "???");
+history.addMessage(messageContent, currentNodeName, currentTime);
+const MessageRecord* lastMsg = history.getMessageAt(0);
+if (lastMsg) {
+    LOG_INFO("Received new message, last was from node: %s\n", lastMsg->nodeName);
+		LOG_INFO("Last message content: %s\n", lastMsg->content);
+}
+const MessageRecord* secondLastMsg = history.getMessageAt(1);
+if (secondLastMsg) {
+    LOG_INFO("secondLastNodeName: %s\n", secondLastMsg->nodeName);
+		LOG_INFO("Second last message content: %s\n", secondLastMsg->content);
+}
 				
-				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-				strcpy(thirdLastNodeName, secondLastNodeName);
-				strcpy(secondLastNodeName, lastNodeName);
-				LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
+				// LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
+				// strcpy(thirdLastNodeName, secondLastNodeName);
+				// strcpy(secondLastNodeName, lastNodeName);
+				// LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
 				receivedNewMessage = false;
-				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
+				// if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
 				// if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
-				else strcpy(lastNodeName, "???");
+				// else strcpy(lastNodeName, "???");
 			}
 		}
     uint32_t seconds = sinceReceived(&mp);
@@ -1201,27 +1314,27 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		uint8_t linePosition;
 		//if there are 3 messages and they're all not too long
 		// counting 60 as 2 lines, 82 as 3 lines
-    if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
-        (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
-        (lastMessageContent2[0] != '*')) {
-        // Display time and sender for 2nd last message
-				if (strlen(lastMessageContent2) < 82) linePosition = 3; // 82 is about 3 lines
-				else linePosition = 4;
-				uint32_t msgCount = totalMessageCount - 1;
-        displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
-        // Display time and sender for 3rd last message
-				if (strlen(lastMessageContent4) < 30) linePosition = 6;
-				else linePosition = 5;
-				msgCount = totalMessageCount - 2;
-        displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
-
-		// if there are 2 messages and the top one isn't too long
-    } else if ((strlen(lastMessageContent2) < 82) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {  // 82 should be 3 lines
-			if (strlen(lastMessageContent2) < 30) linePosition = 4;
-			else linePosition = 5;
-			uint32_t msgCount = totalMessageCount - 1;
-			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
-		} // end 2 messages
+  //   if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
+  //       (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
+  //       (lastMessageContent2[0] != '*')) {
+  //       // Display time and sender for 2nd last message
+		// 		if (strlen(lastMessageContent2) < 82) linePosition = 3; // 82 is about 3 lines
+		// 		else linePosition = 4;
+		// 		uint32_t msgCount = totalMessageCount - 1;
+  //       displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
+  //       // Display time and sender for 3rd last message
+		// 		if (strlen(lastMessageContent4) < 30) linePosition = 6;
+		// 		else linePosition = 5;
+		// 		msgCount = totalMessageCount - 2;
+  //       displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
+		//
+		// // if there are 2 messages and the top one isn't too long
+  //   } else if ((strlen(lastMessageContent2) < 82) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {  // 82 should be 3 lines
+		// 	if (strlen(lastMessageContent2) < 30) linePosition = 4;
+		// 	else linePosition = 5;
+		// 	uint32_t msgCount = totalMessageCount - 1;
+		// 	displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
+		// } // end 2 messages
 	//end
 #endif
 #else

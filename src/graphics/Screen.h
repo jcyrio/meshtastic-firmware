@@ -10,6 +10,45 @@
 #include "power.h"
 namespace graphics
 {
+
+constexpr size_t MAX_MESSAGE_HISTORY = 10;
+constexpr size_t MAX_MESSAGE_LENGTH = 237;
+constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+
+struct MessageRecord {
+    char content[MAX_MESSAGE_LENGTH];
+    char nodeName[MAX_NODE_NAME_LENGTH];
+    uint32_t timestamp;
+    
+    MessageRecord();
+    void clear();
+};
+
+class MessageHistory {
+public:
+    MessageHistory();
+    
+    // Main method for adding new messages
+    void addMessage(const char* content, const char* nodeName, uint32_t currentTime);
+    
+    // Accessor methods
+    const MessageRecord* getMessageAt(size_t position) const;
+    uint32_t getSecondsSince(size_t position, uint32_t currentTime) const;
+    uint32_t getTotalMessageCount() const;
+    bool wasLastMessagePreviousMsgs() const;
+    void setFirstMessageToIgnore(const char* msg);
+
+private:
+    std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
+    size_t currentIndex;
+    uint32_t totalMessageCount;
+    bool firstRunThrough;
+    char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
+    bool lastMessageWasPreviousMsgs;
+};
+
+
+	
 // Noop class for boards without screen.
 class Screen
 {
