@@ -907,6 +907,17 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
+				case 0x23: // # sign, for exiting freetext
+					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+					this->lastTouchMillis = millis();
+            e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+            requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+        // this->currentMessageIndex = -1;
+        // this->freetext = ""; // clear freetext
+        // this->cursor = 0;
+				// validEvent = true;
+					this->notifyObservers(&e);
+					break;
 				case 0x7e: // mic / 0 key, clear line
 					// LOG_INFO("RunState: %d\n", this->runState);
 					// if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
@@ -1256,6 +1267,7 @@ int32_t CannedMessageModule::runOnce()
             case 0xb4: // left
             case 0xb7: // right
 #ifdef SIMPLE_TDECK
+						case 0x23: // # sign, for exiting freetext
 						case 0x7e: // mic / 0 key, clear line
 						case 0x1e: // shift-$, toggle brightness
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
