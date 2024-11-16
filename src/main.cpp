@@ -230,6 +230,9 @@ void printInfo()
 
 void setup()
 {
+#ifdef SIMPLE_TDECK
+    setCpuFrequencyMhz(240);
+#endif
     concurrency::hasBeenSetup = true;
 #if ARCH_PORTDUINO
     SPISettings spiSettings(settingsMap[spiSpeed], MSBFIRST, SPI_MODE0);
@@ -416,7 +419,12 @@ void setup()
     digitalWrite(KB_POWERON, HIGH);
     // There needs to be a delay after power on, give LILYGO-KEYBOARD some startup time
     // otherwise keyboard and touch screen will not work
+#ifdef SIMPLE_TDECK
+		// NOTE: if you ever start using the touch screen might have to increase this delay
+    delay(100);
+#else
     delay(800);
+#endif
 #endif
 
     // Currently only the tbeam has a PMU
@@ -693,6 +701,9 @@ void setup()
     // ESP32
     SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
     LOG_DEBUG("SPI.begin(SCK=%d, MISO=%d, MOSI=%d, NSS=%d)\n", LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
+#ifdef SIMPLE_TDECK
+    SPI.setFrequency(80000000);
+#endif
     SPI.setFrequency(4000000);
 #endif
 
