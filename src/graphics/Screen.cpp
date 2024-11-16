@@ -1243,113 +1243,37 @@ if (previousMessagePage == 0) {
 	if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 	else strcpy(currentNodeName, "???");
 	displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, messageContent, 0);
-
-// } else if (previousMessagePage != lastPreviousMessagePage) {
+	if (previousMessagePage != lastPreviousMessagePage) {
+		LOG_INFO("Page changed, trying to force fast refresh\n");
+		screen->fastRefreshPrevMsgs();
+		lastPreviousMessagePage = previousMessagePage;
+	}
 } else {
 	LOG_INFO("Previous message page: %d\n\n", previousMessagePage);
-	const MessageRecord* lastMsg = history.getMessageAt(0);
-	const MessageRecord* secondLastMsg = history.getMessageAt(1);
-	const MessageRecord* thirdLastMsg = history.getMessageAt(2);
-	const MessageRecord* fourthLastMsg = history.getMessageAt(3);
+	const MessageRecord* lastMsgs[10];
 	uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
-		if ((previousMessagePage == 0) && (history.getTotalMessageCount() > 0)) {
+	for (int i = 0; i < 10; ++i) {
+		lastMsgs[i] = history.getMessageAt(i);
+		if ((previousMessagePage == i) && (history.getTotalMessageCount() > i)) {
 			// LOG_INFO("Got lastMsg\n");
-			LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
-			LOG_INFO("lastMsg->nodeName: %s\n\n", lastMsg->nodeName);
-			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(0, currentTime), lastMsg->nodeName, lastMsg->content, 0);
+			LOG_INFO("lastMsgs[%d]->content: %s\n", i, lastMsgs[i]->content);
+			LOG_INFO("lastMsgs[%d]->nodeName: %s\n\n", i, lastMsgs[i]->nodeName);
+			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(i, currentTime), lastMsgs[i]->nodeName, lastMsgs[i]->content, i);
+			if (previousMessagePage != lastPreviousMessagePage) {
+				LOG_INFO("Page changed, trying to force fast refresh\n");
+				screen->fastRefreshPrevMsgs();
+				lastPreviousMessagePage = previousMessagePage;
+			}
 		}
-		else if ((previousMessagePage == 1) && (history.getTotalMessageCount() > 1)) {
-			// LOG_INFO("Got secondLastMsg\n");
-			LOG_INFO("secondLastMsg->content: %s\n", secondLastMsg->content);
-			LOG_INFO("secondLastMsg->nodeName: %s\n\n", secondLastMsg->nodeName);
-			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(1, currentTime), secondLastMsg->nodeName, secondLastMsg->content, 1);
-		}
-		else if ((previousMessagePage == 2) && (history.getTotalMessageCount() > 2)) {
-			// LOG_INFO("Got thirdLastMsg\n");
-			LOG_INFO("thirdLastMsg->content: %s\n", thirdLastMsg->content);
-			LOG_INFO("thirdLastMsg->nodeName: %s\n\n", thirdLastMsg->nodeName);
-			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(2, currentTime), thirdLastMsg->nodeName, thirdLastMsg->content, 2);
-		}
-		else if (previousMessagePage == 3) {
-			// LOG_INFO("Got fourthLastMsg\n\n");
-			LOG_INFO("fourthLastMsg->content: %s\n", fourthLastMsg->content);
-			LOG_INFO("fourthLastMsg->nodeName: %s\n\n", fourthLastMsg->nodeName);
-			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(3, currentTime), fourthLastMsg->nodeName, fourthLastMsg->content, 3);
-		}
-if (previousMessagePage != lastPreviousMessagePage) {
-	LOG_INFO("Page changed, trying to force fast refresh\n");
-	// setFrames(FOCUS_PRESERVE); // Regen the list of screen frames (returning to same frame, if possible)
-	// ui->setFrames(FOCUS_TEXTMESSAGE); // Regen the list of screen frames (returning to same frame, if possible)
-	// setFrames(); // Regen the list of screen frames (returning to same frame, if possible)
-	// screen->forceDisplay(true);
-	// screen->showNextFrame();
-	// screen->showPrevFrame();
-
-
-	// remove below if not end up using, and in header file
-	// screen->fastRefreshPrevMsgs();
-
-
-
-
-    // ui->setTargetFPS(30);
-    // setInterval(0); // redraw ASAP
-    // runASAP = true;
-
-    // setFastFramerate();
-#if !defined(USE_EINK_DYNAMICDISPLAY)
-    // static_cast<EInkDisplay *>(dispdev)->forceDisplay(0); // Screen::forceDisplay(), but override rate-limit
-		// EInkDisplay::forceDisplay(0); // Screen::forceDisplay(), but override rate-limit
-#endif
-
-    // EInkDisplay *einkDisplay = static_cast<EInkDisplay*>(display);
-    // display->forceDisplay();
-
-	
-    // screen->ui->setOverlays(NULL, 0);  // Clear overlay
-    // setFrames(FOCUS_PRESERVE); // Return to normal display updates, showing same frame as before screensaver, ideally
-    // EINK_ADD_FRAMEFLAG(dispdev, RESPONSIVE); // Really nice to wake screen with a fast-refresh
-	
-	
-	// screen->handleUIFrameEvent();
-	// UIFrameEvent e;
-	// e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-	// Screen::handleUIFrameEvent(e);																											
-    // EINK_ADD_FRAMEFLAG(display, COSMETIC); // Take the opportunity for a full-refresh
-		// EINK_ADD_FRAMEFLAG(dispdev, COSMETIC);
-	lastPreviousMessagePage = previousMessagePage;
 	}
 }
-// FIXME: don't use lastMsgContent2, use new history.get for last msg content
-// if (strcmp(lastMessageContent2, tempBuf) != 0) {
-// const MessageRecord* lastMsg = history.getMessageAt(0);
-// LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
 snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
 // LOG_INFO("tempBuf: %s\n", tempBuf);
 if (strcmp(tempBuf, lastMsg->content) != 0) {
 	LOG_INFO("Adding message1: %s\n", tempBuf);
 	previousMessagePage = 0;
-	//FIXME get rid of firstMessageToIgnore, use new one
-	// if ((strcmp(firstMessageToIgnore, tempBuf) != 0) || (firstMessageToIgnore[0] == '\0')) {
-		// if (tempBuf[0] != '*') {
-// 			lastMessageWasPreviousMsgs = false;
-// 			strcpy(lastMessageContent4, lastMessageContent3);
-// 			strcpy(lastMessageContent3, lastMessageContent2);
-			// strcpy(lastMessageContent2, tempBuf);
-			receivedNewMessage = true;
-		// } //else history.lastMessageWasPreviousMsgs = true;
-	// } else strcpy(firstMessageToIgnore, "");
+	receivedNewMessage = true;
 }
-// uint32_t secondsSinceThirdLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - thirdLastMessageTimestamp;
-// uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-
-				// if (firstRunThroughMessages) {
-				// 	LOG_INFO("In first run through messages\n");
-				// 	// strcpy(firstMessageToIgnore, tempBuf);
-				// 	history.setFirstMessageToIgnore(tempBuf);
-				// 	LOG_INFO("firstMessageToIgnore");
-				// 	firstRunThroughMessages = false;
-				// }
 return;
 
 
@@ -2360,6 +2284,11 @@ int32_t Screen::runOnce()
         case Cmd::SHOW_NEXT_FRAME:
             handleShowNextFrame();
             break;
+#ifdef SIMPLE_TDECK
+				case Cmd::DO_FAST_REFRESH:
+						handleFastRefreshPrevMsgs();
+						break;
+#endif
         case Cmd::START_ALERT_FRAME: {
             showingBootScreen = false; // this should avoid the edge case where an alert triggers before the boot screen goes away
             showingNormalScreen = false;
@@ -2894,7 +2823,7 @@ void Screen::handleShowNextFrame()
 }
 
 #ifdef SIMPLE_TDECK
-void Screen::fastRefreshPrevMsgs() {
+void Screen::handleFastRefreshPrevMsgs() {
 	lastScreenTransition = millis();
 	setFastFramerate();
 }
@@ -3371,48 +3300,35 @@ int Screen::handleInputEvent(const InputEvent *event)
 	// LOG_INFO("Prev frame: %d\n", this->ui->getUiState()->currentFrame);
 	if (this->ui->getUiState()->currentFrame == 0) {  //on previous msg screen
 	if (this->keyboardLockMode == false) {
-
 		// if (event->inputEvent == static_cast<char>(0x20)) {
+		// TODO: below doesn't work for spacebar
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
-				if (event->kbchar == 0x20) {
-			LOG_INFO("Got SPACE on previous msg screen\n");
-			LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
-			if (previousMessagePage < 3) {
-				previousMessagePage++;
-				// if (previousMessagePage > history.getTotalMessageCount()) previousMessagePage = 0;
+			LOG_INFO("Got ANYKEY on previous msg screen\n");
+			if (event->kbchar == 0x20) {
+					LOG_INFO("Got SPACE on previous msg screen\n");
+					LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
+					if ((previousMessagePage < 10) && (previousMessagePage < history.getTotalMessageCount() - 1)) {
+						previousMessagePage++;
+					}
 			}
-			LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 		}
-		}
-
-		
 		else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 		LOG_INFO("Got UP on previous msg screen\n");
 		LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
-		if ((history.getTotalMessageCount() > 1) && (previousMessagePage < 3)) {
+		// if ((history.getTotalMessageCount() > 1) && (previousMessagePage < 3)) {
+		if ((previousMessagePage < 10) && (previousMessagePage < history.getTotalMessageCount() - 1)) {
 			previousMessagePage++;
-			// if (previousMessagePage > 2) previousMessagePage = 0;
 		}
-		LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 	}
 	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 		LOG_INFO("Got DOWN on previous msg screen\n");
 		LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
 		if (previousMessagePage > 0) previousMessagePage--;
-		// if (previousMessagePage <= 0) {
-		// 	if (totalMessageCount > 1) previousMessagePage = 2;
-		// } else previousMessagePage--;
-		LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 	}
+	LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 	}
 }
-
-
-
 #endif
-
-
-
 		
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {

@@ -910,6 +910,11 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
+				case 0x20: // space bar
+					if (screen->isOnFrame(0)) {
+						LOG_INFO("Got SPACE on previous msg screen\n");
+					}
+						break;
 				case 0x23: // # sign, for exiting freetext
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					this->lastTouchMillis = millis();

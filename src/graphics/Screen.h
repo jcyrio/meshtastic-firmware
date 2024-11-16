@@ -57,7 +57,7 @@ class Screen
     void onPress() {}
     void setup() {}
     void setOn(bool) {}
-		
+
 	  // int getTotalMessages() const { return totalReceivedMessagesSinceBoot; }
    //  void setTotalMessages(int value) { totalReceivedMessagesSinceBoot = value; }
 
@@ -229,7 +229,11 @@ class Screen : public concurrency::OSThread
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
 #ifdef SIMPLE_TDECK
-		void fastRefreshPrevMsgs();
+		// void fastRefreshPrevMsgs();
+    void fastRefreshPrevMsgs() { enqueueCmd(ScreenCmd{.cmd = Cmd::DO_FAST_REFRESH}); }
+    bool isOnFrame(int frameNumber) const {
+        return ui && ui->getUiState() && ui->getUiState()->currentFrame == frameNumber;
+    }
 #endif
 
     ~Screen();
@@ -505,6 +509,9 @@ class Screen : public concurrency::OSThread
     void handleOnPress();
     void handleShowNextFrame();
     void handleShowPrevFrame();
+#ifdef SIMPLE_TDECK
+		void handleFastRefreshPrevMsgs();
+#endif
     void handlePrint(const char *text);
     void handleStartFirmwareUpdateScreen();
 
