@@ -228,6 +228,9 @@ class Screen : public concurrency::OSThread
 
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
+#ifdef SIMPLE_TDECK
+		void fastRefreshPrevMsgs();
+#endif
 
     ~Screen();
 

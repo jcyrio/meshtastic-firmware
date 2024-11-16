@@ -1277,6 +1277,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x2a: // alt-2, previous messages 2
 						case 0x9e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
+						case 0x20: // space bar
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
 #endif
