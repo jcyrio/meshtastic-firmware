@@ -232,7 +232,7 @@ class Screen : public concurrency::OSThread
 		// void fastRefreshPrevMsgs();
     void fastRefreshPrevMsgs() { enqueueCmd(ScreenCmd{.cmd = Cmd::DO_FAST_REFRESH}); }
     bool isOnFrame(int frameNumber) const {
-        return ui && ui->getUiState() && ui->getUiState()->currentFrame == frameNumber;
+			return ui->getUiState()->currentFrame == frameNumber;
     }
 #endif
 

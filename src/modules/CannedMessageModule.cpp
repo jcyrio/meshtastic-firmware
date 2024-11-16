@@ -455,6 +455,17 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
 #ifdef SIMPLE_TDECK
+				// case 0x20: // space bar
+				// 	if (screen->isOnFrame(0)) {
+				// 		LOG_INFO("Got SPACE on previous msg screen\n");
+				// 		this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+				// 		this->skipNextFreetextMode = true;
+				// 	} else { // pass the pressed key
+				// 		this->payload = event->kbchar;
+				// 		this->lastTouchMillis = millis();
+				// 		validEvent = true;
+				// 	}
+				// 	break;
 				case 0x24:  // $ sign
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
@@ -910,11 +921,6 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
-				case 0x20: // space bar
-					if (screen->isOnFrame(0)) {
-						LOG_INFO("Got SPACE on previous msg screen\n");
-					}
-						break;
 				case 0x23: // # sign, for exiting freetext
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					this->lastTouchMillis = millis();
@@ -1282,7 +1288,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x2a: // alt-2, previous messages 2
 						case 0x9e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
-						case 0x20: // space bar
+						// case 0x20: // space bar
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
 #endif

@@ -1074,6 +1074,22 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
 }
 
 #ifdef SIMPLE_TDECK
+bool handlePageChange() {
+    if (previousMessagePage != lastPreviousMessagePage) {
+        LOG_INFO("Page changed, trying to force fast refresh\n");
+        screen->fastRefreshPrevMsgs();
+        lastPreviousMessagePage = previousMessagePage;
+        return true;
+    }
+    return false;
+}
+
+void safeStringCopy(char* dest, const char* src, size_t size) {
+    if (!dest || !src || size == 0) return;
+    strncpy(dest, src, size - 1);
+    dest[size - 1] = '\0';
+}
+
 // Helper function to display time delta and sender
 void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount)
 {
@@ -1085,6 +1101,8 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     uint8_t timestampHours, timestampMinutes;
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
+		uint32_t historyMessageCount = history.getTotalMessageCount();
+		if (historyMessageCount > 10) historyMessageCount = 10;
 
     display->setColor(WHITE);
     display->fillRect(x, y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
@@ -1092,11 +1110,11 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 
     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
 			if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) At %02hu:%02hu %s", msgCount, timestampHours, timestampMinutes, nodeName);
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u/%u) At %02hu:%02hu %s", msgCount, historyMessageCount, timestampHours, timestampMinutes, nodeName);
 			} else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) Yest %02hu:%02hu %s", msgCount,  timestampHours, timestampMinutes, nodeName);
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u/%u) Yest %02hu:%02hu %s", msgCount, historyMessageCount, timestampHours, timestampMinutes, nodeName);
 			} else {
-					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) %s ago from %s", msgCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
+					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u/%u) %s ago from %s", msgCount, historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
 			}
 		}
     display->setColor(WHITE);
@@ -1143,6 +1161,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		const MessageRecord* lastMsg = history.getMessageAt(0);
 		if (strcmp(tempBuf, lastMsg->content) != 0) {
 			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
+			LOG_INFO("tempBuf: %s\n", tempBuf);
+			LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
 			// todo: might remove below, already checking for '*' in addMessage
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
 				receivedNewMessage = false;
@@ -1233,47 +1253,81 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 // }
 
 if (previousMessagePage == 0) {
-	LOG_INFO("Previous message page: %d\n", previousMessagePage);
-	const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-	uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
-	// TODO: put lastPreviousMessagePage here
-// snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-// display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-	char currentNodeName[5] = {'\0'};
-	if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
-	else strcpy(currentNodeName, "???");
-	displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, messageContent, 0);
-	if (previousMessagePage != lastPreviousMessagePage) {
-		LOG_INFO("Page changed, trying to force fast refresh\n");
-		screen->fastRefreshPrevMsgs();
-		lastPreviousMessagePage = previousMessagePage;
-	}
+    // LOG_INFO("Previous message page: %d\n", previousMessagePage);
+    const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+    uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
+    
+    char currentNodeName[5] = {'\0'};
+    if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+    else strcpy(currentNodeName, "???");
+    
+    displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, messageContent, 1);
+    handlePageChange();
 } else {
-	LOG_INFO("Previous message page: %d\n\n", previousMessagePage);
-	const MessageRecord* lastMsgs[10];
-	uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
-	for (int i = 0; i < 10; ++i) {
-		lastMsgs[i] = history.getMessageAt(i);
-		if ((previousMessagePage == i) && (history.getTotalMessageCount() > i)) {
-			// LOG_INFO("Got lastMsg\n");
-			LOG_INFO("lastMsgs[%d]->content: %s\n", i, lastMsgs[i]->content);
-			LOG_INFO("lastMsgs[%d]->nodeName: %s\n\n", i, lastMsgs[i]->nodeName);
-			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(i, currentTime), lastMsgs[i]->nodeName, lastMsgs[i]->content, i);
-			if (previousMessagePage != lastPreviousMessagePage) {
-				LOG_INFO("Page changed, trying to force fast refresh\n");
-				screen->fastRefreshPrevMsgs();
-				lastPreviousMessagePage = previousMessagePage;
-			}
-		}
-	}
+    // LOG_INFO("Previous message page: %d\n\n", previousMessagePage);
+    uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
+    
+    // Only get the message we need
+    if (previousMessagePage < history.getTotalMessageCount()) {
+        const MessageRecord* msg = history.getMessageAt(previousMessagePage);
+        if (msg) {
+            // LOG_INFO("Message[%d]->content: %s\n", previousMessagePage, msg->content);
+            // LOG_INFO("Message[%d]->nodeName: %s\n\n", previousMessagePage, msg->nodeName);
+            displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), msg->nodeName, msg->content, previousMessagePage + 1);
+            handlePageChange();
+        }
+    }
 }
-snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-// LOG_INFO("tempBuf: %s\n", tempBuf);
-if (strcmp(tempBuf, lastMsg->content) != 0) {
-	LOG_INFO("Adding message1: %s\n", tempBuf);
-	previousMessagePage = 0;
-	receivedNewMessage = true;
+
+// Use safer string comparison for the message check
+if (lastMsg && mp.decoded.payload.bytes) {
+    size_t payloadLen = strnlen(reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf) - 1);
+    safeStringCopy(tempBuf, reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf));
+    
+    if (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0) {
+        LOG_INFO("Adding message1: %s\n", tempBuf);
+        previousMessagePage = 0;
+        receivedNewMessage = true;
+    }
 }
+// if (previousMessagePage == 0) {
+// 	LOG_INFO("Previous message page: %d\n", previousMessagePage);
+// 	const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+// 	uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
+// 	char currentNodeName[5] = {'\0'};
+// 	if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+// 	else strcpy(currentNodeName, "???");
+// 	displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, messageContent, 1);
+// 	if (previousMessagePage != lastPreviousMessagePage) {
+// 		LOG_INFO("Page changed, trying to force fast refresh\n");
+// 		screen->fastRefreshPrevMsgs();
+// 		lastPreviousMessagePage = previousMessagePage;
+// 	}
+// } else {
+// 	LOG_INFO("Previous message page: %d\n\n", previousMessagePage);
+// 	const MessageRecord* lastMsgs[10];
+// 	uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
+// 	for (int i = 0; i < 10; ++i) {
+// 		lastMsgs[i] = history.getMessageAt(i);
+// 		if ((previousMessagePage == i) && (history.getTotalMessageCount() > i)) {
+// 			LOG_INFO("lastMsgs[%d]->content: %s\n", i, lastMsgs[i]->content);
+// 			LOG_INFO("lastMsgs[%d]->nodeName: %s\n\n", i, lastMsgs[i]->nodeName);
+// 			displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(i, currentTime), lastMsgs[i]->nodeName, lastMsgs[i]->content, i+1);
+// 			if (previousMessagePage != lastPreviousMessagePage) {
+// 				LOG_INFO("Page changed, trying to force fast refresh\n");
+// 				screen->fastRefreshPrevMsgs();
+// 				lastPreviousMessagePage = previousMessagePage;
+// 			}
+// 		}
+// 	}
+// }
+// snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
+// // LOG_INFO("tempBuf: %s\n", tempBuf);
+// if (strcmp(tempBuf, lastMsg->content) != 0) {
+// 	LOG_INFO("Adding message1: %s\n", tempBuf);
+// 	previousMessagePage = 0;
+// 	receivedNewMessage = true;
+// }
 return;
 
 
@@ -3333,19 +3387,18 @@ int Screen::handleInputEvent(const InputEvent *event)
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
 					if (this->keyboardLockMode == false) {
-	if (this->ui->getUiState()->currentFrame != 0) {  //on previous msg screen
-            showPrevFrame();
-	}
+						if (this->ui->getUiState()->currentFrame != 0) {  //on previous msg screen
+								showPrevFrame();
+						}
 					}
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 #ifndef SIMPLE_TDECK
             showNextFrame();
 #else
 					if (this->keyboardLockMode == false) {
-            // showPrevFrame();  // for some reason it freezes if do nextFrame. Not sure why. Either way don't need it now, since only have 2 screens. 7-25-24
-	if (this->ui->getUiState()->currentFrame != 1) {  //on previous msg screen
-            showNextFrame();
-	}
+						if (this->ui->getUiState()->currentFrame != 1) {  //on main screen
+								showNextFrame();
+						}
 					}
 #endif
         }
