@@ -78,6 +78,7 @@ char secondLastNodeName[5] = {'\0'};
 char thirdLastNodeName[5] = {'\0'};
 // bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
+bool showedLastPreviousMessage = false;
 char firstMessageToIgnore[237] = {'\0'};
 
 static uint32_t lastMessageTimestamp = 0;
@@ -1261,8 +1262,10 @@ if (previousMessagePage == 0) {
     if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
     else strcpy(currentNodeName, "???");
     
-    displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, messageContent, 1);
+		// TODO try swapping next 2 lines, in both places
     handlePageChange();
+    displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, messageContent, 1);
+		showedLastPreviousMessage = true;
 } else {
     // LOG_INFO("Previous message page: %d\n\n", previousMessagePage);
     uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
@@ -1273,8 +1276,9 @@ if (previousMessagePage == 0) {
         if (msg) {
             // LOG_INFO("Message[%d]->content: %s\n", previousMessagePage, msg->content);
             // LOG_INFO("Message[%d]->nodeName: %s\n\n", previousMessagePage, msg->nodeName);
-            displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), msg->nodeName, msg->content, previousMessagePage + 1);
             handlePageChange();
+            displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), msg->nodeName, msg->content, previousMessagePage + 1);
+						showedLastPreviousMessage = true;
         }
     }
 }
@@ -3362,7 +3366,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 					LOG_INFO("Got SPACE on previous msg screen\n");
 					LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
 					if ((previousMessagePage < 10) && (previousMessagePage < history.getTotalMessageCount() - 1)) {
-						previousMessagePage++;
+						if (showedLastPreviousMessage) previousMessagePage++;
 					}
 			}
 		}
@@ -3371,13 +3375,15 @@ int Screen::handleInputEvent(const InputEvent *event)
 		LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
 		// if ((history.getTotalMessageCount() > 1) && (previousMessagePage < 3)) {
 		if ((previousMessagePage < 10) && (previousMessagePage < history.getTotalMessageCount() - 1)) {
-			previousMessagePage++;
+			if (showedLastPreviousMessage) previousMessagePage++;
 		}
 	}
 	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 		LOG_INFO("Got DOWN on previous msg screen\n");
 		LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
-		if (previousMessagePage > 0) previousMessagePage--;
+		if (showedLastPreviousMessage) {
+			if (previousMessagePage > 0) previousMessagePage--;
+		}
 	}
 	LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 	}
