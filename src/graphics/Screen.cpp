@@ -113,16 +113,16 @@ public:
         for (auto& msg : messages) {
             msg.clear();
         }
-				addMessage("Hello, world!", "Node", 1638409200);
-				addMessage("Welcome to the network!", "Node", 1638409260);
-				addMessage("Testing message system", "Node", 1638409320);
-				addMessage("Testing message system2", "Node", 1638409320);
-				addMessage("Testing message system3", "Node", 1638409320);
-				addMessage("Testing message system4", "Node", 1638409320);
-				addMessage("Testing message system5", "Node", 1638409320);
-				addMessage("Testing message system6", "Node", 1638409320);
-				addMessage("Testing message system7", "Node", 1638409320);
-				addMessage("Testing message system8", "Node", 1638409320);
+				addMessage("Demo of the new system to scroll message history", "FCyr", 1731860857);
+				addMessage("Messages are stored locally in RAM", "FCyr", 1731860797);
+				addMessage("Currently no local disc storage", "FCyr", 1731860737);
+				addMessage("Messages are not saved after restart", "FCyr", 1731860677);
+				addMessage("This is a longer message, much longer than the others. When a message is larger than half the screen, only one message will show.", "FCyr", 1638409320);
+				addMessage("And this is an even longer message. When a message is larger than an entire screen, then a smaller font will be used so that the entire message can fit. Note that there is still a 200 character limit though.", "FCyr", 1731860617);
+				addMessage("Testing message system1", "FCyr", 1731860557);
+				addMessage("Testing message system2", "FCyr", 1731860497);
+				addMessage("Testing message system3", "FCyr", 1731860437);
+				addMessage("This is my last message in history", "FCyr", 1731860377);
     }
 
     void addMessage(const char* content, const char* nodeName, uint32_t currentTime) {
@@ -1094,7 +1094,6 @@ void safeStringCopy(char* dest, const char* src, size_t size) {
 
 // Helper function to display time delta and sender
 void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount) {
-	LOG_INFO("At START of displayTimeAndMessage");
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
@@ -1118,7 +1117,6 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
 		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
-		LOG_INFO("At END of displayTimeAndMessage");
 }
 #endif
 
@@ -1161,8 +1159,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		const MessageRecord* lastMsg = history.getMessageAt(0);
 		if (strcmp(tempBuf, lastMsg->content) != 0) {
 			// LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-			// LOG_INFO("tempBuf: %s\n", tempBuf);
-			// LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
+			LOG_INFO("tempBuf: %s\n", tempBuf);
+			LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
 			// todo: might remove below, already checking for '*' in addMessage
 			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
 		// Get the most recent message to check for duplicates
@@ -1170,11 +1168,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 		else strcpy(currentNodeName, "???");
 		const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-		// LOG_INFO("Adding message: %s\n", messageContent);
-		// LOG_INFO("From node: %s\n", currentNodeName);
+		LOG_INFO("Adding message: %s\n", messageContent);
+		LOG_INFO("From node: %s\n", currentNodeName);
 		history.addMessage(messageContent, currentNodeName, getValidTime(RTCQuality::RTCQualityDevice, true));
-		// LOG_INFO("totalMessageCount: %d\n", historyMessageCount);
-		// LOG_INFO("lastMsg: %s\n", lastMsg->content);
+		LOG_INFO("totalMessageCount: %d\n", historyMessageCount);
+		LOG_INFO("lastMsg: %s\n", lastMsg->content);
 	// bool isDuplicate = lastMsg && (strcmp(lastMsg->content, tempBuf) == 0);
 		}
 		}
@@ -1190,14 +1188,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		// LOG_INFO("minutes: %u\n", minutes);
 
 if (previousMessagePage == 0) {
-	LOG_INFO("previousMessagePage START: %d\n", previousMessagePage);
     char currentNodeName[5] = {'\0'};
     if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
     else strcpy(currentNodeName, "???");
     displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, reinterpret_cast<const char*>(mp.decoded.payload.bytes), 1);
-    handlePageChange();
-		showedLastPreviousMessage = true;
-		LOG_INFO("previousMessagePage END: %d\n", previousMessagePage);
 } else { // handle history display
 	// LOG_INFO("previousMessagePage START: %d\n", previousMessagePage);
  //    
@@ -1215,43 +1209,48 @@ if (previousMessagePage == 0) {
 	//
 	
 			if (previousMessagePage < historyMessageCount) {
+					LOG_INFO("previousMessagePage < historyMessageCount\n");
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
 					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
 
 					if (currentMsg) {
+						LOG_INFO("Have currentMsg\n");
 							// Check if current message is short and if there's a next message
-							if (strlen(currentMsg->content) <= 65 && nextMsg && 
-									strlen(nextMsg->content) <= 65 && 
-									previousMessagePage + 1 < historyMessageCount) {
+							if (strlen(currentMsg->content) <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
 									// Display both messages
-									displayTimeAndMessage(display, x, y, 0, 
-											history.getSecondsSince(previousMessagePage, currentTime),
-											currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
+									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
 									
-									displayTimeAndMessage(display, x, y, 4,
-											history.getSecondsSince(previousMessagePage + 1, currentTime),
-											nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
+									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1, currentTime), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
 
 									// Skip the next message in the next iteration since we displayed it
-									previousMessagePage++;
+									// previousMessagePage++;
 							} else {
 									// Display single message
-									displayTimeAndMessage(display, x, y, 0,
-											history.getSecondsSince(previousMessagePage, currentTime),
-											currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
-							}
-							handlePageChange();
-							showedLastPreviousMessage = true;
+									LOG_INFO("Displaying only single message\n");
+									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
 					} // end if currentMsg
+					else {
+						LOG_INFO("currentMsg is null\n");
+						showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
+				}
 			}
     }
+    handlePageChange();
+		showedLastPreviousMessage = true;
 
 if (lastMsg && mp.decoded.payload.bytes) {
     size_t payloadLen = strnlen(reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf) - 1);
     safeStringCopy(tempBuf, reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf));
     
-    if (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0) {
-			if (lastMsg->content[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
+		// NOTE: I added !firstRunThroughMessages, not sure if needed/wanted. Main overall problem is that it's not adding first msg to firstMessageToIgnore. Also I think it's not ignoring * msgs
+    if (!firstRunThroughMessages && (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0)) {
+			// if (lastMsg->content[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
+			// TODO: testing below, see if works better than above when receive a prvMsg from router
+			// actually it should have never gotten to this point. keeps thinking that router msgs are always new
+			
+			LOG_INFO("firstMessageToIgnore value: %s\n", firstMessageToIgnore);
+			LOG_INFO("firstRunThroughMessages value: %d\n", firstRunThroughMessages);
+			if (tempBuf[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
 			previousMessagePage = 0;
     }
 }
@@ -1374,7 +1373,7 @@ return;
 					LOG_INFO("In first run through messages\n");
 					// strcpy(firstMessageToIgnore, tempBuf);
 					history.setFirstMessageToIgnore(tempBuf);
-					LOG_INFO("firstMessageToIgnore");
+					LOG_INFO("firstMessageToIgnore: %s\n", tempBuf);
 					firstRunThroughMessages = false;
 				}
 #else
@@ -3291,7 +3290,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 		// 	}
 		// }
 		if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-		LOG_INFO("Got UP on previous msg screen\n");
+		// LOG_INFO("Got UP on previous msg screen\n");
 		// LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
 		// if ((history.getTotalMessageCount() > 1) && (previousMessagePage < 3)) {
 		if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
@@ -3299,12 +3298,13 @@ int Screen::handleInputEvent(const InputEvent *event)
 		}
 	}
 	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-		LOG_INFO("Got DOWN on previous msg screen\n");
+		// LOG_INFO("Got DOWN on previous msg screen\n");
 		// LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
 		if (previousMessagePage > 0) previousMessagePage--;
 	}
-	LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
+		LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 		}
+		LOG_INFO("showedLastPreviousMessage value: %d\n", showedLastPreviousMessage);
 		showedLastPreviousMessage = false;
 	}
 }
