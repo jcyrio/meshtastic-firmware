@@ -29,14 +29,15 @@ public:
     MessageHistory();
     
     // Main method for adding new messages
-    void addMessage(const char* content, const char* nodeName, uint32_t currentTime);
+    void addMessage(const char* content, const char* nodeName);
     
     // Accessor methods
     const MessageRecord* getMessageAt(size_t position) const;
-    uint32_t getSecondsSince(size_t position, uint32_t currentTime) const;
+    uint32_t getSecondsSince(size_t position) const;
     uint32_t getTotalMessageCount() const;
     bool wasLastMessagePreviousMsgs() const;
     void setFirstMessageToIgnore(const char* msg);
+		const char* getFirstMessageToIgnore() const;
 
 private:
     std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;

@@ -72,7 +72,7 @@ char brightnessLevel = 'H';
 // bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
 bool showedLastPreviousMessage = false;
-char firstMessageToIgnore[237] = {'\0'};
+// char firstMessageToIgnore[237] = {'\0'};
 int historyMessageCount;
 
 static uint8_t previousMessagePage = 0;
@@ -105,27 +105,26 @@ private:
     size_t currentIndex = 0;
     uint32_t totalMessageCount = 0;
     bool firstRunThrough = true;
-    char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     bool lastMessageWasPreviousMsgs = false;
 
 public:
+    char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) {
             msg.clear();
         }
-				addMessage("Demo of the new system to scroll message history", "FCyr", 1731860857);
-				addMessage("Messages are stored locally in RAM", "FCyr", 1731860797);
-				addMessage("Currently no local disc storage", "FCyr", 1731860737);
-				addMessage("Messages are not saved after restart", "FCyr", 1731860677);
-				addMessage("This is a longer message, much longer than the others. When a message is larger than half the screen, only one message will show.", "FCyr", 1638409320);
-				addMessage("And this is an even longer message. When a message is larger than an entire screen, then a smaller font will be used so that the entire message can fit. Note that there is still a 200 character limit though.", "FCyr", 1731860617);
-				addMessage("Testing message system1", "FCyr", 1731860557);
-				addMessage("Testing message system2", "FCyr", 1731860497);
-				addMessage("Testing message system3", "FCyr", 1731860437);
-				addMessage("This is my last message in history", "FCyr", 1731860377);
+				// addMessage("This is my last message in history", "FCyr");
+				// addMessage("Messages are stored locally in RAM", "FCyr");
+				// addMessage("Currently no local disc storage", "FCyr");
+				// addMessage("Messages are not saved after restart", "FCyr");
+				// addMessage("And this is an even longer message. When a message is larger than an entire screen, then a smaller font will be used so that the entire message can fit. Note that there is still a 200 character limit though.", "FCyr");
+				// addMessage("This is a longer message, much longer than the others. When a message is larger than half the screen, only one message will show.", "FCyr");
+				// addMessage("Testing message system2", "FCyr");
+				// addMessage("Testing message system1", "FCyr");
+				// addMessage("Demo of the new system to scroll message history", "FCyr");
     }
 
-    void addMessage(const char* content, const char* nodeName, uint32_t currentTime) {
+    void addMessage(const char* content, const char* nodeName) {
         if (!content || content[0] == '*') {
             lastMessageWasPreviousMsgs = (content && content[0] == '*');
             return;
@@ -154,7 +153,7 @@ public:
 				strncpy(record.nodeName, nodeName, MAX_NODE_NAME_LENGTH - 1);
         record.nodeName[MAX_NODE_NAME_LENGTH - 1] = '\0';
         
-        record.timestamp = currentTime;
+        record.timestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
         totalMessageCount++;
         lastMessageWasPreviousMsgs = false;
     }
@@ -166,10 +165,10 @@ public:
         return &messages[index];
     }
 
-    uint32_t getSecondsSince(size_t position, uint32_t currentTime) const {
+    uint32_t getSecondsSince(size_t position) const {
         const MessageRecord* record = getMessageAt(position);
         if (!record || record->timestamp == 0) return 0;
-        return currentTime - record->timestamp;
+				return getValidTime(RTCQuality::RTCQualityDevice, true) - record->timestamp;
     }
 
     // Getter methods
@@ -177,9 +176,13 @@ public:
     bool wasLastMessagePreviousMsgs() const { return lastMessageWasPreviousMsgs; }
     
     void setFirstMessageToIgnore(const char* msg) {
+			LOG_INFO("inside setFirstMessageToIgnore");
         strncpy(firstMessageToIgnore, msg, MAX_MESSAGE_LENGTH - 1);
         firstMessageToIgnore[MAX_MESSAGE_LENGTH - 1] = '\0';
+			LOG_INFO("firstMessageToIgnore: %s", firstMessageToIgnore);
     }
+
+		const char* getFirstMessageToIgnore() const { return firstMessageToIgnore; }
 };
 
 MessageHistory history;
@@ -1100,6 +1103,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     
     char tempBuf[64];
     uint8_t timestampHours, timestampMinutes;
+		uint8_t msgLen = strlen(messageContent);
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
 		if (historyMessageCount > 10) historyMessageCount = 10;
@@ -1116,7 +1120,9 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		display->setColor(BLACK);
 		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
+		if (msgLen > 190) display->setFont(FONT_SMALL);
 		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
+		if (msgLen > 190) display->setFont(FONT_LARGE);
 }
 #endif
 
@@ -1157,24 +1163,33 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // For time delta
 #ifdef SIMPLE_TDECK
 		const MessageRecord* lastMsg = history.getMessageAt(0);
+		//TODO: remove this later, just for fixing bug
+			LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
+			LOG_INFO("firstMessageToIgnore new: %s\n", history.getFirstMessageToIgnore());
 		if (strcmp(tempBuf, lastMsg->content) != 0) {
-			// LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
+			LOG_INFO("Received new message!\n");
+			previousMessagePage = 0;
+			// ON BOOTUP THIS IS BLANK
 			LOG_INFO("tempBuf: %s\n", tempBuf);
 			LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
 			// todo: might remove below, already checking for '*' in addMessage
-			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
-		// Get the most recent message to check for duplicates
-		char currentNodeName[5] = {'\0'};
-		if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
-		else strcpy(currentNodeName, "???");
 		const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-		LOG_INFO("Adding message: %s\n", messageContent);
-		LOG_INFO("From node: %s\n", currentNodeName);
-		history.addMessage(messageContent, currentNodeName, getValidTime(RTCQuality::RTCQualityDevice, true));
-		LOG_INFO("totalMessageCount: %d\n", historyMessageCount);
-		LOG_INFO("lastMsg: %s\n", lastMsg->content);
-	// bool isDuplicate = lastMsg && (strcmp(lastMsg->content, tempBuf) == 0);
-		}
+		if (messageContent[0] != '*') {
+			LOG_INFO("totalMessageCount: %d\n", historyMessageCount);
+			LOG_INFO("lastMsg: %s\n", lastMsg->content);
+			// if (historyMessageCount == 0 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
+			if (historyMessageCount == 1 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
+				// Get the most recent message to check for duplicates
+				char currentNodeName[5] = {'\0'};
+				if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+				else strcpy(currentNodeName, "???");
+				LOG_INFO("Adding message: %s\n", messageContent);
+				LOG_INFO("From node: %s\n", currentNodeName);
+				// history.addMessage(messageContent, currentNodeName, getValidTime(RTCQuality::RTCQualityDevice, true));
+				history.addMessage(messageContent, currentNodeName);
+				// bool isDuplicate = lastMsg && (strcmp(lastMsg->content, tempBuf) == 0);
+			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
+		} else LOG_INFO("not adding message to history because starts with *\n");
 		}
     uint32_t seconds = sinceReceived(&mp);
     uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
@@ -1215,19 +1230,20 @@ if (previousMessagePage == 0) {
 
 					if (currentMsg) {
 						LOG_INFO("Have currentMsg\n");
+						uint8_t msgLen = strlen(currentMsg->content);
 							// Check if current message is short and if there's a next message
-							if (strlen(currentMsg->content) <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
+							if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
 									// Display both messages
-									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
+									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
 									
-									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1, currentTime), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
+									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
 
 									// Skip the next message in the next iteration since we displayed it
 									// previousMessagePage++;
-							} else {
-									// Display single message
-									LOG_INFO("Displaying only single message\n");
-									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
+							} else { // Display single message
+									// LOG_INFO("Displaying only single message\n");
+									// if the length is over 180 char, then make font small
+									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
 					} // end if currentMsg
 					else {
 						LOG_INFO("currentMsg is null\n");
@@ -1244,14 +1260,24 @@ if (lastMsg && mp.decoded.payload.bytes) {
     
 		// NOTE: I added !firstRunThroughMessages, not sure if needed/wanted. Main overall problem is that it's not adding first msg to firstMessageToIgnore. Also I think it's not ignoring * msgs
     if (!firstRunThroughMessages && (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0)) {
+    // if (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0) {
 			// if (lastMsg->content[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
 			// TODO: testing below, see if works better than above when receive a prvMsg from router
 			// actually it should have never gotten to this point. keeps thinking that router msgs are always new
 			
-			LOG_INFO("firstMessageToIgnore value: %s\n", firstMessageToIgnore);
+			LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
 			LOG_INFO("firstRunThroughMessages value: %d\n", firstRunThroughMessages);
-			if (tempBuf[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
-			previousMessagePage = 0;
+			// if (tempBuf[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
+			// LOG_INFO("Adding message1: %s\n", tempBuf);
+			// previousMessagePage = 0;
+
+				if (firstRunThroughMessages) {
+					LOG_INFO("In first run through messages\n");
+					history.setFirstMessageToIgnore(tempBuf);
+					LOG_INFO("firstMessageToIgnore: %s\n", tempBuf);
+					firstRunThroughMessages = false;
+				}
+			// NOTE: This is the true spot where the inital boootup mesg is stored!
     }
 }
 return;
@@ -1368,13 +1394,6 @@ return;
 					display->setFont(FONT_SMALL);
 					display->drawStringMaxWidth(0 + x, 13 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 					display->setFont(FONT_LARGE);
-				}
-				if (firstRunThroughMessages) {
-					LOG_INFO("In first run through messages\n");
-					// strcpy(firstMessageToIgnore, tempBuf);
-					history.setFirstMessageToIgnore(tempBuf);
-					LOG_INFO("firstMessageToIgnore: %s\n", tempBuf);
-					firstRunThroughMessages = false;
 				}
 #else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
