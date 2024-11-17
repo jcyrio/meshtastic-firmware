@@ -72,7 +72,8 @@ char brightnessLevel = 'H';
 // bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
 bool showedLastPreviousMessage = false;
-// char firstMessageToIgnore[237] = {'\0'};
+char lastReceivedMessage[237] = {'\0'};
+bool receivedNewMessage = false;
 int historyMessageCount;
 
 static uint8_t previousMessagePage = 0;
@@ -181,8 +182,6 @@ public:
         firstMessageToIgnore[MAX_MESSAGE_LENGTH - 1] = '\0';
 			LOG_INFO("firstMessageToIgnore: %s", firstMessageToIgnore);
     }
-
-		const char* getFirstMessageToIgnore() const { return firstMessageToIgnore; }
 };
 
 MessageHistory history;
@@ -1163,23 +1162,39 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // For time delta
 #ifdef SIMPLE_TDECK
 		const MessageRecord* lastMsg = history.getMessageAt(0);
+		const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
 		//TODO: remove this later, just for fixing bug
 			LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
-			LOG_INFO("firstMessageToIgnore new: %s\n", history.getFirstMessageToIgnore());
-		if (strcmp(tempBuf, lastMsg->content) != 0) {
+			LOG_INFO("lastMsg->content here: %s\n", lastMsg->content);
+		if (firstRunThroughMessages) {
+			LOG_INFO("In first run through messages\n");
+			history.setFirstMessageToIgnore(messageContent);
+			LOG_INFO("firstMessageToIgnore: %s\n", messageContent);
+			firstRunThroughMessages = false;
+		}
+		// if (strcmp(messageContent, lastMsg->content) != 0) {
+		if (strcmp(messageContent, lastReceivedMessage) != 0) {
+			lastReceivedMessage[0] = '\0'; strcpy(lastReceivedMessage, messageContent);
 			LOG_INFO("Received new message!\n");
+			receivedNewMessage = true;
 			previousMessagePage = 0;
-			// ON BOOTUP THIS IS BLANK
-			LOG_INFO("tempBuf: %s\n", tempBuf);
-			LOG_INFO("lastMsg->content: %s\n", lastMsg->content);
 			// todo: might remove below, already checking for '*' in addMessage
-		const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+			// Below is for deciding when to add a message to the history
 		if (messageContent[0] != '*') {
 			LOG_INFO("totalMessageCount: %d\n", historyMessageCount);
-			LOG_INFO("lastMsg: %s\n", lastMsg->content);
+			LOG_INFO("messageContent: %s\n", messageContent);
+			LOG_INFO("firstMessageToIgnore %s\n", history.firstMessageToIgnore);
 			// if (historyMessageCount == 0 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
-			if (historyMessageCount == 1 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
+			if (strcmp(history.firstMessageToIgnore, messageContent) == 0) {
+				LOG_INFO("firstMessageToIgnore is same as messageContent\n");
+			} else {
+				LOG_INFO("firstMessageToIgnore is different\n");
+			}
+				
+			// if (historyMessageCount == 0 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
+			if (strcmp(history.firstMessageToIgnore, messageContent) != 0) {
 				// Get the most recent message to check for duplicates
+				LOG_INFO("history.firstMessageToIgnore is different than messageContent\n");
 				char currentNodeName[5] = {'\0'};
 				if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 				else strcpy(currentNodeName, "???");
@@ -1190,12 +1205,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				// bool isDuplicate = lastMsg && (strcmp(lastMsg->content, tempBuf) == 0);
 			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
 		} else LOG_INFO("not adding message to history because starts with *\n");
-		}
-    uint32_t seconds = sinceReceived(&mp);
+	} else receivedNewMessage = false;
     uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
-#else
-    uint32_t seconds = sinceReceived(&mp);
 #endif
+    uint32_t seconds = sinceReceived(&mp);
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
@@ -1253,34 +1266,28 @@ if (previousMessagePage == 0) {
     }
     handlePageChange();
 		showedLastPreviousMessage = true;
+// return;
+#ifdef THISISDISABLED
 
-if (lastMsg && mp.decoded.payload.bytes) {
-    size_t payloadLen = strnlen(reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf) - 1);
-    safeStringCopy(tempBuf, reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf));
+// if (lastMsg && mp.decoded.payload.bytes) {
+//     size_t payloadLen = strnlen(reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf) - 1);
+//     safeStringCopy(tempBuf, reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf));
     
 		// NOTE: I added !firstRunThroughMessages, not sure if needed/wanted. Main overall problem is that it's not adding first msg to firstMessageToIgnore. Also I think it's not ignoring * msgs
-    if (!firstRunThroughMessages && (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0)) {
+    // if (!firstRunThroughMessages && (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0)) {
     // if (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0) {
 			// if (lastMsg->content[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
 			// TODO: testing below, see if works better than above when receive a prvMsg from router
 			// actually it should have never gotten to this point. keeps thinking that router msgs are always new
 			
-			LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
-			LOG_INFO("firstRunThroughMessages value: %d\n", firstRunThroughMessages);
+			// LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
+			// LOG_INFO("firstRunThroughMessages value: %d\n", firstRunThroughMessages);
 			// if (tempBuf[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
 			// LOG_INFO("Adding message1: %s\n", tempBuf);
 			// previousMessagePage = 0;
-
-				if (firstRunThroughMessages) {
-					LOG_INFO("In first run through messages\n");
-					history.setFirstMessageToIgnore(tempBuf);
-					LOG_INFO("firstMessageToIgnore: %s\n", tempBuf);
-					firstRunThroughMessages = false;
-				}
 			// NOTE: This is the true spot where the inital boootup mesg is stored!
-    }
-}
-return;
+    // }
+// }
 
 
 
@@ -1291,11 +1298,6 @@ return;
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
 
-#ifdef SIMPLE_TDECK //top line has white background
-		display->setColor(WHITE);
-		display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
-		display->setColor(BLACK);
-#endif
     // If bold, draw twice, shifting right by one pixel
     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
         // Show a timestamp if received today, but longer than 15 minutes ago
@@ -1383,65 +1385,13 @@ return;
                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-#ifdef SIMPLE_TDECK
-				// uint8_t linePos = 1;
-				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
-				// LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
-				if (strlen(tempBuf) < 200) {
-					display->setFont(FONT_LARGE);
-					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
-				} else { // smaller font for long messages
-					display->setFont(FONT_SMALL);
-					display->drawStringMaxWidth(0 + x, 13 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-					display->setFont(FONT_LARGE);
-				}
-#else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-#endif
     }
-#ifdef SIMPLE_TDECK
-		// if ((strcmp(lastMessageContent2, tempBuf) != 0) && (strcmp(firstMessageToIgnore, tempBuf) != 0)) {
-		// 	if (strcmp(firstMessageToIgnore, tempBuf) != 0) {
-		// 		if (tempBuf[0] != '*') {
-		// 			lastMessageWasPreviousMsgs = false;
-		// 			strcpy(lastMessageContent4, lastMessageContent3);
-		// 			strcpy(lastMessageContent3, lastMessageContent2);
-		// 			strcpy(lastMessageContent2, tempBuf);
-		// 		} else lastMessageWasPreviousMsgs = true;
-		// 	} else strcpy(firstMessageToIgnore, "");
-		// }
-		// uint32_t secondsSinceThirdLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - thirdLastMessageTimestamp;
-		// uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-		// uint8_t linePosition;
-		//if there are 3 messages and they're all not too long
-		// counting 60 as 2 lines, 82 as 3 lines
-  //   if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
-  //       (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
-  //       (lastMessageContent2[0] != '*')) {
-  //       // Display time and sender for 2nd last message
-		// 		if (strlen(lastMessageContent2) < 82) linePosition = 3; // 82 is about 3 lines
-		// 		else linePosition = 4;
-		// 		uint32_t msgCount = totalMessageCount - 1;
-  //       displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
-  //       // Display time and sender for 3rd last message
-		// 		if (strlen(lastMessageContent4) < 30) linePosition = 6;
-		// 		else linePosition = 5;
-		// 		msgCount = totalMessageCount - 2;
-  //       displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
-		//
-		// // if there are 2 messages and the top one isn't too long
-  //   } else if ((strlen(lastMessageContent2) < 82) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {  // 82 should be 3 lines
-		// 	if (strlen(lastMessageContent2) < 30) linePosition = 4;
-		// 	else linePosition = 5;
-		// 	uint32_t msgCount = totalMessageCount - 1;
-		// 	displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
-		// } // end 2 messages
-	//end
-#endif
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
+#endif //THISISDISABLED
 }
 
 /// Draw a series of fields in a column, wrapping to multiple columns if needed
