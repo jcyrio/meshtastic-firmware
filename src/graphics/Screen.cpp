@@ -1123,13 +1123,13 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		display->setColor(BLACK);
 		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
-		if (msgLen > 190) display->setFont(FONT_SMALL);
-		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
-    // if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44D") == 0) {
-    //     display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2,
-    //                      y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height,
-    //                      thumbup);
-		if (msgLen > 190) display->setFont(FONT_LARGE);
+    if (strcmp(messageContent, u8"\U0001F44D") == 0) { display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2), thumbs_width, thumbs_height, thumbup);
+		} else if (strcmp(messageContent, u8"\U0001F60A") == 0 || strcmp(messageContent, u8"\U0001F600") == 0 || strcmp(messageContent, u8"\U0001F642") == 0 || strcmp(messageContent, u8"\U0001F609") == 0 || strcmp(messageContent, u8"\U0001F601") == 0) { display->drawXbm(x + (SCREEN_WIDTH - smiley_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - smiley_height, smiley_width, smiley_height, smiley);
+		} else {
+			if (msgLen > 190) display->setFont(FONT_SMALL);
+			display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
+			if (msgLen > 190) display->setFont(FONT_LARGE);
+		}
 }
 #endif
 
