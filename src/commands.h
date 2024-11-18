@@ -14,5 +14,8 @@ enum class Cmd {
     STOP_BOOT_SCREEN,
     PRINT,
     SHOW_PREV_FRAME,
-    SHOW_NEXT_FRAME
+    SHOW_NEXT_FRAME,
+#ifdef SIMPLE_TDECK
+		DO_FAST_REFRESH
+#endif
 };

@@ -157,6 +157,7 @@ void initDeepSleep()
 #endif
 
 #endif
+		// digitalWrite(KB_POWERON, HIGH);
 }
 
 bool doPreflightSleep()
@@ -194,6 +195,8 @@ static void waitEnterSleep(bool skipPreflight = false)
 			LOG_INFO("LED was previously on, enabling gpio_hold_en\n");
 			gpio_hold_en((gpio_num_t)43);
 		}
+		// cut keyboard power
+		// digitalWrite(KB_POWERON, LOW);
 #endif
 
     notifySleep.notifyObservers(NULL);

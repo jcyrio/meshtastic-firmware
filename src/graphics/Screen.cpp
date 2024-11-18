@@ -69,25 +69,129 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
 char brightnessLevel = 'H';
-char lastMessageContent2[237] = {'\0'};
-char lastMessageContent3[237] = {'\0'};
-char lastMessageContent4[237] = {'\0'};
-bool receivedNewMessage = false;
-char lastNodeName[5] = {'\0'};
-char secondLastNodeName[5] = {'\0'};
-char thirdLastNodeName[5] = {'\0'};
-bool lastMessageWasPreviousMsgs = false;
+// bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
-char firstMessageToIgnore[237] = {'\0'};
+bool showedLastPreviousMessage = false;
+char lastReceivedMessage[237] = {'\0'};
+bool receivedNewMessage = false;
+int historyMessageCount;
 
-static uint32_t lastMessageTimestamp = 0;
-static uint32_t secondLastMessageTimestamp = 0;
-static uint32_t thirdLastMessageTimestamp = 0;
-uint32_t totalMessageCount = 0;
+static uint8_t previousMessagePage = 0;
+static uint8_t lastPreviousMessagePage = 0;
+// uint32_t totalMessageCount = 0;
+
+constexpr size_t MAX_MESSAGE_HISTORY = 10;  // Easily adjustable number of messages to store
+constexpr size_t MAX_MESSAGE_LENGTH = 237;
+constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+
+struct MessageRecord {
+    char content[MAX_MESSAGE_LENGTH];
+    char nodeName[MAX_NODE_NAME_LENGTH];
+    uint32_t timestamp;
+    
+    MessageRecord() {
+        clear();
+    }
+    
+    void clear() {
+        content[0] = '\0';
+        nodeName[0] = '\0';
+        timestamp = 0;
+    }
+};
+
+class MessageHistory {
+private:
+    std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
+    size_t currentIndex = 0;
+    uint32_t totalMessageCount = 0;
+    bool firstRunThrough = true;
+    bool lastMessageWasPreviousMsgs = false;
+
+public:
+    char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
+    MessageHistory() {
+        for (auto& msg : messages) {
+            msg.clear();
+        }
+				// addMessage("This is my last message in history", "FCyr");
+				// addMessage("Messages are stored locally in RAM", "FCyr");
+				// addMessage("Currently no local disc storage", "FCyr");
+				// addMessage("Messages are not saved after restart", "FCyr");
+				// addMessage("And this is an even longer message. When a message is larger than an entire screen, then a smaller font will be used so that the entire message can fit. Note that there is still a 200 character limit though.", "FCyr");
+				// addMessage("This is a longer message, much longer than the others. When a message is larger than half the screen, only one message will show.", "FCyr");
+				// addMessage("Testing message system2", "FCyr");
+				// addMessage("Testing message system1", "FCyr");
+				// addMessage("Demo of the new system to scroll message history", "FCyr");
+    }
+
+    void addMessage(const char* content, const char* nodeName) {
+        if (!content || content[0] == '*') {
+            lastMessageWasPreviousMsgs = (content && content[0] == '*');
+            return;
+        }
+
+        // Check if this is a message to ignore
+        if (strcmp(firstMessageToIgnore, content) == 0) {
+            memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
+            return;
+        }
+
+        // Check if this is a duplicate of the last message
+        if (currentIndex < messages.size() && 
+            strcmp(messages[currentIndex].content, content) == 0) {
+            return;
+        }
+
+        // Update index for circular buffer
+        currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
+        
+        // Store the new message
+        MessageRecord& record = messages[currentIndex];
+        strncpy(record.content, content, MAX_MESSAGE_LENGTH - 1);
+        record.content[MAX_MESSAGE_LENGTH - 1] = '\0';
+        
+				strncpy(record.nodeName, nodeName, MAX_NODE_NAME_LENGTH - 1);
+        record.nodeName[MAX_NODE_NAME_LENGTH - 1] = '\0';
+        
+        record.timestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
+        totalMessageCount++;
+        lastMessageWasPreviousMsgs = false;
+    }
+
+    // Helper methods to access message history
+    const MessageRecord* getMessageAt(size_t position) const {
+        if (position >= MAX_MESSAGE_HISTORY) return nullptr;
+        size_t index = (currentIndex + MAX_MESSAGE_HISTORY - position) % MAX_MESSAGE_HISTORY;
+        return &messages[index];
+    }
+
+    uint32_t getSecondsSince(size_t position) const {
+        const MessageRecord* record = getMessageAt(position);
+        if (!record || record->timestamp == 0) return 0;
+				return getValidTime(RTCQuality::RTCQualityDevice, true) - record->timestamp;
+    }
+
+    // Getter methods
+    uint32_t getTotalMessageCount() const { return totalMessageCount; }
+    bool wasLastMessagePreviousMsgs() const { return lastMessageWasPreviousMsgs; }
+    
+    void setFirstMessageToIgnore(const char* msg) {
+			LOG_INFO("inside setFirstMessageToIgnore");
+        strncpy(firstMessageToIgnore, msg, MAX_MESSAGE_LENGTH - 1);
+        firstMessageToIgnore[MAX_MESSAGE_LENGTH - 1] = '\0';
+			LOG_INFO("firstMessageToIgnore: %s", firstMessageToIgnore);
+    }
+};
+
+MessageHistory history;
 
 namespace graphics
 {
-
+// uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
+// history.addMessage("Msg1", "frc", currentTime - 300);
+// history.addMessage("Msg2", "frc", currentTime - 180);
+// history.addMessage("Msg3", "frc", currentTime - 20);
 // This means the *visible* area (sh1106 can address 132, but shows 128 for example)
 #define IDLE_FRAMERATE 1 // in fps
 
@@ -974,33 +1078,50 @@ bool deltaToTimestamp(uint32_t secondsAgo, uint8_t *hours, uint8_t *minutes, int
 }
 
 #ifdef SIMPLE_TDECK
+bool handlePageChange() {
+    if (previousMessagePage != lastPreviousMessagePage) {
+        LOG_INFO("Page changed, trying to force fast refresh\n");
+        screen->fastRefreshPrevMsgs();
+        lastPreviousMessagePage = previousMessagePage;
+        return true;
+    }
+    return false;
+}
+
+void safeStringCopy(char* dest, const char* src, size_t size) {
+    if (!dest || !src || size == 0) return;
+    strncpy(dest, src, size - 1);
+    dest[size - 1] = '\0';
+}
+
 // Helper function to display time delta and sender
-void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount)
-{
+void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount) {
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
     
     char tempBuf[64];
     uint8_t timestampHours, timestampMinutes;
+		uint8_t msgLen = strlen(messageContent);
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
+		if (historyMessageCount > 10) historyMessageCount = 10;
 
-    display->setColor(WHITE);
-    display->fillRect(x, y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
-    display->setColor(BLACK);
-
-    for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
-			if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) At %02hu:%02hu %s", msgCount, timestampHours, timestampMinutes, nodeName);
-			} else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) Yest %02hu:%02hu %s", msgCount,  timestampHours, timestampMinutes, nodeName);
-			} else {
-					display->drawStringf(xOff + x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf, "%u) %s ago from %s", msgCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
-			}
+		if (useTimestamp && minutes >= 15 && daysAgo == 0) {
+				snprintf(tempBuf, sizeof(tempBuf), "%u/%u) At %02hu:%02hu %s", msgCount, historyMessageCount, timestampHours, timestampMinutes, nodeName);
+		} else if (useTimestamp && daysAgo == 1) {
+				snprintf(tempBuf, sizeof(tempBuf), "%u/%u) Yest %02hu:%02hu %s", msgCount, historyMessageCount, timestampHours, timestampMinutes, nodeName);
+		} else {
+				snprintf(tempBuf, sizeof(tempBuf), "%u/%u) %s ago from %s", msgCount, historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
 		}
+		display->setColor(WHITE);
+		display->fillRect(x, y + FONT_HEIGHT_LARGE * linePosition, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+		display->setColor(BLACK);
+		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
+		if (msgLen > 190) display->setFont(FONT_SMALL);
 		display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
+		if (msgLen > 190) display->setFont(FONT_LARGE);
 }
 #endif
 
@@ -1022,84 +1143,184 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     // Demo for drawStringMaxWidth:
     // with the third parameter you can define the width after which words will
     // be wrapped. Currently only spaces and "-" are allowed for wrapping
-    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    // display->setTextAlignment(TEXT_ALIGN_LEFT);
 #ifdef SIMPLE_TDECK
+		historyMessageCount = history.getTotalMessageCount();
     display->setFont(FONT_LARGE);
-    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
-        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
-        display->setColor(BLACK);
-    }
+    // if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+    //     display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
+    //     display->setColor(BLACK);
+    // }
 #else
-    display->setFont(FONT_SMALL);
-    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
-        display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
-        display->setColor(BLACK);
-    }
+    // display->setFont(FONT_SMALL);
+    // if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_INVERTED) {
+    //     display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_SMALL);
+    //     display->setColor(BLACK);
+    // }
 #endif
 
     // For time delta
 #ifdef SIMPLE_TDECK
-		if (receivedNewMessage) {
-			LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-			if (reinterpret_cast<const char *>(mp.decoded.payload.bytes)[0] != '*') {
-				totalMessageCount++;
-				thirdLastMessageTimestamp = secondLastMessageTimestamp;
-				secondLastMessageTimestamp = lastMessageTimestamp;
-				lastMessageTimestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-				
-				LOG_INFO("Received new message, last was from node: %s\n", lastNodeName);
-				strcpy(thirdLastNodeName, secondLastNodeName);
-				strcpy(secondLastNodeName, lastNodeName);
-				LOG_INFO("secondLastNodeName: %s\n", secondLastNodeName);
-				receivedNewMessage = false;
-				if (node && node->has_user) strncpy(lastNodeName, node->user.short_name, sizeof(lastNodeName));
-				// if (node && node->has_user) strncpy(lastNodeName, "???", sizeof(lastNodeName));
-				else strcpy(lastNodeName, "???");
-			}
+		const MessageRecord* lastMsg = history.getMessageAt(0);
+		const char* messageContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+		//TODO: remove this later, just for fixing bug
+			LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
+			LOG_INFO("lastMsg->content here: %s\n", lastMsg->content);
+		if (firstRunThroughMessages) {
+			LOG_INFO("In first run through messages\n");
+			history.setFirstMessageToIgnore(messageContent);
+			LOG_INFO("firstMessageToIgnore: %s\n", messageContent);
+			firstRunThroughMessages = false;
 		}
-    uint32_t seconds = sinceReceived(&mp);
-#else
-    uint32_t seconds = sinceReceived(&mp);
+		// if (strcmp(messageContent, lastMsg->content) != 0) {
+		if (strcmp(messageContent, lastReceivedMessage) != 0) {
+			lastReceivedMessage[0] = '\0'; strcpy(lastReceivedMessage, messageContent);
+			LOG_INFO("Received new message!\n");
+			receivedNewMessage = true;
+			previousMessagePage = 0;
+			// todo: might remove below, already checking for '*' in addMessage
+			// Below is for deciding when to add a message to the history
+		if (messageContent[0] != '*') {
+			LOG_INFO("totalMessageCount: %d\n", historyMessageCount);
+			LOG_INFO("messageContent: %s\n", messageContent);
+			LOG_INFO("firstMessageToIgnore %s\n", history.firstMessageToIgnore);
+			// if (historyMessageCount == 0 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
+			if (strcmp(history.firstMessageToIgnore, messageContent) == 0) {
+				LOG_INFO("firstMessageToIgnore is same as messageContent\n");
+			} else {
+				LOG_INFO("firstMessageToIgnore is different\n");
+			}
+				
+			// if (historyMessageCount == 0 and (strcmp(history.firstMessageToIgnore, messageContent) != 0)) {
+			if (strcmp(history.firstMessageToIgnore, messageContent) != 0) {
+				// Get the most recent message to check for duplicates
+				LOG_INFO("history.firstMessageToIgnore is different than messageContent\n");
+				char currentNodeName[5] = {'\0'};
+				if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+				else strcpy(currentNodeName, "???");
+				LOG_INFO("Adding message: %s\n", messageContent);
+				LOG_INFO("From node: %s\n", currentNodeName);
+				// history.addMessage(messageContent, currentNodeName, getValidTime(RTCQuality::RTCQualityDevice, true));
+				history.addMessage(messageContent, currentNodeName);
+				// bool isDuplicate = lastMsg && (strcmp(lastMsg->content, tempBuf) == 0);
+			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
+		} else LOG_INFO("not adding message to history because starts with *\n");
+	} else receivedNewMessage = false;
+    uint32_t currentTime = getValidTime(RTCQuality::RTCQualityDevice, true);
 #endif
+    uint32_t seconds = sinceReceived(&mp);
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
 		// LOG_INFO("seconds: %u\n", seconds);
 		// LOG_INFO("minutes: %u\n", minutes);
 
+if (previousMessagePage == 0) {
+    char currentNodeName[5] = {'\0'};
+    if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+    else strcpy(currentNodeName, "???");
+    displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, reinterpret_cast<const char*>(mp.decoded.payload.bytes), 1);
+} else { // handle history display
+	// LOG_INFO("previousMessagePage START: %d\n", previousMessagePage);
+ //    
+ //    if (previousMessagePage < historyMessageCount) {
+ //        const MessageRecord* msg = history.getMessageAt(previousMessagePage);
+ //        if (msg) {
+ //            // LOG_INFO("Message[%d]->content: %s\n", previousMessagePage, msg->content);
+ //            // LOG_INFO("Message[%d]->nodeName: %s\n\n", previousMessagePage, msg->nodeName);
+ //            displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage, currentTime), msg->nodeName, msg->content, previousMessagePage + 1);
+ //            handlePageChange();
+	// 					showedLastPreviousMessage = true;
+ //        }
+ //    }
+	// 	LOG_INFO("previousMessagePage END: %d\n", previousMessagePage);
+	//
+	
+			if (previousMessagePage < historyMessageCount) {
+					LOG_INFO("previousMessagePage < historyMessageCount\n");
+					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
+					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
+
+					if (currentMsg) {
+						LOG_INFO("Have currentMsg\n");
+						uint8_t msgLen = strlen(currentMsg->content);
+							// Check if current message is short and if there's a next message
+							if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
+									// Display both messages
+									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
+									
+									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
+
+									// Skip the next message in the next iteration since we displayed it
+									// previousMessagePage++;
+							} else { // Display single message
+									// LOG_INFO("Displaying only single message\n");
+									// if the length is over 180 char, then make font small
+									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
+					} // end if currentMsg
+					else {
+						LOG_INFO("currentMsg is null\n");
+						showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
+				}
+			}
+    }
+    handlePageChange();
+		showedLastPreviousMessage = true;
+// return;
+#ifdef THISISDISABLED
+
+// if (lastMsg && mp.decoded.payload.bytes) {
+//     size_t payloadLen = strnlen(reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf) - 1);
+//     safeStringCopy(tempBuf, reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf));
+    
+		// NOTE: I added !firstRunThroughMessages, not sure if needed/wanted. Main overall problem is that it's not adding first msg to firstMessageToIgnore. Also I think it's not ignoring * msgs
+    // if (!firstRunThroughMessages && (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0)) {
+    // if (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0) {
+			// if (lastMsg->content[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
+			// TODO: testing below, see if works better than above when receive a prvMsg from router
+			// actually it should have never gotten to this point. keeps thinking that router msgs are always new
+			
+			// LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
+			// LOG_INFO("firstRunThroughMessages value: %d\n", firstRunThroughMessages);
+			// if (tempBuf[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
+			// LOG_INFO("Adding message1: %s\n", tempBuf);
+			// previousMessagePage = 0;
+			// NOTE: This is the true spot where the inital boootup mesg is stored!
+    // }
+// }
+
+
+
+
+		
     // For timestamp
     uint8_t timestampHours, timestampMinutes;
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
 
-#ifdef SIMPLE_TDECK //top line has white background
-		display->setColor(WHITE);
-		display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
-		display->setColor(BLACK);
-#endif
     // If bold, draw twice, shifting right by one pixel
     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
         // Show a timestamp if received today, but longer than 15 minutes ago
         if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-					if (totalMessageCount > 0) {
+					if (historyMessageCount > 0) {
 							display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
 					} else {
-							display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s", totalMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), (node && node->has_user) ? node->user.short_name : "???");
+							display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s", historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), (node && node->has_user) ? node->user.short_name : "???");
 					}
         }
         // Timestamp yesterday (if display is wide enough)
         else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-					if (totalMessageCount > 0) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) Yest %02hu:%02hu from %s", totalMessageCount, timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+					if (historyMessageCount > 0) {
+            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) Yest %02hu:%02hu from %s", historyMessageCount, timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
 					} else {
 						display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
 					}
         }
         // Otherwise, show a time delta
         else {
-					if (totalMessageCount > 0) {
+					if (historyMessageCount > 0) {
             display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s",
-                                 totalMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+                                 historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
                                  (node && node->has_user) ? node->user.short_name : "???");
 					} else {
 						display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
@@ -1164,70 +1385,13 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
     } else {
         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-#ifdef SIMPLE_TDECK
-				// uint8_t linePos = 1;
-				// if ((strlen(tempBuf) < 130) && (secondLastNodeName[0] == '\0')) linePos = 2;
-				// LOG_INFO("strlen: %d\n", strlen(reinterpret_cast<const char *>(mp.decoded.payload.bytes)));
-				if (strlen(tempBuf) < 200) {
-					display->setFont(FONT_LARGE);
-					display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE, x + display->getWidth(), tempBuf);
-				} else { // smaller font for long messages
-					display->setFont(FONT_SMALL);
-					display->drawStringMaxWidth(0 + x, 13 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-					display->setFont(FONT_LARGE);
-				}
-				if (firstRunThroughMessages) {
-					strcpy(firstMessageToIgnore, tempBuf);
-					firstRunThroughMessages = false;
-				}
-#else
         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-#endif
     }
-#ifdef SIMPLE_TDECK
-		if ((strcmp(lastMessageContent2, tempBuf) != 0) && (strcmp(firstMessageToIgnore, tempBuf) != 0)) {
-			if (strcmp(firstMessageToIgnore, tempBuf) != 0) {
-				if (tempBuf[0] != '*') {
-					lastMessageWasPreviousMsgs = false;
-					strcpy(lastMessageContent4, lastMessageContent3);
-					strcpy(lastMessageContent3, lastMessageContent2);
-					strcpy(lastMessageContent2, tempBuf);
-					receivedNewMessage = true;
-				} else lastMessageWasPreviousMsgs = true;
-			} else strcpy(firstMessageToIgnore, "");
-		}
-		uint32_t secondsSinceThirdLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - thirdLastMessageTimestamp;
-		uint32_t secondsSinceSecondLastMessage = getValidTime(RTCQuality::RTCQualityDevice, true) - secondLastMessageTimestamp;
-		uint8_t linePosition;
-		//if there are 3 messages and they're all not too long
-		// counting 60 as 2 lines, 82 as 3 lines
-    if ((strlen(lastMessageContent2) < 60) && (strlen(lastMessageContent3) < 60) && 
-        (secondLastNodeName[0] != '\0') && (thirdLastNodeName[0] != '\0') && 
-        (lastMessageContent2[0] != '*')) {
-        // Display time and sender for 2nd last message
-				if (strlen(lastMessageContent2) < 82) linePosition = 3; // 82 is about 3 lines
-				else linePosition = 4;
-				uint32_t msgCount = totalMessageCount - 1;
-        displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
-        // Display time and sender for 3rd last message
-				if (strlen(lastMessageContent4) < 30) linePosition = 6;
-				else linePosition = 5;
-				msgCount = totalMessageCount - 2;
-        displayTimeAndMessage(display, x, y, linePosition, secondsSinceThirdLastMessage, thirdLastNodeName, lastMessageContent4, msgCount);
-
-		// if there are 2 messages and the top one isn't too long
-    } else if ((strlen(lastMessageContent2) < 82) && (secondLastNodeName[0] != '\0') && (lastMessageContent2[0] != '*')) {  // 82 should be 3 lines
-			if (strlen(lastMessageContent2) < 30) linePosition = 4;
-			else linePosition = 5;
-			uint32_t msgCount = totalMessageCount - 1;
-			displayTimeAndMessage(display, x, y, linePosition, secondsSinceSecondLastMessage, secondLastNodeName, lastMessageContent3, msgCount);
-		} // end 2 messages
-	//end
-#endif
 #else
     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
 #endif
+#endif //THISISDISABLED
 }
 
 /// Draw a series of fields in a column, wrapping to multiple columns if needed
@@ -1759,6 +1923,10 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 					setCPUFast(true);
 					// if just woke from light sleep and led was on, turn off LED
 					if (externalNotificationModule->getExternal(0) == 1) gpio_hold_dis((gpio_num_t)43);
+					// FIXME: might not be good here. might want to check first if just woke from sleep. might test moving to initDeepSleep in sleep.cpp
+					digitalWrite(KB_POWERON, HIGH);
+					// pinMode(GPIO_NUM_43, OUTPUT);
+					// digitalWrite((gpio_num_t)43, LOW);
 #endif
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3
@@ -2057,6 +2225,11 @@ int32_t Screen::runOnce()
         case Cmd::SHOW_NEXT_FRAME:
             handleShowNextFrame();
             break;
+#ifdef SIMPLE_TDECK
+				case Cmd::DO_FAST_REFRESH:
+						handleFastRefreshPrevMsgs();
+						break;
+#endif
         case Cmd::START_ALERT_FRAME: {
             showingBootScreen = false; // this should avoid the edge case where an alert triggers before the boot screen goes away
             showingNormalScreen = false;
@@ -2552,6 +2725,10 @@ void Screen::handleOnPress()
 
 void Screen::handleShowPrevFrame()
 {
+#ifdef SIMPLE_TDECK
+	LOG_INFO("Prev frame: %d\n", this->ui->getUiState()->currentFrame);
+	// NOTE it's the same if you do it after this block. I think the frame logic has already changed, just it hasn't shown it yet. 0 is main screen, 1 is previous msg
+#endif
     // If screen was off, just wake it, otherwise go back to previous frame
     // If we are in a transition, the press must have bounced, drop it.
 #ifdef SIMPLE_TDECK
@@ -2575,6 +2752,14 @@ void Screen::handleShowNextFrame()
         setFastFramerate();
     }
 }
+
+#ifdef SIMPLE_TDECK
+void Screen::handleFastRefreshPrevMsgs() {
+	lastScreenTransition = millis();
+	setFastFramerate();
+}
+#endif
+
 
 #ifndef SCREEN_TRANSITION_FRAMERATE
 #define SCREEN_TRANSITION_FRAMERATE 30 // fps
@@ -3042,17 +3227,62 @@ int Screen::handleInputEvent(const InputEvent *event)
 #endif
 
     if (showingNormalScreen && moduleFrames.size() == 0) {
+#ifdef SIMPLE_TDECK
+	// LOG_INFO("Prev frame: %d\n", this->ui->getUiState()->currentFrame);
+	if (this->ui->getUiState()->currentFrame == 0) {  //on previous msg screen
+	if (this->keyboardLockMode == false) {
+		if (showedLastPreviousMessage) {
+		// if (event->inputEvent == static_cast<char>(0x20)) {
+		// TODO: below doesn't work for spacebar
+  //   if (event->inputEvent == static_cast<char>(ANYKEY)) {
+		// 	LOG_INFO("Got ANYKEY on previous msg screen\n");
+		// 	if (event->kbchar == 0x20) {
+		// 			// LOG_INFO("Got SPACE on previous msg screen\n");
+		// 			// LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
+		// 			if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
+		// 				if (showedLastPreviousMessage) {
+		// 					previousMessagePage++;
+		// 					showedLastPreviousMessage = false;
+		// 				}
+		// 			}
+		// 	}
+		// }
+		if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+		// LOG_INFO("Got UP on previous msg screen\n");
+		// LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
+		// if ((history.getTotalMessageCount() > 1) && (previousMessagePage < 3)) {
+		if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
+			previousMessagePage++;
+		}
+	}
+	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+		// LOG_INFO("Got DOWN on previous msg screen\n");
+		// LOG_INFO("totalMessageCount: %d\n", history.getTotalMessageCount());
+		if (previousMessagePage > 0) previousMessagePage--;
+	}
+		LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
+		}
+		LOG_INFO("showedLastPreviousMessage value: %d\n", showedLastPreviousMessage);
+		showedLastPreviousMessage = false;
+	}
+}
+#endif
+		
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
 					if (this->keyboardLockMode == false) {
-            showPrevFrame();
+						if (this->ui->getUiState()->currentFrame != 0) {  //on previous msg screen
+								showPrevFrame();
+						}
 					}
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 #ifndef SIMPLE_TDECK
             showNextFrame();
 #else
 					if (this->keyboardLockMode == false) {
-            showPrevFrame();  // for some reason it freezes if do nextFrame. Not sure why. Either way don't need it now, since only have 2 screens. 7-25-24
+						if (this->ui->getUiState()->currentFrame != 1) {  //on main screen
+								showNextFrame();
+						}
 					}
 #endif
         }

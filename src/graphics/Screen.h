@@ -10,6 +10,46 @@
 #include "power.h"
 namespace graphics
 {
+
+constexpr size_t MAX_MESSAGE_HISTORY = 10;
+constexpr size_t MAX_MESSAGE_LENGTH = 237;
+constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+
+struct MessageRecord {
+    char content[MAX_MESSAGE_LENGTH];
+    char nodeName[MAX_NODE_NAME_LENGTH];
+    uint32_t timestamp;
+    
+    MessageRecord();
+    void clear();
+};
+
+class MessageHistory {
+public:
+    MessageHistory();
+    
+    // Main method for adding new messages
+    void addMessage(const char* content, const char* nodeName);
+    
+    // Accessor methods
+    const MessageRecord* getMessageAt(size_t position) const;
+    uint32_t getSecondsSince(size_t position) const;
+    uint32_t getTotalMessageCount() const;
+    bool wasLastMessagePreviousMsgs() const;
+    void setFirstMessageToIgnore(const char* msg);
+		const char* getFirstMessageToIgnore() const;
+
+private:
+    std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
+    size_t currentIndex;
+    uint32_t totalMessageCount;
+    bool firstRunThrough;
+    char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
+    bool lastMessageWasPreviousMsgs;
+};
+
+
+	
 // Noop class for boards without screen.
 class Screen
 {
@@ -18,7 +58,7 @@ class Screen
     void onPress() {}
     void setup() {}
     void setOn(bool) {}
-		
+
 	  // int getTotalMessages() const { return totalReceivedMessagesSinceBoot; }
    //  void setTotalMessages(int value) { totalReceivedMessagesSinceBoot = value; }
 
@@ -189,6 +229,13 @@ class Screen : public concurrency::OSThread
 
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
+#ifdef SIMPLE_TDECK
+		// void fastRefreshPrevMsgs();
+    void fastRefreshPrevMsgs() { enqueueCmd(ScreenCmd{.cmd = Cmd::DO_FAST_REFRESH}); }
+    bool isOnFrame(int frameNumber) const {
+			return ui->getUiState()->currentFrame == frameNumber;
+    }
+#endif
 
     ~Screen();
 
@@ -463,6 +510,9 @@ class Screen : public concurrency::OSThread
     void handleOnPress();
     void handleShowNextFrame();
     void handleShowPrevFrame();
+#ifdef SIMPLE_TDECK
+		void handleFastRefreshPrevMsgs();
+#endif
     void handlePrint(const char *text);
     void handleStartFirmwareUpdateScreen();
 

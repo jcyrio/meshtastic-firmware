@@ -24,6 +24,7 @@
 
 // OPTIONAL
 #define FOR_GUESTS
+#define FOR_GUESTS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -455,6 +456,17 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
 #ifdef SIMPLE_TDECK
+				// case 0x20: // space bar
+				// 	if (screen->isOnFrame(0)) {
+				// 		LOG_INFO("Got SPACE on previous msg screen\n");
+				// 		this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
+				// 		this->skipNextFreetextMode = true;
+				// 	} else { // pass the pressed key
+				// 		this->payload = event->kbchar;
+				// 		this->lastTouchMillis = millis();
+				// 		validEvent = true;
+				// 	}
+				// 	break;
 				case 0x24:  // $ sign
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
@@ -951,11 +963,11 @@ int32_t CannedMessageModule::runOnce()
 					sendText(NODENUM_RPI5, 0, "1", false);
 					showTemporaryMessage("Requesting Previous\nMessages 1");
 					break;
-				case 0x2a: // alt-e/2, previous Messages2
-				// case 0x9d: // alt-e/2, previous Messages2
-					sendText(NODENUM_RPI5, 0, "2", false);
-					showTemporaryMessage("Requesting Previous\nMessages 2");
-					break;
+				// case 0x2a: // alt-e/2, previous Messages2
+				// // case 0x9d: // alt-e/2, previous Messages2
+				// 	sendText(NODENUM_RPI5, 0, "2", false);
+				// 	showTemporaryMessage("Requesting Previous\nMessages 2");
+				// 	break;
 				case 0x9e: // alt-r, retype last message
 					LOG_INFO("Got ALT-R, Retype last message\n");
 					if (this->previousFreetext.length() > 0) {
@@ -1274,9 +1286,10 @@ int32_t CannedMessageModule::runOnce()
 						case 0x1f: // alt-f, flashlight
 						case 0x5f: // _, toggle cursorScrollMode
 						case 0x1a: // alt-1, previous messages 1
-						case 0x2a: // alt-2, previous messages 2
+						// case 0x2a: // alt-2, previous messages 2
 						case 0x9e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
+						// case 0x20: // space bar
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
 #endif
