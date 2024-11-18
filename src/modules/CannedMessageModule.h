@@ -15,8 +15,6 @@ enum cannedMessageModuleRunState {
     CANNED_MESSAGE_RUN_STATE_ACTION_SELECT,
     CANNED_MESSAGE_RUN_STATE_ACTION_UP,
     CANNED_MESSAGE_RUN_STATE_ACTION_DOWN,
-		CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG,
-		CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE,
 };
 
 enum cannedMessageDestinationType {
@@ -166,7 +164,6 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int deliveryFailedCount = 0;
 		int nodeIndex = 0;
 		bool alreadySentFirstMessage = 0;
-		unsigned long lastTrackballMillis = 0;
 		bool skipNextFreetextMode = false;
 #endif
     unsigned long lastTouchMillis = 0;

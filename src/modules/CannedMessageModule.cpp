@@ -225,36 +225,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     if (this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
         return 0; // Ignore input while sending
     }
-#ifdef SIMPLE_TDECK
-    if ((this->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) && (this->previousMessageIndex > 0)) {
-        return 0; // Ignore input while sending
-    }
-#endif
     bool validEvent = false;
-#ifdef SIMPLE_TDECK
-		if ((this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) &&
-				((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) || ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) && (this->previousMessageIndex > 0)))) {
-			if (this->lastTrackballMillis + 10000 > millis()) {
-				LOG_INFO("GOT HERE, ALLOWING TRACKBALL BECAUSE ITS BEEN 10 SECONDS\n");
-				this->lastTrackballMillis = millis();
-			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-				this->previousMessageIndex++;
-			} else this->previousMessageIndex--;
-			LOG_DEBUG("Previous message index: %d\n", this->previousMessageIndex);
-			this->runState = CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG;
-        // UIFrameEvent e = {false, true};
-        // e.frameChanged = true;
-				UIFrameEvent e;
-				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-        this->currentMessageIndex = -1;
-				// removed below on 11/14/24, I don't think there's a reason to clear the text here. Let them restore it if wanted
-        // this->freetext = ""; // clear freetext
-        // this->cursor = 0;
-        this->notifyObservers(&e);
-			validEvent = true;
-			} // end trackballEnabled
-}
-#endif
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
         if (this->messagesCount > 0) {
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_UP;
@@ -338,21 +309,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         this->lastTouchMillis = millis();
         validEvent = true;
     }
-#ifdef SIMPLE_TDECK
-//FIXME: doesn't work. Trying to make it so that pressing trackball key goes to Router node in freetext
-  //   if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_SELECT)) {
-  //       if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE)) {
-  //           this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-		// 				this->dest = NODENUM_RPI5;
-		// 				this->lastTouchMillis = millis();
-		// 				this->freetext = ""; // clear freetext
-		// 				this->cursor = 0;
-		// 				validEvent = true;
-		// 				UIFrameEvent e = {false, true};
-		// 				e.frameChanged = true;
-		// 	}
-		// }
-#endif
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
 #ifdef SIMPLE_TDECK
 				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX)) 
@@ -485,29 +441,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						requestFocus();
 				// 		// runOnce();
 				break;
-				// case 0x7e: // 0-mic key, press to enable trackball scrolling for next 10 seconds
-				// 					 // NOTE: this one supersedes the other one that deletes the line. Maybe remove that case
-				// 	LOG_INFO("RunState: %d\n", this->runState);
-				// 	if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
-				// 		LOG_INFO("Trackball enabled for next 10 seconds\n");
-				// 		this->lastTrackballMillis = millis();
-    //         this->lastTouchMillis = millis();
-    //         this->payload = event->kbchar;
-				// 		this->skipNextFreetextMode = true;
-				// 		this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
-    //         validEvent = true;
-				// 	} else {  // if in freetext mode, delete / clear the line
-				// 		LOG_INFO("Was in freetext mode, deleting line\n");
-				// 		this->freetext = ""; // clear freetext
-				// 		// this->notifyObservers(&e);
-				// 		// this->freetext = this->freetext.substring(1);
-				// 		this->cursor = 0;
-				// 		this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-    //         // validEvent = true;
-				// 		requestFocus();
-				// 		// runOnce();
-				// 	}
-				// 	break;
 #endif
         default:
             // pass the pressed key
@@ -628,11 +561,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         // Let runOnce to be called immediately.
         if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTION_SELECT) {
             setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
-#ifdef SIMPLE_TDECK
-				} else if ((this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex > 0)) {
-					this->dontACK = 1;
-					setIntervalFromNow(1300);
-#endif
         } else {
 					this->dontACK = 0;
             runOnce();
@@ -725,40 +653,6 @@ int32_t CannedMessageModule::runOnce()
 #endif
 
         this->notifyObservers(&e);
-#ifdef SIMPLE_TDECK
-		} else if (this->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) {
-		if (this->previousMessageIndex == 0) {
-        // UIFrameEvent e = {false, true};
-        // e.frameChanged = true;
-				requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
-				UIFrameEvent e;
-				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-        this->currentMessageIndex = -1;
-        this->freetext = ""; // clear freetext
-        this->cursor = 0;
-        this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-        this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
-        this->notifyObservers(&e);
-		} else {
-	LOG_DEBUG("** Previous message index: %d\n", this->previousMessageIndex);
-	LOG_DEBUG("** processing message\n");
-	// TODO: previously this had just frameChanged = true, not sure if need requestFocus and uiframevent
-				requestFocus(); // Tell Screen::setFrames to move to our module's frame, next time it runs
-				UIFrameEvent e;
-				e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-        // e.frameChanged = true;
-        this->currentMessageIndex = -1;
-        this->freetext = ""; // clear freetext
-        this->cursor = 0;
-        this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-				this->runState = CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE;
-        this->notifyObservers(&e);
-				char str[6];
-				sprintf(str, "%d", this->previousMessageIndex);
-				sendText(NODENUM_RPI5, 0, str, false);
-				this->previousMessageIndex = 0;
-		}
-#endif
     } else if (((this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT)) &&
                ((millis() - this->lastTouchMillis) > INACTIVATE_AFTER_MS)) {
         // Reset module
@@ -930,34 +824,13 @@ int32_t CannedMessageModule::runOnce()
 					this->notifyObservers(&e);
 					break;
 				case 0x7e: // mic / 0 key, clear line
-					// LOG_INFO("RunState: %d\n", this->runState);
-					// if (this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
-					if (this->freetext.length() == 0) {
-						LOG_INFO("Trackball enabled for next 10 seconds\n");
-						this->lastTrackballMillis = millis();
-            this->lastTouchMillis = millis();
-            // this->payload = event->kbchar;
-						this->skipNextFreetextMode = true;
-						this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
-            // validEvent = true;
-					} else {  // if in writing mode and more than 1 char written, delete / clear the line
+					if (this->freetext.length() > 0) {
 						LOG_INFO("more than 1 char is on freetext line, deleting line\n");
 						this->freetext = ""; // clear freetext
-						// this->notifyObservers(&e);
-						// this->freetext = this->freetext.substring(1);
 						this->cursor = 0;
 						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-            // validEvent = true;
 						requestFocus();
-						// runOnce();
 					}
-					// this->freetext = ""; // clear freetext
-					// this->notifyObservers(&e);
-					// // this->freetext = this->freetext.substring(1);
-					// this->cursor = 0;
-					// this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-					// this->cursor--;
-					// might want runOnce here
 					break;
 				case 0x1a: // alt-w/1, previous Messages1
 					sendText(NODENUM_RPI5, 0, "1", false);
@@ -1732,28 +1605,6 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Sending...");
 #endif
     }
-
-#ifdef SIMPLE_TDECK
-		else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_REQUEST_PREVIOUS_ACTIVE) {
-        // display->setTextAlignment(TEXT_ALIGN_CENTER);
-        // display->setFont(FONT_LARGE);
-        // display->drawString(display->getWidth() / 2 + x, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "Retrieving...");
-				showTemporaryMessage("Retrieving...");
-    }
-		//TODO: should this be else if below? compare with orig
-		//new 4-24-24 2:25
-		else if ((cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_PREVIOUS_MSG) && (this->previousMessageIndex != 0)) {
-		display->setTextAlignment(TEXT_ALIGN_CENTER);
-		display->setFont(FONT_LARGE);
-		char msgBuffer1[32]; char msgBuffer2[32];
-		snprintf(msgBuffer1, sizeof(msgBuffer1), "View previous");
-		snprintf(msgBuffer2, sizeof(msgBuffer2), "message #%d", this->previousMessageIndex);
-		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y - FONT_HEIGHT_LARGE, msgBuffer1);
-		display->drawString(display->getWidth() / 2 + x, display->getHeight() / 2 + y, msgBuffer2);
-}
-#endif
-
-			
     else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_DISABLED) {
         display->setTextAlignment(TEXT_ALIGN_LEFT);
         display->setFont(FONT_SMALL);
