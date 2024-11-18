@@ -40,7 +40,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     // {2864390690, "Fr Michael"}, //old virtual node
-    {205167532, "Fr Michael"},
+    // {205167532, "Fr Michael"},
     {202935032, "Fr Evgeni"},
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
@@ -412,17 +412,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             }
             break;
 #ifdef SIMPLE_TDECK
-				// case 0x20: // space bar
-				// 	if (screen->isOnFrame(0)) {
-				// 		LOG_INFO("Got SPACE on previous msg screen\n");
-				// 		this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
-				// 		this->skipNextFreetextMode = true;
-				// 	} else { // pass the pressed key
-				// 		this->payload = event->kbchar;
-				// 		this->lastTouchMillis = millis();
-				// 		validEvent = true;
-				// 	}
-				// 	break;
 				case 0x24:  // $ sign
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
@@ -942,39 +931,6 @@ int32_t CannedMessageModule::runOnce()
 					// this->skipNextFreetextMode = true; //this caused a big delay in setting brightness
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;  //prevents entering freetext mode
 					break;
-     //    case 0x24: // $ sign
-     //    // case 0x20: // speaker sign, some tdecks with newer keyboards
-					// if (moduleConfig.external_notification.enabled == true) {
-					// 		if (externalNotificationModule->getMute()) {
-					// 				externalNotificationModule->setMute(false);
-					// 				showTemporaryMessage("Notifications\nEnabled");
-					// 				if (screen)
-					// 						screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
-					// 		} else {
-					// 				externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
-					// 				externalNotificationModule->setMute(true);
-					// 				showTemporaryMessage("Notifications\nDisabled");
-					// 				if (screen)
-					// 						screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
-					// 		}
-					// }
-					// // if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NODE) {
-					// // 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-					// // } else {
-					// // 		this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
-					// // 		if (this->dest == NODENUM_BROADCAST) {
-					// // 				this->dest = NODENUM_RPI5;
-					// // 		}
-					// // }
-					// // note wasn't able to find out how to delete the $ sign. When I put backspace here it wasn't doing anything
-					// // This does though remove subsequent characters. Only the first one isn't caught
-					// // if (this->freetext.length() > 0) {
-					// // 	this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-					// // 	// this->freetext = "";
-					// // 	this->cursor--;
-					// // 	// this->notifyObservers(&e);
-					// // }
-					// break;
 #endif
         case 0xb4: // left
 			    if (screen->keyboardLockMode == true) break;
@@ -1162,7 +1118,6 @@ int32_t CannedMessageModule::runOnce()
 						// case 0x2a: // alt-2, previous messages 2
 						case 0x9e: // alt-r, resend last message
 						// case 0x20: // speaker sign (some tdecks, new)
-						// case 0x20: // space bar
 						case 0x3e: // > sign
 						case 0x04: // > sign, at least on newest tdecks with black trackball
 #endif

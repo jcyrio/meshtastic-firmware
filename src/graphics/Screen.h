@@ -230,8 +230,6 @@ class Screen : public concurrency::OSThread
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
 #ifdef SIMPLE_TDECK
-		// void fastRefreshPrevMsgs();
-    void fastRefreshPrevMsgs() { enqueueCmd(ScreenCmd{.cmd = Cmd::DO_FAST_REFRESH}); }
     bool isOnFrame(int frameNumber) const {
 			return ui->getUiState()->currentFrame == frameNumber;
     }
@@ -511,7 +509,7 @@ class Screen : public concurrency::OSThread
     void handleShowNextFrame();
     void handleShowPrevFrame();
 #ifdef SIMPLE_TDECK
-		void handleFastRefreshPrevMsgs();
+		const char* NO_MSGS_RECEIVED_MESSAGE;
 #endif
     void handlePrint(const char *text);
     void handleStartFirmwareUpdateScreen();
