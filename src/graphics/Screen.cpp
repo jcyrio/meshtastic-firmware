@@ -1218,6 +1218,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				}
 		} else { // not on first msg page, handle history display
 			if (previousMessagePage < historyMessageCount) {
+					const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
 					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
 					const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2); // just for checking if nextMsg will be displayed alone because thirdMsg is too large, in which case skip showing nextMsg alone because it was already shown
@@ -1233,14 +1234,18 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 									// Skip the next message in the next iteration since we displayed it
 									// enabling this causes to jump by 2 pags instead of "smooth" scrolling 1 at a time
 									// previousMessagePage++;
-							} else { // Display single message
+							} else { // Display single message, but only if it's not because the next message is too long (and this one is short, so it was already displayed)
+											 // TOOD: can remove extra parenthesis below??
+									// if ((strlen(currentMsg->content) <= 65) && (strlen(nextMsg->content) > 65) && (strlen(prevMsg->content) <= 65)) { // if current message is short and next message is too long, don't display currentMsg alone, but rather skip it because it was already shown
+									// 	previousMessagePage++;
+									// } else {
+
 									// LOG_INFO("Displaying only single message\n");
 									// if the length is over 180 char, then make font small
 									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
+							// }
 					} // end if currentMsg
-					else {
-						showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
-				}
+					else showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
 			}
     }
 		showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
@@ -3213,19 +3218,19 @@ int Screen::handleInputEvent(const InputEvent *event)
 		
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
+#ifdef SIMPLE_TDECK
+					showPrevFrame();
+#else
 					if (this->keyboardLockMode == false) {
-						if (this->ui->getUiState()->currentFrame != 0) {  //on previous msg screen
-								showPrevFrame();
-						}
+						if (this->ui->getUiState()->currentFrame != 0) showPrevFrame();  //on previous msg screen
 					}
+#endif
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 #ifndef SIMPLE_TDECK
             showNextFrame();
 #else
 					if (this->keyboardLockMode == false) {
-						if (this->ui->getUiState()->currentFrame != 1) {  //on main screen
-								showNextFrame();
-						}
+						if (this->ui->getUiState()->currentFrame != 1) showNextFrame();  //on main screen
 					}
 #endif
         }

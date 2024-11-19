@@ -23,8 +23,7 @@
 #endif
 
 // OPTIONAL
-#define FOR_GUESTS
-#define FOR_GUESTS
+// #define FOR_GUESTS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -45,6 +44,9 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
+
+    {3175760252, "Spare2"},
+    { 667676428 , "Spare4"},
     // {2217306826, "79"}, // for testing
     // {279520186, "CF"}, // for testing
     // {219520199, "test"}, // for testing
@@ -569,11 +571,50 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 #ifdef SIMPLE_TDECK
 		setDeliveryStatus(0);
 		this->totalMessagesSent++;
-		LOG_INFO("Total messages sent: %d\n", this->totalMessagesSent);
+		// LOG_INFO("Total messages sent: %d\n", this->totalMessagesSent);
 		if (strcmp(message, " ") == 0) {
 			LOG_INFO("Message is only a space, not sending\n");
 			return;
 		}
+		// replace "sss" anywhere in message with unicode smiley emoji
+    // Create a modifiable copy of the message
+    constexpr size_t bufferSize = 256; // Adjust the buffer size as needed
+    char modifiableMessage[bufferSize];
+    strncpy(modifiableMessage, message, bufferSize - 1);
+    modifiableMessage[bufferSize - 1] = '\0'; // Ensure null-termination
+
+    // Replace "sss" with the smiley emoji (😊) and "ttt" with thumbs-up emoji (👍)
+    const char *target1 = "sss";
+    const char *emoji1 = "😊";
+    const char *target2 = "ttt";
+    const char *emoji2 = "👍";
+
+    char result[bufferSize] = {0}; // Buffer to hold the final message
+    char *currentPos = modifiableMessage;
+    char *resultPos = result;
+
+    while (*currentPos != '\0') {
+        // Check for "sss"
+        if (strncmp(currentPos, target1, strlen(target1)) == 0) {
+            // Add the emoji
+            strncat(resultPos, emoji1, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji1);
+            currentPos += strlen(target1);
+        }
+        // Check for "ttt"
+        else if (strncmp(currentPos, target2, strlen(target2)) == 0) {
+            // Add the emoji
+            strncat(resultPos, emoji2, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji2);
+            currentPos += strlen(target2);
+        }
+        // Copy the current character
+        else *resultPos++ = *currentPos++;
+    }
+
+    *resultPos = '\0'; // Null-terminate the result
+    // LOG_INFO("Modified message: %s\n", result);
+
 		// below was for enabling number count before every message, for testing
 		// char totalMessagesSent[8];
 		// memset(totalMessagesSent, 0, sizeof(totalMessagesSent)); // clear the string, first send has junk data
@@ -583,9 +624,12 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 		// strcat(newMessage, message);
 		// p->decoded.payload.size = strlen(newMessage);
 		// memcpy(p->decoded.payload.bytes, newMessage, p->decoded.payload.size);
-#endif
+    p->decoded.payload.size = strlen(result);
+    memcpy(p->decoded.payload.bytes, result, p->decoded.payload.size);
+#else
     p->decoded.payload.size = strlen(message);
     memcpy(p->decoded.payload.bytes, message, p->decoded.payload.size);
+#endif
     if (moduleConfig.canned_message.send_bell && p->decoded.payload.size < meshtastic_Constants_DATA_PAYLOAD_LEN) {
         p->decoded.payload.bytes[p->decoded.payload.size] = 7;        // Bell character
         p->decoded.payload.bytes[p->decoded.payload.size + 1] = '\0'; // Bell character
