@@ -588,6 +588,8 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     const char *emoji1 = "😊";
     const char *target2 = "ttt";
     const char *emoji2 = "👍";
+    const char *target3 = "hhh";
+    const char *emoji3 = "❤️";
 
     char result[bufferSize] = {0}; // Buffer to hold the final message
     char *currentPos = modifiableMessage;
@@ -596,17 +598,19 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     while (*currentPos != '\0') {
         // Check for "sss"
         if (strncmp(currentPos, target1, strlen(target1)) == 0) {
-            // Add the emoji
             strncat(resultPos, emoji1, bufferSize - strlen(result) - 1);
             resultPos += strlen(emoji1);
             currentPos += strlen(target1);
-        }
-        // Check for "ttt"
+        } // Check for "ttt"
         else if (strncmp(currentPos, target2, strlen(target2)) == 0) {
-            // Add the emoji
             strncat(resultPos, emoji2, bufferSize - strlen(result) - 1);
             resultPos += strlen(emoji2);
             currentPos += strlen(target2);
+        } // Check for "hhh"
+        else if (strncmp(currentPos, target3, strlen(target3)) == 0) {
+            strncat(resultPos, emoji3, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji3);
+            currentPos += strlen(target3);
         }
         // Copy the current character
         else *resultPos++ = *currentPos++;

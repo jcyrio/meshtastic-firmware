@@ -194,7 +194,7 @@ namespace graphics
 // DEBUG
 #define NUM_EXTRA_FRAMES 3 // text message and debug frame
 // if defined a pixel will blink to show redraws
-#define SHOW_REDRAWS
+// #define SHOW_REDRAWS
 
 // A text message frame + debug frame + all the node infos
 FrameCallback *normalFrames;
@@ -1095,6 +1095,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		uint8_t msgLen = strlen(messageContent);
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
 		if (historyMessageCount > MAX_MESSAGE_HISTORY) historyMessageCount = MAX_MESSAGE_HISTORY;
 
 		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*'))) {
@@ -1221,7 +1222,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
 					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
-					const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2); // just for checking if nextMsg will be displayed alone because thirdMsg is too large, in which case skip showing nextMsg alone because it was already shown
+					// const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2); // just for checking if nextMsg will be displayed alone because thirdMsg is too large, in which case skip showing nextMsg alone because it was already shown
 
 					if (currentMsg) {
 						uint8_t msgLen = strlen(currentMsg->content);
@@ -3219,19 +3220,21 @@ int Screen::handleInputEvent(const InputEvent *event)
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
 #ifdef SIMPLE_TDECK
-					showPrevFrame();
-#else
+					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
 					if (this->keyboardLockMode == false) {
 						if (this->ui->getUiState()->currentFrame != 0) showPrevFrame();  //on previous msg screen
 					}
+#else
+					showPrevFrame();
 #endif
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
-#ifndef SIMPLE_TDECK
-            showNextFrame();
-#else
+#ifdef SIMPLE_TDECK
+					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
 					if (this->keyboardLockMode == false) {
 						if (this->ui->getUiState()->currentFrame != 1) showNextFrame();  //on main screen
 					}
+#else
+            showNextFrame();
 #endif
         }
     }
