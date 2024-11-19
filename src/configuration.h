@@ -48,6 +48,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HW_VERSION "1.0"
 #endif
 
+#ifdef SIMPLE_TDECK
+#define MESHTASTIC_EXCLUDE_WIFI 1
+#define MESHTASTIC_EXCLUDE_GPS 1
+#define MESHTASTIC_EXCLUDE_DETECTIONSENSOR 1
+#define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR 1
+#define MESHTASTIC_EXCLUDE_PAXCOUNTER 1
+#define MESHTASTIC_EXCLUDE_RANGETEST 1
+#define MESHTASTIC_EXCLUDE_ATAK 1
+#endif
+
 // -----------------------------------------------------------------------------
 // Configuration
 // -----------------------------------------------------------------------------

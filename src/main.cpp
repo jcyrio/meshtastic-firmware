@@ -1062,7 +1062,8 @@ void setup()
     PowerFSM_setup(); // we will transition to ON in a couple of seconds, FIXME, only do this for cold boots, not waking from SDS
     powerFSMthread = new PowerFSMThread();
 #ifdef SIMPLE_TDECK
-    setCPUFast(true); // 240MHz is much smoother!
+    // setCPUFast(true); // 240MHz is much smoother!
+    setCPUFastest(); // 240MHz is much smoother!
 #else
     setCPUFast(false); // 80MHz is fine for our slow peripherals
 #endif

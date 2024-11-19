@@ -113,15 +113,15 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
-				addMessage("This is my last message in history", "FCyr");
-				addMessage("Messages are stored locally in RAM", "FCyr");
-				addMessage("Currently no local disc storage", "FCyr");
-				addMessage("Messages are not saved after restart", "FCyr");
-				addMessage("And this is an even longer message. When a message is larger than an entire screen, then a smaller font will be used so that the entire message can fit. Note that there is still a 200 character limit though.", "FCyr");
-				addMessage("This is a longer message, much longer than the others. When a message is larger than half the screen, only one message will show.", "FCyr");
-				addMessage("Testing message system2", "FCyr");
-				addMessage("Testing message system1", "FCyr");
-				addMessage("Demo of the new system to scroll message history", "FCyr");
+				// addMessage("This is my last message in history", "FCyr");
+				// addMessage("Messages are stored locally in RAM", "FCyr");
+				// addMessage("Currently no local disc storage", "FCyr");
+				// addMessage("Messages are not saved after restart", "FCyr");
+				// addMessage("And this is an even longer message. When a message is larger than an entire screen, then a smaller font will be used so that the entire message can fit. Note that there is still a 200 character limit though.", "FCyr");
+				// addMessage("This is a longer message, much longer than the others. When a message is larger than half the screen, only one message will show.", "FCyr");
+				// addMessage("Testing message system2", "FCyr");
+				// addMessage("Testing message system1", "FCyr");
+				// addMessage("Demo of the new system to scroll message history", "FCyr");
     }
 
     void addMessage(const char* content, const char* nodeName) {
@@ -1106,7 +1106,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				int hour = hms / SEC_PER_HOUR;
 				int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
 				int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
-				snprintf(tempBuf, sizeof(tempBuf), "         %02d:%02d:%02d", hour, min, sec);
+				snprintf(tempBuf, sizeof(tempBuf), "            %02d:%02d:%02d", hour, min, sec);
 			} else tempBuf[0] = '\0';
 		} else {
 				char prefixBuf[10];
@@ -1125,10 +1125,13 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
     if (strcmp(messageContent, u8"\U0001F44D") == 0) {
-			display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2), thumbs_width, thumbs_height, thumbup);
+			display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, thumbs_width, thumbs_height, thumbup);
 		}
 		else if (strcmp(messageContent, u8"\U0001F60A") == 0 || strcmp(messageContent, u8"\U0001F600") == 0 || strcmp(messageContent, u8"\U0001F642") == 0 || strcmp(messageContent, u8"\U0001F609") == 0 || strcmp(messageContent, u8"\U0001F601") == 0) {
-			display->drawXbm(x + (SCREEN_WIDTH - smiley_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2), smiley_width, smiley_height, smiley);
+			display->drawXbm(x + (SCREEN_WIDTH - smiley_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, smiley_width, smiley_height, smiley);
+		}
+		else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
+			display->drawXbm(x + (SCREEN_WIDTH - heart_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
 		}
 		else {
 			if (msgLen > 190) display->setFont(FONT_SMALL);
@@ -1364,7 +1367,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\xf0\x9f\x98\x88") == 0) {
         display->drawXbm(x + (SCREEN_WIDTH - devil_width) / 2,
                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - devil_height) / 2 + 2 + 5, devil_width, devil_height, devil);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"♥️") == 0) {
+		} else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
         display->drawXbm(x + (SCREEN_WIDTH - heart_width) / 2,
                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
     } else {
