@@ -3198,6 +3198,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 		if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 		if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
 			previousMessagePage++;
+			setCPUFastest();
 			screen->forceDisplay();
 			targetFramerate = 30;
 			ui->setTargetFPS(30);
@@ -3206,6 +3207,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 		if (previousMessagePage > 0) {
 			previousMessagePage--;
+			setCPUFastest();
 			screen->forceDisplay();
 			targetFramerate = 30;
 			ui->setTargetFPS(30);
@@ -3222,7 +3224,10 @@ int Screen::handleInputEvent(const InputEvent *event)
 #ifdef SIMPLE_TDECK
 					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
 					if (this->keyboardLockMode == false) {
-						if (this->ui->getUiState()->currentFrame != 0) showPrevFrame();  //on previous msg screen
+						if (this->ui->getUiState()->currentFrame != 0) {
+							setCPUFastest();
+							showPrevFrame();  //on previous msg screen
+						}
 					}
 #else
 					showPrevFrame();
@@ -3231,7 +3236,10 @@ int Screen::handleInputEvent(const InputEvent *event)
 #ifdef SIMPLE_TDECK
 					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
 					if (this->keyboardLockMode == false) {
-						if (this->ui->getUiState()->currentFrame != 1) showNextFrame();  //on main screen
+						if (this->ui->getUiState()->currentFrame != 1) {
+							showNextFrame();  //on main screen
+							setCPUFast(false);
+						}
 					}
 #else
             showNextFrame();

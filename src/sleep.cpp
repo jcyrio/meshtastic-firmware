@@ -89,6 +89,10 @@ void setCPUFast(bool on)
 #endif
 }
 
+#ifdef SIMPLE_TDECK
+void setCPUFastest() { setCpuFrequencyMhz(240); }
+#endif
+
 // Perform power on init that we do on each wake from deep sleep
 void initDeepSleep()
 {

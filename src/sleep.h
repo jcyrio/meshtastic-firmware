@@ -22,6 +22,9 @@ extern XPowersLibInterface *PMU;
 void initDeepSleep();
 
 void setCPUFast(bool on);
+#ifdef SIMPLE_TDECK
+void setCPUFastest();
+#endif
 
 /** return true if sleep is allowed right now */
 bool doPreflightSleep();
