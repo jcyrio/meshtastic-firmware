@@ -126,6 +126,12 @@ public:
 
     void addMessage(const char* content, const char* nodeName) {
         if (!content || content[0] == '*') {
+					LOG_INFO("HERE222\n");
+					LOG_INFO("HERE222\n");
+					LOG_INFO("HERE222\n");
+					LOG_INFO("HERE222\n");
+					LOG_INFO("HERE222\n");
+					LOG_INFO("HERE222\n");
             lastMessageWasPreviousMsgs = (content && content[0] == '*');
             return;
         }
@@ -1099,6 +1105,11 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		if (historyMessageCount > MAX_MESSAGE_HISTORY) historyMessageCount = MAX_MESSAGE_HISTORY;
 
 		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*'))) {
+			LOG_INFO("HERE111\n");
+			LOG_INFO("HERE111\n");
+			LOG_INFO("HERE111\n");
+			LOG_INFO("HERE111\n");
+			LOG_INFO("HERE111\n");
 			uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local timezone
 			if (rtc_sec > 0) {
 				long hms = rtc_sec % SEC_PER_DAY;
@@ -1106,7 +1117,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				int hour = hms / SEC_PER_HOUR;
 				int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
 				int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
-				snprintf(tempBuf, sizeof(tempBuf), "            %02d:%02d:%02d", hour, min, sec);
+				snprintf(tempBuf, sizeof(tempBuf), "               %02d:%02d:%02d", hour, min, sec);
 			} else tempBuf[0] = '\0';
 		} else {
 				char prefixBuf[10];

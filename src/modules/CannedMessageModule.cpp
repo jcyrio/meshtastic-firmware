@@ -23,7 +23,7 @@
 #endif
 
 // OPTIONAL
-// #define FOR_GUESTS
+#define FOR_GUESTS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
