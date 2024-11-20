@@ -126,12 +126,7 @@ public:
 
     void addMessage(const char* content, const char* nodeName) {
         if (!content || content[0] == '*') {
-					LOG_INFO("HERE222\n");
-					LOG_INFO("HERE222\n");
-					LOG_INFO("HERE222\n");
-					LOG_INFO("HERE222\n");
-					LOG_INFO("HERE222\n");
-					LOG_INFO("HERE222\n");
+					//TODO: this is never used!
             lastMessageWasPreviousMsgs = (content && content[0] == '*');
             return;
         }
@@ -150,7 +145,7 @@ public:
 
         // Update index for circular buffer
         currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
-        
+
         // Store the new message
         MessageRecord& record = messages[currentIndex];
         strncpy(record.content, content, MAX_MESSAGE_LENGTH - 1);
@@ -1105,11 +1100,6 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		if (historyMessageCount > MAX_MESSAGE_HISTORY) historyMessageCount = MAX_MESSAGE_HISTORY;
 
 		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*'))) {
-			LOG_INFO("HERE111\n");
-			LOG_INFO("HERE111\n");
-			LOG_INFO("HERE111\n");
-			LOG_INFO("HERE111\n");
-			LOG_INFO("HERE111\n");
 			uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local timezone
 			if (rtc_sec > 0) {
 				long hms = rtc_sec % SEC_PER_DAY;
@@ -1136,13 +1126,19 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
     if (strcmp(messageContent, u8"\U0001F44D") == 0) {
-			display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, thumbs_width, thumbs_height, thumbup);
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, thumbs_width, thumbs_height, thumbup);
 		}
 		else if (strcmp(messageContent, u8"\U0001F60A") == 0 || strcmp(messageContent, u8"\U0001F600") == 0 || strcmp(messageContent, u8"\U0001F642") == 0 || strcmp(messageContent, u8"\U0001F609") == 0 || strcmp(messageContent, u8"\U0001F601") == 0) {
-			display->drawXbm(x + (SCREEN_WIDTH - smiley_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, smiley_width, smiley_height, smiley);
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, smiley_width, smiley_height, smiley);
+		}
+		else if (strcmp(messageContent, u8"\U0001F64F") == 0) {
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, foldedHands_width, foldedHands_height, foldedHands);
+		}
+    else if (strcmp(messageContent, "\xf0\x9f\xa4\xa3") == 0) {
+        display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, haha_width, haha_height, haha);
 		}
 		else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
-			display->drawXbm(x + (SCREEN_WIDTH - heart_width) / 2, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
 		}
 		else {
 			if (msgLen > 190) display->setFont(FONT_SMALL);
@@ -1190,9 +1186,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			LOG_INFO("Received new message!\n");
 			receivedNewMessage = true;
 			previousMessagePage = 0;
-			// todo: might remove below, already checking for '*' in addMessage
 			// Below is for deciding when to add a message to the history
-		if (currentMsgContent[0] != '*') {
 			if (strcmp(history.firstMessageToIgnore, currentMsgContent) != 0) {
 				// Get the most recent message to check for duplicates
 				bool isDuplicate = lastMsg && (strcmp(lastMsg->content, currentMsgContent) == 0);
@@ -1204,7 +1198,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					history.addMessage(currentMsgContent, currentNodeName);
 				} else LOG_INFO("Skipping adding message to history because it's a duplicate\n");
 			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
-		} else LOG_INFO("not adding message to history because starts with *\n");
 	} else receivedNewMessage = false;
 #endif
     uint32_t seconds = sinceReceived(&mp);
@@ -1225,7 +1218,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
 				}
 				} else { // only have 1 msg, or msg is too long, or next msg is too long, only display 1
-					if (historyMessageCount > 0) { // if received at least 1 real message
+					if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
 					} else { // want to ignore first bootup message
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
@@ -1266,31 +1259,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
 // return;
 #ifdef THISISDISABLED
-
-// if (lastMsg && mp.decoded.payload.bytes) {
-//     size_t payloadLen = strnlen(reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf) - 1);
-//     safeStringCopy(tempBuf, reinterpret_cast<const char*>(mp.decoded.payload.bytes), sizeof(tempBuf));
-    
-		// NOTE: I added !firstRunThroughMessages, not sure if needed/wanted. Main overall problem is that it's not adding first msg to firstMessageToIgnore. Also I think it's not ignoring * msgs
-    // if (!firstRunThroughMessages && (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0)) {
-    // if (!lastMsg->content || strcmp(tempBuf, lastMsg->content) != 0) {
-			// if (lastMsg->content[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
-			// TODO: testing below, see if works better than above when receive a prvMsg from router
-			// actually it should have never gotten to this point. keeps thinking that router msgs are always new
-			
-			// LOG_INFO("firstMessageToIgnore value: %s\n", history.firstMessageToIgnore);
-			// LOG_INFO("firstRunThroughMessages value: %d\n", firstRunThroughMessages);
-			// if (tempBuf[0] != '*') LOG_INFO("Adding message1: %s\n", tempBuf);
-			// LOG_INFO("Adding message1: %s\n", tempBuf);
-			// previousMessagePage = 0;
-			// NOTE: This is the true spot where the inital boootup mesg is stored!
-    // }
-// }
-
-
-
-
-		
     // For timestamp
     uint8_t timestampHours, timestampMinutes;
     int32_t daysAgo;
@@ -3212,7 +3180,8 @@ int Screen::handleInputEvent(const InputEvent *event)
 		if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 		if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
 			previousMessagePage++;
-			setCPUFastest();
+			// setCPUFastest();
+			setCPUFast(true);
 			screen->forceDisplay();
 			targetFramerate = 30;
 			ui->setTargetFPS(30);
@@ -3221,7 +3190,8 @@ int Screen::handleInputEvent(const InputEvent *event)
 	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 		if (previousMessagePage > 0) {
 			previousMessagePage--;
-			setCPUFastest();
+			// setCPUFastest();
+			setCPUFast(true);
 			screen->forceDisplay();
 			targetFramerate = 30;
 			ui->setTargetFPS(30);
@@ -3239,7 +3209,8 @@ int Screen::handleInputEvent(const InputEvent *event)
 					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
 					if (this->keyboardLockMode == false) {
 						if (this->ui->getUiState()->currentFrame != 0) {
-							setCPUFastest();
+							// setCPUFastest();
+							setCPUFast(true);
 							showPrevFrame();  //on previous msg screen
 						}
 					}

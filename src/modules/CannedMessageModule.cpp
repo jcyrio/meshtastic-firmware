@@ -32,7 +32,10 @@ std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", 
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
     {3734369073, "Fr Cyril"},
-#ifndef FOR_GUESTS
+#ifdef FOR_GUESTS
+    {3175760252, "Spare2"},
+    {667676428, "Spare4"},
+#else
     {3014898611, "Bookstore"},
     // {2864386355, "Kitchen"}, // was old virtual node
     {4184751652, "Kitchen"},
@@ -45,8 +48,6 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
 
-    // {3175760252, "Spare2"},
-    // { 667676428 , "Spare4"},
     // {2217306826, "79"}, // for testing
     // {279520186, "CF"}, // for testing
     // {219520199, "test"}, // for testing
