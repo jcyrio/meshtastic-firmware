@@ -25,7 +25,7 @@
 
 #ifdef SIMPLE_TDECK
 // FRC
-#define SLEEP_TIME 1
+#define SLEEP_TIME 1 // change default from 5 min to 10 seconds
 #endif
 
 #if EXCLUDE_POWER_FSM
