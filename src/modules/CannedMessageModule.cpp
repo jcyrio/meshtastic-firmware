@@ -23,7 +23,7 @@
 #endif
 
 // OPTIONAL
-#define FOR_GUESTS
+// #define FOR_GUESTS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -1534,7 +1534,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setTextAlignment(TEXT_ALIGN_CENTER);
 #ifdef SIMPLE_TDECK
         if (this->ack) {
-            // displayString = "En route...\n";
+            displayString = "En route...\n";
+            // displayString = "Delivering...\n";
 						if (deliveryStatus != 2) setDeliveryStatus(1);  // this prevents problem where if you're sending to a nearby node, right after getting set to 2 it gets immediately set back to 1 and so the (D) doesn't show at all
         } else {
 					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
