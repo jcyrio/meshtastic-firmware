@@ -22,6 +22,12 @@
 #ifndef SLEEP_TIME
 #define SLEEP_TIME 30
 #endif
+
+#ifdef SIMPLE_TDECK
+// FRC
+#define SLEEP_TIME 1
+#endif
+
 #if EXCLUDE_POWER_FSM
 FakeFsm powerFSM;
 void PowerFSM_setup(){};

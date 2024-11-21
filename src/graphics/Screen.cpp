@@ -1935,6 +1935,8 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             LOG_INFO("Turning off screen\n");
 #ifdef SIMPLE_TDECK
 					setCPUFast(false);
+					// NOTE: TESTING 11-21
+					digitalWrite(KB_POWERON, LOW);
 #endif
             dispdev->displayOff();
 #ifdef USE_ST7789
