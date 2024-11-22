@@ -55,7 +55,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #endif
 
     // {2217306826, "79"}, // for testing
-    // {279520186, "CF"}, // for testing
+    {279520186, "CF"}, // for testing
     // {219520199, "test"}, // for testing
     // {2297825467, "W3"}, // for testing
 #endif
@@ -1549,11 +1549,11 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 #ifdef SIMPLE_TDECK
         if (this->ack) {
 					// TODO: below is just for testing trying to get rid of black screen
-            if (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED) {
-							LOG_INFO("ACK NACK RECEIVED\n");
-						} else if (this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
-							LOG_INFO("SENDING ACTIVE\n");
-						}
+      //       if (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED) {
+						// 	LOG_INFO("ACK NACK RECEIVED\n");
+						// } else if (this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
+						// 	LOG_INFO("SENDING ACTIVE\n");
+						// }
 
             // displayString = "En route...\n";
             // displayString = "Delivering...\n";
@@ -1793,22 +1793,24 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 
 ProcessMessage CannedMessageModule::handleReceived(const meshtastic_MeshPacket &mp)
 {
-	LOG_INFO("HANDLE RECEIVED11\n");
     if (mp.decoded.portnum == meshtastic_PortNum_ROUTING_APP && waitingForAck) {
-	LOG_INFO("HANDLE RECEIVED12\n");
         // look for a request_id
         if (mp.decoded.request_id != 0) {
-	LOG_INFO("HANDLE RECEIVED13\n");
+// #ifndef SIMPLE_TDECK
             UIFrameEvent e;
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
             requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
             this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
+// #endif
+						// setDeliveryStatus(1);
             this->incoming = service->getNodenumFromRequestId(mp.decoded.request_id);
             meshtastic_Routing decoded = meshtastic_Routing_init_default;
             pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, meshtastic_Routing_fields, &decoded);
             this->ack = decoded.error_reason == meshtastic_Routing_Error_NONE;
             waitingForAck = false; // No longer want routing packets
+// #ifndef SIMPLE_TDECK
             this->notifyObservers(&e);
+// #endif
             // run the next time 2 seconds later
             setIntervalFromNow(2000);
         }
