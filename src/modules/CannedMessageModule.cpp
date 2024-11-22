@@ -24,6 +24,7 @@
 
 // OPTIONAL
 // #define FOR_GUESTS
+// #define MONASTERY_FRIENDS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -35,7 +36,9 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #ifdef FOR_GUESTS
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
+    {205167532, "Dcn Michael"},
 #else
+    {667676428, "Spare4"},
     {3014898611, "Bookstore"},
     // {2864386355, "Kitchen"}, // was old virtual node
     {4184751652, "Kitchen"},
@@ -47,6 +50,9 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
+#ifdef MONASTERY_FRIENDS
+		{1127590756, "Fr Andre"},
+#endif
 
     // {2217306826, "79"}, // for testing
     // {279520186, "CF"}, // for testing
@@ -419,13 +425,13 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 					if (moduleConfig.external_notification.enabled == true) {
 							if (externalNotificationModule->getMute()) {
 									externalNotificationModule->setMute(false);
-									showTemporaryMessage("Notifications\nEnabled");
+									showTemporaryMessage("Buzzer\nEnabled");
 									if (screen)
 											screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
 							} else {
 									externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
 									externalNotificationModule->setMute(true);
-									showTemporaryMessage("Notifications\nDisabled");
+									showTemporaryMessage("Buzzer\nDisabled");
 									if (screen)
 											screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
 							}
@@ -444,9 +450,6 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
 						if (deliveryStatus == 2) { // means ACKed, showing (D)
-						 LOG_INFO("deliveryStatus == 2\n");
-						 LOG_INFO("deliveryStatus == 2\n");
-						 LOG_INFO("deliveryStatus == 2\n");
 						 LOG_INFO("deliveryStatus == 2\n");
 							keyCountLoopForDeliveryStatus++;
 							if (keyCountLoopForDeliveryStatus > 2) {
@@ -591,6 +594,8 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     const char *emoji2 = "👍";
     const char *target3 = "hhh";
     const char *emoji3 = "❤️";
+    const char *target4 = "rofl";
+		const char *emoji4 = "🤣";
 
     char result[bufferSize] = {0}; // Buffer to hold the final message
     char *currentPos = modifiableMessage;
@@ -612,7 +617,12 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
             strncat(resultPos, emoji3, bufferSize - strlen(result) - 1);
             resultPos += strlen(emoji3);
             currentPos += strlen(target3);
-        }
+        } // Check for "rofl"
+        else if (strncmp(currentPos, target4, strlen(target4)) == 0) {
+            strncat(resultPos, emoji4, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji4);
+            currentPos += strlen(target4);
+				}
         // Copy the current character
         else *resultPos++ = *currentPos++;
     }
@@ -765,7 +775,11 @@ int32_t CannedMessageModule::runOnce()
 									char allMessage[this->freetext.length() + 6];
 									strcpy(allMessage, "ALL: ");
 									strcat(allMessage, this->freetext.c_str());
+#ifdef MONASTERY_FRIENDS
+									sendText(this->dest, 3, allMessage, true); //goes to Monastery Friends channel
+#else
 									sendText(this->dest, 3, allMessage, true); //goes to StA channel
+#endif
 								} else sendText(this->dest, 0, this->freetext.c_str(), true);
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								this->previousDest = this->dest;
@@ -1029,15 +1043,15 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 							nodeIndex = (nodeIndex + 1) % MYNODES.size();
-							LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							
 			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 							// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
-							LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							this->dest = MYNODES[nodeIndex].first;
-							LOG_INFO("Dest: %d\n", this->dest);
+							// LOG_INFO("Dest: %d\n", this->dest);
 							// LOG_INFO("nodeNameeee: %d\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
@@ -1101,8 +1115,8 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 							nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
-							LOG_INFO("NodeIndex: %d\n", nodeIndex);
-							LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
+							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 						} else {
@@ -1534,9 +1548,17 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         display->setTextAlignment(TEXT_ALIGN_CENTER);
 #ifdef SIMPLE_TDECK
         if (this->ack) {
-            displayString = "En route...\n";
+					// TODO: below is just for testing trying to get rid of black screen
+            if (this->runState == CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED) {
+							LOG_INFO("ACK NACK RECEIVED\n");
+						} else if (this->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
+							LOG_INFO("SENDING ACTIVE\n");
+						}
+
+            // displayString = "En route...\n";
             // displayString = "Delivering...\n";
 						if (deliveryStatus != 2) setDeliveryStatus(1);  // this prevents problem where if you're sending to a nearby node, right after getting set to 2 it gets immediately set back to 1 and so the (D) doesn't show at all
+        // display->drawString(display->getWidth() / 2 - 50, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "En route...");
         } else {
 					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
 						this->deliveryFailedCount = 1;
@@ -1547,7 +1569,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 					} else {
 						this->deliveryFailedCount = 0;
 						setDeliveryStatus(0);
-            displayString = "Delivery failed";
+            // displayString = "Delivery failed";
+						showTemporaryMessage("Delivery failed\n");
 					}
 				}
 #else
@@ -1556,16 +1579,8 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         } else {
             displayString = "Delivery failed\nto %s";
         }
-#endif
-// TODO: might want to allow the Delivery Failed msg if dontACK = true
-#ifdef SIMPLE_TDECK
-				if (this->dontACK == 0) { // I don't think this works
-        display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12 + FONT_HEIGHT_LARGE, buffer, displayString,
-#else
         display->drawStringf(display->getWidth() / 2 + x, 0 + y + 12, buffer, displayString,
-#endif
                              cannedMessageModule->getNodeName(this->incoming));
-#ifndef SIMPLE_TDECK
         display->setFont(FONT_SMALL);
 
         String snrString = "Last Rx SNR: %f";
@@ -1574,7 +1589,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         // Don't bother drawing snr and rssi for tiny displays
         if (display->getHeight() > 100) {
 
-            // Original implementation used constants of y = 100 and y = 130. Shrink this if screen is *slightly* small
+            // Original implemenation used constants of y = 100 and y = 130. Shrink this if screen is *slightly* small
             int16_t snrY = 100;
             int16_t rssiY = 130;
 
@@ -1591,7 +1606,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         }
 #endif
 #ifdef SIMPLE_TDECK
-				}
+				// } // for noack above
 #endif
     } else if (cannedMessageModule->runState == CANNED_MESSAGE_RUN_STATE_SENDING_ACTIVE) {
         // E-Ink: clean the screen *after* this pop-up
@@ -1640,7 +1655,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             // display->drawStringf(1 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
             // display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
                     // if (nodeDB->getMeshNodeByIndex(i)->num == this->dest) {
-						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+						// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->setColor(WHITE);
             display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
             display->setColor(BLACK);
@@ -1778,9 +1793,12 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 
 ProcessMessage CannedMessageModule::handleReceived(const meshtastic_MeshPacket &mp)
 {
+	LOG_INFO("HANDLE RECEIVED11\n");
     if (mp.decoded.portnum == meshtastic_PortNum_ROUTING_APP && waitingForAck) {
+	LOG_INFO("HANDLE RECEIVED12\n");
         // look for a request_id
         if (mp.decoded.request_id != 0) {
+	LOG_INFO("HANDLE RECEIVED13\n");
             UIFrameEvent e;
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
             requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset

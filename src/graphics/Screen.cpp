@@ -1134,16 +1134,16 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		else if (strcmp(messageContent, u8"\U0001F64F") == 0) {
 			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, foldedHands_width, foldedHands_height, foldedHands);
 		}
-    else if (strcmp(messageContent, "\xf0\x9f\xa4\xa3") == 0) {
+    else if (strcmp(messageContent, "\xf0\x9f\xa4\xa3") == 0 || strcmp(messageContent, "rofl") == 0) {
         display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, haha_width, haha_height, haha);
 		}
 		else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
 			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
 		}
 		else {
-			if (msgLen > 190) display->setFont(FONT_SMALL);
+			if (msgLen > 170) display->setFont(FONT_SMALL);
 			display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_LARGE * (linePosition + 1), x + display->getWidth(), messageContent);
-			if (msgLen > 190) display->setFont(FONT_LARGE);
+			if (msgLen > 170) display->setFont(FONT_LARGE);
 		}
 }
 #endif
@@ -1206,25 +1206,67 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     uint32_t days = hours / 24;
 
 		if (previousMessagePage == 0) {
+			// LOG_INFO("on first message page\n");
 			char currentNodeName[5] = {'\0'};
 			if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 			else strcpy(currentNodeName, "???");
 
-			if ((strlen(currentMsgContent) <= 65) && (historyMessageCount > 1)) { // first msg is short and there exists a 2nd msg
-				const MessageRecord* secondMsg = history.getMessageAt(1);
-				if (secondMsg && strlen(secondMsg->content) <= 65) { //2nd msg exists and is also short, display 2 msgs on screen
-					// Display both messages
-					displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
-					displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
-				}
-				} else { // only have 1 msg, or msg is too long, or next msg is too long, only display 1
-					if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
+			if (historyMessageCount > 1) { //there exists a 2nd message
+				if (strlen(currentMsgContent) <= 65) { // first msg is short
+					LOG_INFO("First message is short and there exists a 2nd msg\n");
+					const MessageRecord* secondMsg = history.getMessageAt(1);
+					if (secondMsg && strlen(secondMsg->content) <= 65) { //2nd msg exists and is also short, display 2 msgs on screen
+						// LOG_INFO("Second message exists and is also short, display 2 msgs on screen\n");
+						// LOG_INFO("Current message: %s\n", currentMsgContent);
+						// LOG_INFO("Second message: %s\n", secondMsg->content);
+						// LOG_INFO("Current node name: %s\n", currentNodeName);
+						// LOG_INFO("Second node name: %s\n", secondMsg->nodeName);
+						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
+					} else { // 2nd msg is long, don't display both at same time
+						// LOG_INFO("2nd msg is long, don't display both at same time\n");
+						// if (totalReceivedMessagesSinceBoot == 1 && currentMsgContent[0] == '*') {
+						// LOG_INFO("received 1 msg only but it was a previousHistory msg from Router\n");
+						// LOG_INFO("totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
+						// LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
+						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
+						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
+						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+					}
+				} else { // 1st message is long, display alone
+					// LOG_INFO("GOT HERE: Displaying only one message\n");
+					// if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
+					if (totalReceivedMessagesSinceBoot > 0) { 
+						// LOG_INFO("received at least 1 real message\n");
+						// if (totalReceivedMessagesSinceBoot == 1 && currentMsgContent[0] == '*') {
+						// LOG_INFO("received 1 msg only but it was a previousHistory msg from Router\n");
+						// LOG_INFO("totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
+						// LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
+						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
+						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
 					} else { // want to ignore first bootup message
+						// LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
 					}
-				}
+				} // end 1st message is long display alone
+				} else { // there is only 1 message
+				// LOG_INFO("historyMessageCount is not greater than 1, there is only 1 msg\n");
+				// HERE IS WHERE YOU HAVE TO DISPLAY THE SINGLE MESSAGE
+				
+					if (totalReceivedMessagesSinceBoot > 0) { 
+						// LOG_INFO("received 1 message\n");
+						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
+						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
+						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+					} else { // want to ignore first bootup message
+						// LOG_INFO("Displaying no messages\n");
+						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
+					}
+				
+			} // end if historyMessageCount == 1
 		} else { // not on first msg page, handle history display
+			// LOG_INFO("Not on first msg page\n");
 			if (previousMessagePage < historyMessageCount) {
 					const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
@@ -1236,6 +1278,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 							// Check if current message is short and if there's a next message
 							if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
 									// Display both messages
+									// LOG_INFO("Displaying both messages\n");
 									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
 									
 									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
@@ -1250,6 +1293,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
 									// LOG_INFO("Displaying only single message\n");
 									// if the length is over 180 char, then make font small
+									// LOG_INFO("currentMsg->content: %s\n", currentMsg->content);
+									// LOG_INFO("currentMsg->nodeName: %s\n", currentMsg->nodeName);
+									// LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
 									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
 							// }
 					} // end if currentMsg
@@ -1883,14 +1929,15 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 
     if (on != screenOn) {
         if (on) {
-						if (screen->keyboardLockMode == true) return;
+						// if (screen->keyboardLockMode == true) return;
             LOG_INFO("Turning on screen\n");
 #ifdef SIMPLE_TDECK
-					setCPUFast(true);
+					// setCPUFast(true);
 					// if just woke from light sleep and led was on, turn off LED
-					if (externalNotificationModule->getExternal(0) == 1) gpio_hold_dis((gpio_num_t)43);
+					// if (externalNotificationModule->getExternal(0) == 1) gpio_hold_dis((gpio_num_t)43);
+					// 
 					// FIXME: might not be good here. might want to check first if just woke from sleep. might test moving to initDeepSleep in sleep.cpp
-					digitalWrite(KB_POWERON, HIGH);
+					// digitalWrite(KB_POWERON, HIGH);
 					// pinMode(GPIO_NUM_43, OUTPUT);
 					// digitalWrite((gpio_num_t)43, LOW);
 #endif
@@ -1935,8 +1982,8 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             LOG_INFO("Turning off screen\n");
 #ifdef SIMPLE_TDECK
 					setCPUFast(false);
-					// NOTE: TESTING 11-21
-					digitalWrite(KB_POWERON, LOW);
+					// NOTE: TESTING 11-21. I THINK THIS WAS CAUSING A MAJOR FREEZE! Not good
+					// digitalWrite(KB_POWERON, LOW);
 #endif
             dispdev->displayOff();
 #ifdef USE_ST7789
@@ -3053,7 +3100,11 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 	else if (month == "Dec") monthNumber = 12;
 	int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
 	// Construct the final string in M.DD.H format
+#ifdef MONASTERY_FRIENDS
+	String title = "Messenger (" + String(monthNumber) + "." + String(day) + ")";
+#else
 	String title = "Monastery Messenger (" + String(monthNumber) + "." + String(day) + ")";
+#endif
 	// Serial.println(dateTimeString);
 		
     // const char *title = "Monastery Messenger  v4.29a";
@@ -3124,6 +3175,20 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 		// }
 #endif
     if (showingNormalScreen) {
+#ifdef SIMPLE_TDECK
+        // Outgoing message
+			if (packet->from == 0) {
+				LOG_INFO("Outgoing message\n");
+				setFrames(FOCUS_PRESERVE); // Return to same frame (quietly hiding the rx text message frame)
+			}
+
+			// Incoming message
+			else {
+				LOG_INFO("Incoming message\n");
+				setFrames(FOCUS_TEXTMESSAGE); // Focus on the new message
+			}
+    }
+#else
         // Outgoing message
         if (packet->from == 0)
             setFrames(FOCUS_PRESERVE); // Return to same frame (quietly hiding the rx text message frame)
@@ -3132,6 +3197,7 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
         else
             setFrames(FOCUS_TEXTMESSAGE); // Focus on the new message
     }
+#endif
 
     return 0;
 }
@@ -3173,35 +3239,39 @@ int Screen::handleInputEvent(const InputEvent *event)
     }
 #endif
 
-    if (showingNormalScreen && moduleFrames.size() == 0) {
+	if (showingNormalScreen && moduleFrames.size() == 0) {
 #ifdef SIMPLE_TDECK
-	// LOG_INFO("Prev frame: %d\n", this->ui->getUiState()->currentFrame);
+	LOG_INFO("Frame: %d\n", this->ui->getUiState()->currentFrame);
 	if (this->ui->getUiState()->currentFrame == 0) {  //on previous msg screen
-	if (this->keyboardLockMode == false) {
-		if (showedLastPreviousMessage) {
-		if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-		if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
-			previousMessagePage++;
-			// setCPUFastest();
-			setCPUFast(true);
-			screen->forceDisplay();
-			targetFramerate = 30;
-			ui->setTargetFPS(30);
-		}
-	}
-	else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-		if (previousMessagePage > 0) {
-			previousMessagePage--;
-			// setCPUFastest();
-			setCPUFast(true);
-			screen->forceDisplay();
-			targetFramerate = 30;
-			ui->setTargetFPS(30);
-		}
-	}
-		}
-		showedLastPreviousMessage = false;
-	}
+		LOG_INFO("On previous msg screen\n");
+		if (this->keyboardLockMode == false) {
+			if (showedLastPreviousMessage) {
+				// LOG_INFO("Showed last previous message\n");
+				if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+					if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
+						previousMessagePage++;
+						LOG_INFO("Previous message page: %d\n", previousMessagePage);
+						// setCPUFastest();
+						setCPUFast(true);
+						screen->forceDisplay();
+						targetFramerate = 30;
+						ui->setTargetFPS(30);
+					}
+				}
+				else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+					if (previousMessagePage > 0) {
+						previousMessagePage--;
+						LOG_INFO("Previous message page: %d\n", previousMessagePage);
+						// setCPUFastest();
+						setCPUFast(true);
+						screen->forceDisplay();
+						targetFramerate = 30;
+						ui->setTargetFPS(30);
+					}
+				}
+			}
+			showedLastPreviousMessage = false;
+		} // end keyboardLockMode == true
 }
 #endif
 		

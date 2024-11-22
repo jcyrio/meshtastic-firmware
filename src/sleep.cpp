@@ -200,7 +200,7 @@ static void waitEnterSleep(bool skipPreflight = false)
 			gpio_hold_en((gpio_num_t)43);
 		}
 		// cut keyboard power
-		digitalWrite(KB_POWERON, LOW);
+		// digitalWrite(KB_POWERON, LOW);
 #endif
 
     notifySleep.notifyObservers(NULL);
