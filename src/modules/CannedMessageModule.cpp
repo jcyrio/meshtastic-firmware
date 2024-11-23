@@ -23,8 +23,9 @@
 #endif
 
 // OPTIONAL
-// #define FOR_GUESTS
+#define FOR_GUESTS
 // #define MONASTERY_FRIENDS
+// #define FATHERS_NODES
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -37,25 +38,29 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
     {205167532, "Dcn Michael"},
-#else
-    {667676428, "Spare4"},
+#endif
+#ifdef MONASTERY_FRIENDS
+		{1127590756, "Fr Andre"},
     {3014898611, "Bookstore"},
-    // {2864386355, "Kitchen"}, // was old virtual node
+    {NODENUM_BROADCAST, "BROADCAST"},
+#endif
+#ifdef FATHERS_NODES  //fathers
+    {3014898611, "Bookstore"},
     {4184751652, "Kitchen"},
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
-    // {2864390690, "Fr Michael"}, //old virtual node
-    // {205167532, "Fr Michael"},
     {202935032, "Fr Evgeni"},
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
-#ifdef MONASTERY_FRIENDS
-		{1127590756, "Fr Andre"},
-#endif
+    // {2864386355, "Kitchen"}, // was old virtual node
+		///REMOVE LATER!!!!
+		// {1127590756, "Fr Andre"},
+    // {2864390690, "Fr Michael"}, //old virtual node
+    // {205167532, "Fr Michael"},
 
     // {2217306826, "79"}, // for testing
-    {279520186, "CF"}, // for testing
+    // {279520186, "CF"}, // for testing
     // {219520199, "test"}, // for testing
     // {2297825467, "W3"}, // for testing
 #endif
@@ -775,11 +780,7 @@ int32_t CannedMessageModule::runOnce()
 									char allMessage[this->freetext.length() + 6];
 									strcpy(allMessage, "ALL: ");
 									strcat(allMessage, this->freetext.c_str());
-#ifdef MONASTERY_FRIENDS
-									sendText(this->dest, 3, allMessage, true); //goes to Monastery Friends channel
-#else
-									sendText(this->dest, 3, allMessage, true); //goes to StA channel
-#endif
+									sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order)
 								} else sendText(this->dest, 0, this->freetext.c_str(), true);
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								this->previousDest = this->dest;
@@ -1796,21 +1797,22 @@ ProcessMessage CannedMessageModule::handleReceived(const meshtastic_MeshPacket &
     if (mp.decoded.portnum == meshtastic_PortNum_ROUTING_APP && waitingForAck) {
         // look for a request_id
         if (mp.decoded.request_id != 0) {
-// #ifndef SIMPLE_TDECK
+#ifndef SIMPLE_TDECK
             UIFrameEvent e;
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
             requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
             this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
-// #endif
-						// setDeliveryStatus(1);
+#else
+						if (this->ack && deliveryStatus != 2) setDeliveryStatus(1);
+#endif
             this->incoming = service->getNodenumFromRequestId(mp.decoded.request_id);
             meshtastic_Routing decoded = meshtastic_Routing_init_default;
             pb_decode_from_bytes(mp.decoded.payload.bytes, mp.decoded.payload.size, meshtastic_Routing_fields, &decoded);
             this->ack = decoded.error_reason == meshtastic_Routing_Error_NONE;
             waitingForAck = false; // No longer want routing packets
-// #ifndef SIMPLE_TDECK
+#ifndef SIMPLE_TDECK
             this->notifyObservers(&e);
-// #endif
+#endif
             // run the next time 2 seconds later
             setIntervalFromNow(2000);
         }
