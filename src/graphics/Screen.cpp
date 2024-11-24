@@ -124,6 +124,17 @@ public:
 				// addMessage("Demo of the new system to scroll message history", "FCyr");
     }
 
+		void clear() {
+			for (auto& msg : messages) {
+				msg.clear();
+			}
+				currentIndex = 0;
+        totalMessageCount = 0;
+        // firstRunThrough = true;
+        lastMessageWasPreviousMsgs = false;
+        // memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
+    }
+
     void addMessage(const char* content, const char* nodeName) {
         if (!content || content[0] == '*') {
 					//TODO: this is never used!

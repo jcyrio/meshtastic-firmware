@@ -28,6 +28,7 @@ class MessageHistory {
 public:
     MessageHistory();
     
+		void clear();
     // Main method for adding new messages
     void addMessage(const char* content, const char* nodeName);
     
@@ -61,6 +62,7 @@ class Screen
 
 	  // int getTotalMessages() const { return totalReceivedMessagesSinceBoot; }
    //  void setTotalMessages(int value) { totalReceivedMessagesSinceBoot = value; }
+	 MessageHistory();
 
     void print(const char *) {}
     void doDeepSleep() {}
@@ -74,6 +76,7 @@ class Screen
     void decreaseBrightness() {}
     void setFunctionSymbal(std::string) {}
     void removeFunctionSymbal(std::string) {}
+		void clear() {}
     void startAlert(const char *) {}
     void endAlert() {}
 };
@@ -606,4 +609,5 @@ class Screen : public concurrency::OSThread
 
 } // namespace graphics
 
+extern MessageHistory history;
 #endif
