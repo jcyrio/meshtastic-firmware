@@ -76,7 +76,7 @@ class Screen
     void decreaseBrightness() {}
     void setFunctionSymbal(std::string) {}
     void removeFunctionSymbal(std::string) {}
-		void clear() {}
+		void clearHistory() {}
     void startAlert(const char *) {}
     void endAlert() {}
 };
@@ -344,6 +344,7 @@ class Screen : public concurrency::OSThread
 
     void setFunctionSymbal(std::string sym);
     void removeFunctionSymbal(std::string sym);
+		void clearHistory();
 
     /// Stops showing the boot screen.
     void stopBootScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BOOT_SCREEN}); }
@@ -609,5 +610,5 @@ class Screen : public concurrency::OSThread
 
 } // namespace graphics
 
-extern MessageHistory history;
+// extern MessageHistory history;
 #endif

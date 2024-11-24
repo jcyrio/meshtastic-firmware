@@ -130,9 +130,10 @@ public:
 			}
 				currentIndex = 0;
         totalMessageCount = 0;
-        // firstRunThrough = true;
+				previousMessagePage = 0;
+        firstRunThroughMessages = true;
         lastMessageWasPreviousMsgs = false;
-        // memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
+        memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
     }
 
     void addMessage(const char* content, const char* nodeName) {
@@ -2624,6 +2625,12 @@ void Screen::blink()
 }
 
 #ifdef SIMPLE_TDECK
+void Screen::clearHistory() {
+	LOG_INFO("Clearing the history\n");
+	lastReceivedMessage[0] = '\0';
+	totalReceivedMessagesSinceBoot = 0;
+	history.clear();
+}
 // void Screen::showFirstBrightnessLevel() {
 // 	setFunctionSymbal(std::string(1, brightnessLevel));
 // }

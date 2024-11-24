@@ -740,15 +740,13 @@ int32_t CannedMessageModule::runOnce()
 							// } else if ((this->freetext == "BToff") || (this->freetext == "btoff")) {
 							// 	setBluetoothEnable(false);
 							// 	showTemporaryMessage("Bluetooth\nDisabled");
-							} else if (this->freetext == "clr") {
-								// clear all previous messages
-								// screen->history.clear();
-								history.clear();
-								showTemporaryMessage("Cleared all previous messages");
-		char clrMessage[20];
-		snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-		sendText(NODENUM_RPI5, 0, clrMessage, false);
-		alreadySentFirstMessage = 1;
+							} else if (this->freetext == "clr") { // clear all previous messages
+								screen->clearHistory();
+								showTemporaryMessage("Cleared all\nprevious messages");
+								char clrMessage[20];
+								snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+								sendText(NODENUM_RPI5, 0, clrMessage, false);
+								alreadySentFirstMessage = 1;
 							} else if ((this->freetext == "rndb") || (this->freetext == "ndbr")) {
 								nodeDB->resetNodes();
 								showTemporaryMessage("Reset NodeDB");
