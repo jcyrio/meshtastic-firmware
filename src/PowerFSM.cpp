@@ -22,12 +22,6 @@
 #ifndef SLEEP_TIME
 #define SLEEP_TIME 30
 #endif
-
-#ifdef SIMPLE_TDECK
-// FRC
-#define SLEEP_TIME 1 // change default from 5 min to 10 seconds
-#endif
-
 #if EXCLUDE_POWER_FSM
 FakeFsm powerFSM;
 void PowerFSM_setup(){};
@@ -145,6 +139,11 @@ static void lsIdle()
         ledBlink.set(false);
         LOG_INFO("Reached ls_secs, servicing loop()\n");
         powerFSM.trigger(EVENT_WAKE_TIMER);
+#ifdef SIMPLE_TDECK
+				// digitalWrite(KB_POWERON, HIGH);
+				// gpio_hold_dis((gpio_num_t)43);
+				// digitalWrite((gpio_num_t)43, LOW);
+#endif
     }
 #endif
 }

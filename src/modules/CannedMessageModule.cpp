@@ -740,7 +740,7 @@ int32_t CannedMessageModule::runOnce()
 							// } else if ((this->freetext == "BToff") || (this->freetext == "btoff")) {
 							// 	setBluetoothEnable(false);
 							// 	showTemporaryMessage("Bluetooth\nDisabled");
-							} else if (this->freetext == "clr") { // clear all previous messages
+							} else if (this->freetext == "c") { // clear all previous messages
 								screen->clearHistory();
 								showTemporaryMessage("Cleared all\nprevious messages");
 								char clrMessage[20];
