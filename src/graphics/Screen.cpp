@@ -428,6 +428,15 @@ static void drawFunctionOverlay(OLEDDisplay *display, OLEDDisplayUiState *state)
     }
 }
 
+#ifdef SIMPLE_TDECK
+static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiState *state)
+{
+		String batteryPercent = String(powerStatus->getBatteryChargePercent()) + "%";
+		display->setFont(FONT_SMALL);
+		display->drawString(0, SCREEN_HEIGHT - FONT_HEIGHT_SMALL, batteryPercent);
+}
+#endif
+
 #ifdef USE_EINK
 /// Used on eink displays while in deep sleep
 static void drawDeepSleepScreen(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
@@ -2532,7 +2541,9 @@ void Screen::setFrames(FrameFocus focus)
     // Add function overlay here. This can show when notifications muted, modifier key is active etc
     static OverlayCallback functionOverlay[] = {drawFunctionOverlay};
     static const int functionOverlayCount = sizeof(functionOverlay) / sizeof(functionOverlay[0]);
+		static OverlayCallback batteryLevelOverlay[] {drawBatteryLevelInBottomLeft};
     ui->setOverlays(functionOverlay, functionOverlayCount);
+		ui->setOverlays(batteryLevelOverlay, 1);
 
     prevFrame = -1; // Force drawNodeInfo to pick a new node (because our list
                     // just changed)
