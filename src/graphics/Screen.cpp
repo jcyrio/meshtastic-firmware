@@ -431,9 +431,20 @@ static void drawFunctionOverlay(OLEDDisplay *display, OLEDDisplayUiState *state)
 #ifdef SIMPLE_TDECK
 static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiState *state)
 {
-		String batteryPercent = String(powerStatus->getBatteryChargePercent()) + "%";
-		display->setFont(FONT_SMALL);
-		display->drawString(0, SCREEN_HEIGHT - FONT_HEIGHT_SMALL, batteryPercent);
+	char tempBuf[64];
+	uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local time
+	if (rtc_sec > 0) {
+		long hms = rtc_sec % SEC_PER_DAY;
+		hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
+		int hour = hms / SEC_PER_HOUR;
+		int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
+		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "%d:%02d  ", hour, min); // No leading zero for hour
+    else snprintf(tempBuf, sizeof(tempBuf), "%02d:%02d  ", hour, min); // With leading zero for hour
+	} else tempBuf[0] = '\0';
+	String batteryPercent = String(powerStatus->getBatteryChargePercent()) + "%";
+	String timeAndBattery = tempBuf + batteryPercent;
+	display->setFont(FONT_SMALL);
+	display->drawString(0, SCREEN_HEIGHT - FONT_HEIGHT_SMALL, timeAndBattery);
 }
 #endif
 
@@ -1121,7 +1132,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		if (historyMessageCount > MAX_MESSAGE_HISTORY) historyMessageCount = MAX_MESSAGE_HISTORY;
 
 		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*'))) {
-			uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local timezone
+			uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local time
 			if (rtc_sec > 0) {
 				long hms = rtc_sec % SEC_PER_DAY;
 				hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
