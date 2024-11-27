@@ -25,8 +25,8 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-// #define FATHERS_NODES
-#define SECURITY
+#define FATHERS_NODES
+// #define SECURITY
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -902,8 +902,10 @@ int32_t CannedMessageModule::runOnce()
 					}
 					break;
 				case 0x1a: // alt-w/1, previous Messages1
+#ifndef SECURITY
 					sendText(NODENUM_RPI5, 0, "1", false);
 					showTemporaryMessage("Requesting Previous\nMessages 1");
+#endif
 					break;
 				// case 0x2a: // alt-e/2, previous Messages2
 				// // case 0x9d: // alt-e/2, previous Messages2

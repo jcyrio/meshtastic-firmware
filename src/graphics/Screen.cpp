@@ -443,11 +443,12 @@ static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiStat
 		int hour = hms / SEC_PER_HOUR;
 		int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
 		// snprintf(tempBuf, sizeof(tempBuf), "               1:23"); // No leading zero for hour
-		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "              %d:%02d", hour, min); // No leading zero for hour
-    else snprintf(tempBuf, sizeof(tempBuf), "              %02d:%02d", hour, min); // With leading zero for hour
+		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "%d:%02d ", hour, min); // No leading zero for hour
+    else snprintf(tempBuf, sizeof(tempBuf), "%02d:%02d", hour, min); // With leading zero for hour
 	} else tempBuf[0] = '\0';
-	String batteryPercent = String(powerStatus->getBatteryChargePercent()) + "%";
-	String timeAndBattery = batteryPercent + tempBuf;
+	String batteryPercent = "             " + String(powerStatus->getBatteryChargePercent()) + "%";
+	// String timeAndBattery = batteryPercent + tempBuf;
+	String timeAndBattery = tempBuf + batteryPercent;
 	display->setFont(FONT_SMALL);
 	display->drawString(0, SCREEN_HEIGHT - FONT_HEIGHT_SMALL, timeAndBattery);
 }
@@ -3146,7 +3147,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 	else if (month == "Dec") monthNumber = 12;
 	int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
 	// Construct the final string in M.DD.H format
-#ifdef MONASTERY_FRIENDS
+#if defined(MONASTERY_FRIENDS) || defined(SECURITY)
 	String title = "Messenger (" + String(monthNumber) + "." + String(day) + ")";
 #else
 	String title = "Monastery Messenger (" + String(monthNumber) + "." + String(day) + ")";
