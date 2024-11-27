@@ -297,7 +297,11 @@ static void drawIconScreen(const char *upperMsg, OLEDDisplay *display, OLEDDispl
     display->setFont(FONT_MEDIUM);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
     // const char *title = "meshtastic.org";
+#ifdef SECURITY
+    const char *title = "Messenger";
+#else
     const char *title = "Monastery Messenger";
+#endif
     display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM, title);
     display->setFont(FONT_SMALL);
 
@@ -438,11 +442,12 @@ static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiStat
 		hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
 		int hour = hms / SEC_PER_HOUR;
 		int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
-		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "%d:%02d  ", hour, min); // No leading zero for hour
-    else snprintf(tempBuf, sizeof(tempBuf), "%02d:%02d  ", hour, min); // With leading zero for hour
+		// snprintf(tempBuf, sizeof(tempBuf), "               1:23"); // No leading zero for hour
+		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "              %d:%02d", hour, min); // No leading zero for hour
+    else snprintf(tempBuf, sizeof(tempBuf), "              %02d:%02d", hour, min); // With leading zero for hour
 	} else tempBuf[0] = '\0';
 	String batteryPercent = String(powerStatus->getBatteryChargePercent()) + "%";
-	String timeAndBattery = tempBuf + batteryPercent;
+	String timeAndBattery = batteryPercent + tempBuf;
 	display->setFont(FONT_SMALL);
 	display->drawString(0, SCREEN_HEIGHT - FONT_HEIGHT_SMALL, timeAndBattery);
 }
@@ -1139,7 +1144,8 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				int hour = hms / SEC_PER_HOUR;
 				int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
 				int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
-				snprintf(tempBuf, sizeof(tempBuf), "               %02d:%02d:%02d", hour, min, sec);
+				if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "                 %d:%02d", hour, min); // No leading zero for hour
+				else snprintf(tempBuf, sizeof(tempBuf), "               %02d:%02d", hour, min); // With leading zero for hour
 			} else tempBuf[0] = '\0';
 		} else {
 				char prefixBuf[10];

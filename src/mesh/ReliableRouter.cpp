@@ -1,5 +1,6 @@
 #include "ReliableRouter.h"
 #include "Default.h"
+#include "modules/RoutingModule.h"
 #include "MeshModule.h"
 #include "MeshTypes.h"
 #include "configuration.h"
@@ -88,18 +89,6 @@ bool ReliableRouter::shouldFilterReceived(const meshtastic_MeshPacket *p)
         i->second.nextTxMsec += iface->getPacketTime(p);
     }
 
-    /* Resend implicit ACKs for repeated packets (hopStart equals hopLimit);
-     * this way if an implicit ACK is dropped and a packet is resent we'll rebroadcast again.
-     * Resending real ACKs is omitted, as you might receive a packet multiple times due to flooding and
-     * flooding this ACK back to the original sender already adds redundancy. */
-    bool isRepeated = p->hop_start == 0 ? (p->hop_limit == HOP_RELIABLE) : (p->hop_start == p->hop_limit);
-    if (wasSeenRecently(p, false) && isRepeated && !MeshModule::currentReply && p->to != nodeDB->getNodeNum()) {
-        LOG_DEBUG("Resending implicit ack for a repeated floodmsg\n");
-        meshtastic_MeshPacket *tosend = packetPool.allocCopy(*p);
-        tosend->hop_limit--; // bump down the hop count
-        Router::send(tosend);
-    }
-
     return FloodingRouter::shouldFilterReceived(p);
 }
 
@@ -124,11 +113,19 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
             if (MeshModule::currentReply) {
                 LOG_DEBUG("Some other module has replied to this message, no need for a 2nd ack\n");
             } else if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
-                sendAckNak(meshtastic_Routing_Error_NONE, getFrom(p), p->id, p->channel, p->hop_start, p->hop_limit);
+                // A response may be set to want_ack for retransmissions, but we don't need to ACK a response if it received an
+                // implicit ACK already. If we received it directly, only ACK with a hop limit of 0
+                if (!p->decoded.request_id)
+                    sendAckNak(meshtastic_Routing_Error_NONE, getFrom(p), p->id, p->channel,
+                               routingModule->getHopLimitForResponse(p->hop_start, p->hop_limit));
+                else if (p->hop_start > 0 && p->hop_start == p->hop_limit)
+                    sendAckNak(meshtastic_Routing_Error_NONE, getFrom(p), p->id, p->channel, 0);
+
+							
             } else {
                 // Send a 'NO_CHANNEL' error on the primary channel if want_ack packet destined for us cannot be decoded
-                sendAckNak(meshtastic_Routing_Error_NO_CHANNEL, getFrom(p), p->id, channels.getPrimaryIndex(), p->hop_start,
-                           p->hop_limit);
+                sendAckNak(meshtastic_Routing_Error_NO_CHANNEL, getFrom(p), p->id, channels.getPrimaryIndex(),
+										routingModule->getHopLimitForResponse(p->hop_start, p->hop_limit));
             }
         }
 
@@ -204,9 +201,9 @@ bool ReliableRouter::stopRetransmission(GlobalPacketId key)
         if (old->numRetransmissions < NUM_RETRANSMISSIONS - 1) {
             // remove the 'original' (identified by originator and packet->id) from the txqueue and free it
             cancelSending(getFrom(p), p->id);
-            // now free the pooled copy for retransmission too
-            packetPool.release(p);
         }
+				// now free the pooled copy for retransmission too
+				packetPool.release(p);
         auto numErased = pending.erase(key);
         assert(numErased == 1);
         return true;

@@ -581,7 +581,7 @@ void Power::shutdown()
 #ifdef PIN_LED3
     ledOff(PIN_LED3);
 #endif
-    doDeepSleep(DELAY_FOREVER, false);
+    doDeepSleep(DELAY_FOREVER, false, false);
 #endif
 }
 

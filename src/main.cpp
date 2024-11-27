@@ -421,7 +421,7 @@ void setup()
     // otherwise keyboard and touch screen will not work
 #ifdef SIMPLE_TDECK
 		// NOTE: if you ever start using the touch screen might have to increase this delay
-    delay(100);
+    delay(200);
 #else
     delay(800);
 #endif

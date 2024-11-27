@@ -15,7 +15,7 @@ PacketHistory::PacketHistory()
 /**
  * Update recentBroadcasts and return true if we have already seen this packet
  */
-bool PacketHistory::wasSeenRecently(const meshtastic_MeshPacket *p, bool withUpdate)
+bool PacketHistory::wasSeenRecently(const meshtastic_MeshPacket *p, bool withUpdate, bool *isRepeated)
 {
     if (p->id == 0) {
         LOG_DEBUG("Ignoring message with zero id\n");
@@ -35,6 +35,18 @@ bool PacketHistory::wasSeenRecently(const meshtastic_MeshPacket *p, bool withUpd
     if (seenRecently && (now - found->rxTimeMsec) >= FLOOD_EXPIRE_TIME) { // Check whether found packet has already expired
         recentPackets.erase(found);                                       // Erase and pretend packet has not been seen recently
         found = recentPackets.end();
+        seenRecently = false;
+    }
+		    /* If the original transmitter is doing retransmissions (hopStart equals hopLimit) for a reliable transmission, e.g., when the
+       ACK got lost, we will handle the packet again to make sure it gets an ACK/response to its packet. */
+    if (seenRecently && p->hop_start > 0 && p->hop_start == p->hop_limit) {
+        LOG_DEBUG("Repeated reliable tx");
+        seenRecently = false;
+    }
+		    /* If the original transmitter is doing retransmissions (hopStart equals hopLimit) for a reliable transmission, e.g., when the
+       ACK got lost, we will handle the packet again to make sure it gets an ACK/response to its packet. */
+    if (seenRecently && p->hop_start > 0 && p->hop_start == p->hop_limit) {
+        LOG_DEBUG("Repeated reliable tx");
         seenRecently = false;
     }
 

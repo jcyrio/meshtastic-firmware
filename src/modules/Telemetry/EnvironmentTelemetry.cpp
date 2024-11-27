@@ -70,7 +70,7 @@ int32_t EnvironmentTelemetryModule::runOnce()
         uint32_t nightyNightMs = Default::getConfiguredOrDefaultMs(moduleConfig.telemetry.environment_update_interval,
                                                                    default_telemetry_broadcast_interval_secs);
         LOG_DEBUG("Sleeping for %ims, then awaking to send metrics again.\n", nightyNightMs);
-        doDeepSleep(nightyNightMs, true);
+        doDeepSleep(nightyNightMs, true, false);
     }
 
     uint32_t result = UINT32_MAX;

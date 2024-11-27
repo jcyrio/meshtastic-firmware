@@ -23,9 +23,10 @@
 #endif
 
 // OPTIONAL
-#define FOR_GUESTS
+// #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
 // #define FATHERS_NODES
+#define SECURITY
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -38,6 +39,11 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
     {205167532, "Dcn Michael"},
+#endif
+#ifdef SECURITY
+    {3014898611, "Bookstore"},
+    {NODENUM_BROADCAST, "BROADCAST"},
+    {2579205344, "Fr Theoktist"},
 #endif
 #ifdef MONASTERY_FRIENDS
 		{1127590756, "Fr Andre"},
@@ -53,6 +59,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
+#endif
     // {2864386355, "Kitchen"}, // was old virtual node
 		///REMOVE LATER!!!!
 		// {1127590756, "Fr Andre"},
@@ -63,7 +70,6 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     // {279520186, "CF"}, // for testing
     // {219520199, "test"}, // for testing
     // {2297825467, "W3"}, // for testing
-#endif
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
 		// {3771734928, "Birdman"},
