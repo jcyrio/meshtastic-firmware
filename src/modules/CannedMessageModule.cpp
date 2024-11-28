@@ -25,8 +25,8 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-#define FATHERS_NODES
-// #define SECURITY
+// #define FATHERS_NODES
+#define SECURITY
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -38,12 +38,17 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #ifdef FOR_GUESTS
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
-    {205167532, "Dcn Michael"},
+    // {205167532, "Dcn Michael"},
 #endif
 #ifdef SECURITY
     {3014898611, "Bookstore"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {2579205344, "Fr Theoktist"},
+		{207139432, "Matrix"},
+		{207216020, "Ronin"},
+		{3771733328, "Athos"}, //Pete
+		{3771735168, "Rambo"}, //Perry
+		{3771734404, "Chopani"}, //Niko
 #endif
 #ifdef MONASTERY_FRIENDS
 		{1127590756, "Fr Andre"},
@@ -73,7 +78,6 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		// below for Geronda only
 		// {207036432, "CHIP"}, 
 		// {3771734928, "Birdman"},
-		// {3771735168, "RAMBO"},
 		// 
 		// {NODENUM_BROADCAST, "Broadcast"},
 };
@@ -120,10 +124,11 @@ void CannedMessageModule::setDeliveryStatus(uint8_t status) {
 // Remove Canned message screen if no action is taken for some milliseconds
 #define INACTIVATE_AFTER_MS 20000
 
-#define NODENUM_HYTEC 808611244
 #define NODENUM_RPI5 3719082304
-#define NODENUM_MONTDECK 4184738532
-#define NODENUM_FRTH_TDECK 207089188
+#define NODENUM_SP2 3175760252
+#define NODENUM_SP4 667676428
+#define NODENUM_DCNM 205167532
+#define NODENUM_FRCYRIL 3734369073
 
 extern ScanI2C::DeviceAddress cardkb_found;
 
@@ -747,12 +752,28 @@ int32_t CannedMessageModule::runOnce()
 							// 	setBluetoothEnable(false);
 							// 	showTemporaryMessage("Bluetooth\nDisabled");
 							} else if (this->freetext == "c") { // clear all previous messages
-								screen->clearHistory();
-								showTemporaryMessage("Cleared all\nprevious messages");
-								char clrMessage[20];
-								snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-								sendText(NODENUM_RPI5, 0, clrMessage, false);
-								alreadySentFirstMessage = 1;
+																									// check if it's from SP2, and if so, send msg to SP4 'clr'
+								// below is for auto clearing other device
+								// if (nodeDB->getNodeNum() == NODENUM_SP2) {
+								// 	sendText(NODENUM_SP4, 0, "clr", false);
+								// } else if (nodeDB->getNodeNum() == NODENUM_SP4) {
+								// 	sendText(NODENUM_SP2, 0, "clr", false);
+								// }
+								if ((nodeDB->getNodeNum() == NODENUM_SP2) && (this->dest == NODENUM_SP4)) {
+									sendText(NODENUM_SP4, 0, "c", false);
+									showTemporaryMessage("Cleared other");
+								} else if ((nodeDB->getNodeNum() == NODENUM_SP4) && (this->dest == NODENUM_SP2)) {
+									sendText(NODENUM_SP2, 0, "c", false);
+									showTemporaryMessage("Cleared other");
+								} else {
+									screen->clearHistory();
+									showTemporaryMessage("Cleared all\nprevious messages");
+									char clrMessage[20];
+									delay(500);
+									snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+									sendText(NODENUM_RPI5, 0, clrMessage, false);
+									alreadySentFirstMessage = 1; //screen.cpp can't do this
+							  }
 							} else if ((this->freetext == "rndb") || (this->freetext == "ndbr")) {
 								nodeDB->resetNodes();
 								showTemporaryMessage("Reset NodeDB");

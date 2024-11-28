@@ -49,6 +49,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "modules/TextMessageModule.h"
 #include "sleep.h"
 #include "target_specific.h"
+
+#define SECURITY
+
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 const char* NO_MSGS_RECEIVED_MESSAGE = "     No messages received";
@@ -436,6 +439,7 @@ static void drawFunctionOverlay(OLEDDisplay *display, OLEDDisplayUiState *state)
 static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiState *state)
 {
 	char tempBuf[64];
+	String batteryPercent;
 	uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local time
 	if (rtc_sec > 0) {
 		long hms = rtc_sec % SEC_PER_DAY;
@@ -445,8 +449,11 @@ static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiStat
 		// snprintf(tempBuf, sizeof(tempBuf), "               1:23"); // No leading zero for hour
 		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "%d:%02d ", hour, min); // No leading zero for hour
     else snprintf(tempBuf, sizeof(tempBuf), "%02d:%02d", hour, min); // With leading zero for hour
-	} else tempBuf[0] = '\0';
-	String batteryPercent = "             " + String(powerStatus->getBatteryChargePercent()) + "%";
+		batteryPercent = "             " + String(powerStatus->getBatteryChargePercent()) + "%";
+	} else {  // time not received yet
+		tempBuf[0] = '\0';
+		batteryPercent = "                  " + String(powerStatus->getBatteryChargePercent()) + "%";
+	}
 	// String timeAndBattery = batteryPercent + tempBuf;
 	String timeAndBattery = tempBuf + batteryPercent;
 	display->setFont(FONT_SMALL);
@@ -1128,7 +1135,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
-    
+
     char tempBuf[64];
     uint8_t timestampHours, timestampMinutes;
 		uint8_t msgLen = strlen(messageContent);
@@ -1214,7 +1221,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		historyMessageCount = history.getTotalMessageCount();
     display->setFont(FONT_LARGE);
 		//TODO: remove this later, just for fixing bug
-		if (firstRunThroughMessages) { // for ignoring the first / bootup message
+		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
 			LOG_INFO("In first run through messages\n");
 			history.setFirstMessageToIgnore(currentMsgContent);
 			LOG_INFO("firstMessageToIgnore: %s\n", currentMsgContent);
@@ -1275,8 +1282,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				} else { // 1st message is long, display alone
 					// LOG_INFO("GOT HERE: Displaying only one message\n");
 					// if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
-					if (totalReceivedMessagesSinceBoot > 0) { 
+					if (totalReceivedMessagesSinceBoot > 0) {
+					// if (totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
 						// LOG_INFO("received at least 1 real message\n");
+						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
 						// if (totalReceivedMessagesSinceBoot == 1 && currentMsgContent[0] == '*') {
 						// LOG_INFO("received 1 msg only but it was a previousHistory msg from Router\n");
 						// LOG_INFO("totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
@@ -1285,15 +1294,15 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
 					} else { // want to ignore first bootup message
-						// LOG_INFO("Displaying no messages\n");
+						LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
 					}
 				} // end 1st message is long display alone
 				} else { // there is only 1 message
 				// LOG_INFO("historyMessageCount is not greater than 1, there is only 1 msg\n");
 				// HERE IS WHERE YOU HAVE TO DISPLAY THE SINGLE MESSAGE
-				
-					if (totalReceivedMessagesSinceBoot > 0) { 
+
+					if ((totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
 						// LOG_INFO("received 1 message\n");
 						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
 						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
@@ -1302,7 +1311,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 						// LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
 					}
-				
+
 			} // end if historyMessageCount == 1
 		} else { // not on first msg page, handle history display
 			// LOG_INFO("Not on first msg page\n");
@@ -1319,7 +1328,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 									// Display both messages
 									// LOG_INFO("Displaying both messages\n");
 									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
-									
+
 									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
 									// Skip the next message in the next iteration since we displayed it
 									// enabling this causes to jump by 2 pags instead of "smooth" scrolling 1 at a time
@@ -3208,6 +3217,14 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 #ifdef SIMPLE_TDECK
 	LOG_DEBUG("Increasing totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
 		totalReceivedMessagesSinceBoot++;
+		//check if msg == 'c'
+    const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
+		const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+		if (strcmp(currentMsgContent, "c") == 0) { // allow clr msg to clear the history
+			// LOG_INFO("Clearing the history\n");
+			history.clear();
+			return 0;
+		}
     // char channelStr[20];
 		// snprintf(channelStr, sizeof(channelStr), "%s", packet->channel);
 		// char channelName[20];
