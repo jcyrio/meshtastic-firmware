@@ -191,7 +191,7 @@ public:
     uint32_t getTotalMessageCount() const { return totalMessageCount; }
 		// NOTE: below isn't used yet. what did we originally have it for?
     bool wasLastMessagePreviousMsgs() const { return lastMessageWasPreviousMsgs; }
-    
+
     void setFirstMessageToIgnore(const char* msg) {
 			LOG_INFO("inside setFirstMessageToIgnore");
         strncpy(firstMessageToIgnore, msg, MAX_MESSAGE_LENGTH - 1);
@@ -449,10 +449,10 @@ static void drawBatteryLevelInBottomLeft(OLEDDisplay *display, OLEDDisplayUiStat
 		// snprintf(tempBuf, sizeof(tempBuf), "               1:23"); // No leading zero for hour
 		if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "%d:%02d ", hour, min); // No leading zero for hour
     else snprintf(tempBuf, sizeof(tempBuf), "%02d:%02d", hour, min); // With leading zero for hour
-		batteryPercent = "             " + String(powerStatus->getBatteryChargePercent()) + "%";
+		batteryPercent = "            " + String(powerStatus->getBatteryChargePercent()) + "%";
 	} else {  // time not received yet
 		tempBuf[0] = '\0';
-		batteryPercent = "                  " + String(powerStatus->getBatteryChargePercent()) + "%";
+		batteryPercent = "                 " + String(powerStatus->getBatteryChargePercent()) + "%";
 	}
 	// String timeAndBattery = batteryPercent + tempBuf;
 	String timeAndBattery = tempBuf + batteryPercent;
@@ -1144,7 +1144,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     display->setTextAlignment(TEXT_ALIGN_LEFT);
 		if (historyMessageCount > MAX_MESSAGE_HISTORY) historyMessageCount = MAX_MESSAGE_HISTORY;
 
-		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*'))) {
+		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*')) || (strcmp(messageContent, NO_MSGS_RECEIVED_MESSAGE) == 0)) {
 			uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local time
 			if (rtc_sec > 0) {
 				long hms = rtc_sec % SEC_PER_DAY;
@@ -1152,8 +1152,8 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				int hour = hms / SEC_PER_HOUR;
 				int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
 				int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
-				if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "                 %d:%02d", hour, min); // No leading zero for hour
-				else snprintf(tempBuf, sizeof(tempBuf), "               %02d:%02d", hour, min); // With leading zero for hour
+				if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "                   %d:%02d", hour, min); // No leading zero for hour
+				else snprintf(tempBuf, sizeof(tempBuf), "                   %02d:%02d", hour, min); // With leading zero for hour
 			} else tempBuf[0] = '\0';
 		} else {
 				char prefixBuf[10];
@@ -1220,15 +1220,14 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
 		historyMessageCount = history.getTotalMessageCount();
     display->setFont(FONT_LARGE);
-		//TODO: remove this later, just for fixing bug
-#if !defined(SECURITY) && !defined(FOR_GUESTS)
+// #if !defined(SECURITY) && !defined(FOR_GUESTS)
 		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
 			LOG_INFO("In first run through messages\n");
 			history.setFirstMessageToIgnore(currentMsgContent);
 			LOG_INFO("firstMessageToIgnore: %s\n", currentMsgContent);
 			firstRunThroughMessages = false;
 		}
-#endif
+// #endif
 		if (strcmp(currentMsgContent, lastReceivedMessage) != 0) {
 			lastReceivedMessage[0] = '\0'; strcpy(lastReceivedMessage, currentMsgContent);
 			LOG_INFO("Received new message!\n");
