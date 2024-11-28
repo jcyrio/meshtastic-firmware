@@ -1221,12 +1221,14 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		historyMessageCount = history.getTotalMessageCount();
     display->setFont(FONT_LARGE);
 		//TODO: remove this later, just for fixing bug
+#if !defined(SECURITY) && !defined(FOR_GUESTS)
 		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
 			LOG_INFO("In first run through messages\n");
 			history.setFirstMessageToIgnore(currentMsgContent);
 			LOG_INFO("firstMessageToIgnore: %s\n", currentMsgContent);
 			firstRunThroughMessages = false;
 		}
+#endif
 		if (strcmp(currentMsgContent, lastReceivedMessage) != 0) {
 			lastReceivedMessage[0] = '\0'; strcpy(lastReceivedMessage, currentMsgContent);
 			LOG_INFO("Received new message!\n");
@@ -2565,12 +2567,18 @@ void Screen::setFrames(FrameFocus focus)
     ui->setFrames(normalFrames, numframes);
     ui->enableAllIndicators();
 
+#ifdef SIMPLE_TDECK
+		static OverlayCallback combinedOverlays[] = {drawFunctionOverlay, drawBatteryLevelInBottomLeft};
+		static const int combinedOverlayCount = sizeof(combinedOverlays) / sizeof(combinedOverlays[0]);
+		ui->setOverlays(combinedOverlays, combinedOverlayCount);
+#else
     // Add function overlay here. This can show when notifications muted, modifier key is active etc
     static OverlayCallback functionOverlay[] = {drawFunctionOverlay};
     static const int functionOverlayCount = sizeof(functionOverlay) / sizeof(functionOverlay[0]);
 		static OverlayCallback batteryLevelOverlay[] {drawBatteryLevelInBottomLeft};
     ui->setOverlays(functionOverlay, functionOverlayCount);
 		ui->setOverlays(batteryLevelOverlay, 1);
+#endif
 
     prevFrame = -1; // Force drawNodeInfo to pick a new node (because our list
                     // just changed)
