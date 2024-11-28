@@ -1153,7 +1153,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
 				int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
 				if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "                   %d:%02d", hour, min); // No leading zero for hour
-				else snprintf(tempBuf, sizeof(tempBuf), "                   %02d:%02d", hour, min); // With leading zero for hour
+				else snprintf(tempBuf, sizeof(tempBuf), "                  %02d:%02d", hour, min); // With leading zero for hour
 			} else tempBuf[0] = '\0';
 		} else {
 				char prefixBuf[10];

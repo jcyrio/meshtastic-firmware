@@ -25,8 +25,9 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-// #define FATHERS_NODES
-#define SECURITY
+#define FATHERS_NODES
+// #define SECURITY
+// #define GATE_SECURITY
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -41,8 +42,23 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     // {205167532, "Dcn Michael"},
 #endif
 #ifdef SECURITY
+    {667627820, "Gate Security"},
     {3014898611, "Bookstore"},
     {NODENUM_BROADCAST, "BROADCAST"},
+		{207139432, "Matrix"},
+		{207216020, "Ronin"},
+		{3771733328, "Athos"}, //Pete
+		{3771735168, "Rambo"}, //Perry
+		{3771734404, "Chopani"}, //Niko
+#endif
+#ifdef GATE_SECURITY
+    {3014898611, "Bookstore"},
+    {4184751652, "Kitchen"},
+    {207141012, "Fr Jerome"},
+    {NODENUM_BROADCAST, "BROADCAST"},
+    {202935032, "Fr Evgeni"},
+		{669969380, "Fr Silouanos"},
+    {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
 		{207139432, "Matrix"},
 		{207216020, "Ronin"},
@@ -61,7 +77,8 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {202935032, "Fr Evgeni"},
-    {667627820, "Fr Silouanos"},
+    {667627820, "Gate Security"},
+		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {2579205344, "Fr Theoktist"},
 #endif
@@ -814,7 +831,7 @@ int32_t CannedMessageModule::runOnce()
 									char allMessage[this->freetext.length() + 6];
 									strcpy(allMessage, "ALL: ");
 									strcat(allMessage, this->freetext.c_str());
-									sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order)
+									sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
 								} else sendText(this->dest, 0, this->freetext.c_str(), true);
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								// first check to make sure this->freetext isn't in commandsForRouterOnlyExact
@@ -923,7 +940,7 @@ int32_t CannedMessageModule::runOnce()
 					}
 					break;
 				case 0x1a: // alt-w/1, previous Messages1
-#ifndef SECURITY
+#if !defined(SECURITY) && !defined(GATE_SECURITY)
 					sendText(NODENUM_RPI5, 0, "1", false);
 					showTemporaryMessage("Requesting Previous\nMessages 1");
 #endif

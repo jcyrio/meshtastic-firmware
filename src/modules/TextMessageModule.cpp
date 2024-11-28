@@ -12,7 +12,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
     auto &p = mp.decoded;
     LOG_INFO("Received text msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
 #endif
-#ifdef SIMPLE_TDECK
+#ifdef FATHERS_NODES
 		// char channelName[20];
 		// snprintf(channelName, sizeof(channelName), "%s", channels.getName(mp.channel));
 		// LOG_DEBUG("Channel Name: %s\n", channelName);
@@ -24,6 +24,26 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			return ProcessMessage::STOP;
 		}
 #endif
+#if defined(SECURITY) || defined(GATE_SECURITY)
+#if defined(SECURITY)
+		if ((strcmp(channels.getName(mp.channel), "Varangians") != 0) && (mp.to == 0xffffffff)) {
+			LOG_INFO("Was Broadcast message, but Channel Name is not Varangians, ignoring\n");
+			return ProcessMessage::STOP;
+		}
+#elif defined(GATE_SECURITY)
+		if (((strcmp(channels.getName(mp.channel), "StA") != 0) && (strcmp(channels.getName(mp.channel), "Varangians") != 0)) && (mp.to == 0xffffffff)) {
+			LOG_INFO("Was Broadcast message, but Channel Name is not StA or Varangians, ignoring\n");
+			return ProcessMessage::STOP;
+		}
+#endif
+#endif
+#ifdef MONASTERY_FRIENDS
+		if ((strcmp(channels.getName(mp.channel), "MFA") != 0) && (mp.to == 0xffffffff)) {
+			LOG_INFO("Was Broadcast message, but Channel Name is not MFA, ignoring\n");
+			return ProcessMessage::STOP;
+		}
+#endif
+
     // We only store/display messages destined for us.
     // Keep a copy of the most recent text message.
     devicestate.rx_text_message = mp;
