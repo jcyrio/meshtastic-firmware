@@ -92,11 +92,11 @@ struct MessageRecord {
     char content[MAX_MESSAGE_LENGTH];
     char nodeName[MAX_NODE_NAME_LENGTH];
     uint32_t timestamp;
-    
+
     MessageRecord() {
         clear();
     }
-    
+
     void clear() {
         content[0] = '\0';
         nodeName[0] = '\0';
@@ -137,6 +137,7 @@ public:
         firstRunThroughMessages = true;
         lastMessageWasPreviousMsgs = false;
         memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
+				externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
     }
 
     void addMessage(const char* content, const char* nodeName) {
@@ -3319,7 +3320,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 			if (showedLastPreviousMessage) {
 				// LOG_INFO("Showed last previous message\n");
 				if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-					if ((previousMessagePage < 10) && (previousMessagePage < historyMessageCount - 1)) {
+					if ((previousMessagePage < MAX_MESSAGE_HISTORY) && (previousMessagePage < historyMessageCount - 1)) {
 						previousMessagePage++;
 						LOG_INFO("Previous message page: %d\n", previousMessagePage);
 						// setCPUFastest();

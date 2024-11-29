@@ -4,6 +4,10 @@
 #include "PowerFSM.h"
 #include "buzz.h"
 #include "configuration.h"
+#ifdef SIMPLE_TDECK
+// #include "graphics/Screen.cpp"
+// using namespace graphics;
+#endif
 TextMessageModule *textMessageModule;
 
 ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp)
@@ -11,6 +15,13 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 #ifdef DEBUG_PORT
     auto &p = mp.decoded;
     LOG_INFO("Received text msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
+#endif
+#ifdef SIMPLE_TDECK
+		// if (strcmp(reinterpret_cast<const char*>(p.payload.bytes), "c") == 0) {
+		// 	LOG_INFO("Was command for clearing previous messages\n");
+		// 	screen->clearHistory();
+		// 	return ProcessMessage::STOP;
+		// }
 #endif
 #ifdef FATHERS_NODES
 		// char channelName[20];

@@ -779,12 +779,21 @@ int32_t CannedMessageModule::runOnce()
 								if ((nodeDB->getNodeNum() == NODENUM_SP2) && (this->dest == NODENUM_SP4)) {
 									sendText(NODENUM_SP4, 0, "c", false);
 									showTemporaryMessage("Cleared other");
+									delay(400);
+									char clrMessage[20];
+									snprintf(clrMessage, sizeof(clrMessage), "sp4 RCLR");
+									sendText(NODENUM_RPI5, 0, clrMessage, false);
 								} else if ((nodeDB->getNodeNum() == NODENUM_SP4) && (this->dest == NODENUM_SP2)) {
 									sendText(NODENUM_SP2, 0, "c", false);
 									showTemporaryMessage("Cleared other");
+									delay(400);
+									char clrMessage[20];
+									snprintf(clrMessage, sizeof(clrMessage), "sp2 RCLR");
+									sendText(NODENUM_RPI5, 0, clrMessage, false);
 								} else {
 									screen->clearHistory();
 									showTemporaryMessage("Cleared all\nprevious messages");
+									// externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 									char clrMessage[20];
 									delay(500);
 									snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));

@@ -19,7 +19,6 @@ struct MessageRecord {
     char content[MAX_MESSAGE_LENGTH];
     char nodeName[MAX_NODE_NAME_LENGTH];
     uint32_t timestamp;
-    
     MessageRecord();
     void clear();
 };
@@ -27,11 +26,11 @@ struct MessageRecord {
 class MessageHistory {
 public:
     MessageHistory();
-    
+
 		void clear();
     // Main method for adding new messages
     void addMessage(const char* content, const char* nodeName);
-    
+
     // Accessor methods
     const MessageRecord* getMessageAt(size_t position) const;
     uint32_t getSecondsSince(size_t position) const;
@@ -49,8 +48,8 @@ private:
     bool lastMessageWasPreviousMsgs;
 };
 
+extern MessageHistory history;
 
-	
 // Noop class for boards without screen.
 class Screen
 {
@@ -610,5 +609,4 @@ class Screen : public concurrency::OSThread
 
 } // namespace graphics
 
-// extern MessageHistory history;
 #endif
