@@ -27,6 +27,7 @@
 // #define MONASTERY_FRIENDS
 #define FATHERS_NODES
 // #define SECURITY
+// #define HELPERS
 // #define GATE_SECURITY
 
 #ifdef SIMPLE_TDECK
@@ -40,6 +41,10 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
     // {205167532, "Dcn Michael"},
+#endif
+#ifdef HELPERS
+    {4184751652, "Kitchen"},
+    {2579205344, "Fr Theoktist"},
 #endif
 #ifdef SECURITY
     {667627820, "Gate Security"},
@@ -77,6 +82,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {202935032, "Fr Evgeni"},
+    {207089188, "Spare1"},
     {667627820, "Gate Security"},
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
@@ -822,18 +828,19 @@ int32_t CannedMessageModule::runOnce()
 							// 	this->dest = MYNODES[nodeIndex].first;
 							// 	showTemporaryMessage("Ignored\nNode");
 							} else {
-								bool sendToRouterOnly = false;
+								bool sendToRouterOnlyExact = false;
+								bool sendToRouterOnlyStart = false;
 								// check if string starts with router prefixes
 								for (const auto& command : commandsForRouterOnlyStarting) {
 										if (strncmp(this->freetext.c_str(), command.c_str(), command.size()) == 0) {
-												sendToRouterOnly = true; break;
+												sendToRouterOnlyStart = true; break;
 										}
 								}
 								// Check for exact matches
 								for (const auto& command : commandsForRouterOnlyExact) {
-										if (this->freetext.c_str() == command) { sendToRouterOnly = true; break; }
+										if (this->freetext.c_str() == command) { sendToRouterOnlyExact = true; break; }
 								}
-								if (sendToRouterOnly) this->dest = this->previousDest = NODENUM_RPI5;
+								if (sendToRouterOnlyStart || sendToRouterOnlyExact) this->dest = this->previousDest = NODENUM_RPI5;
 								if (this->dest == NODENUM_BROADCAST) {
 									LOG_DEBUG("WAS BROADCAST\n");
 									if (this->freetext.length() < 4) return 0;
@@ -844,7 +851,7 @@ int32_t CannedMessageModule::runOnce()
 								} else sendText(this->dest, 0, this->freetext.c_str(), true);
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								// first check to make sure this->freetext isn't in commandsForRouterOnlyExact
-								if (!sendToRouterOnly) {
+								if (!sendToRouterOnlyExact) {
 									this->previousDest = this->dest;
 									this->previousFreetext = this->freetext;
 								}
@@ -981,7 +988,7 @@ int32_t CannedMessageModule::runOnce()
 						showTemporaryMessage("No previous\nmessage to retype");
 					}
 					break;
-						
+
 					// LOG_INFO("Got ALT-R, Resend last message\n");
 					// LOG_INFO("Got ALT-R, Resend last message\n");
 					// if (this->previousFreetext.length() > 0) {

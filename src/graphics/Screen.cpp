@@ -50,7 +50,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "sleep.h"
 #include "target_specific.h"
 
-#define SECURITY
+// #define SECURITY
+// #define MONASTERY_FRIENDS
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
