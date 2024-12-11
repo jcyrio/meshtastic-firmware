@@ -23,8 +23,10 @@ bool NodeInfoModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
     // Show new nodes on LCD screen
     if (wasBroadcast) {
         String lcd = String("Joined: ") + p.long_name + "\n";
+#ifndef SIMPLE_TDECK // trying to stop screen from turning on when user joins
         if (screen)
             screen->print(lcd.c_str());
+#endif
     }
 
     // if user has changed while packet was not for us, inform phone

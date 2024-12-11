@@ -15,11 +15,7 @@ struct Message {
     NodeNum toNode;
 };
 Message* lastSentMessage = new Message();
-// PacketId lastMessageID = 0;
-// NodeNum lastNodeFrom = 0;
-// NodeNum lastNodeTo = 0;
 extern CannedMessageModule* cannedMessageModule;
-extern uint8_t deliveryStatus;
 #endif
 
 // ReliableRouter::ReliableRouter() {}
@@ -145,9 +141,14 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
 							LOG_INFO("p->id: %x\n", p->id); //this is not the number we want
 							LOG_INFO("LastMessageFrom: %x\n", lastSentMessage->fromNode);
 							LOG_INFO("LastMessageTo: %x\n", lastSentMessage->toNode);
+							LOG_INFO("deliveryStatus: %d\n", cannedMessageModule->getDeliveryStatus());
 							//TODO: check make sure in logs lastNodeTo is not NODENUM_RPI5 (might want From instead)
 							if ((ackId == lastSentMessage->id) && (lastSentMessage->fromNode == p->to) && (lastSentMessage->toNode == getFrom(p))) {
-								cannedMessageModule->setDeliveryStatus(2);
+								//check if lastSentMessagee->id is empty
+								if (cannedMessageModule->getDeliveryStatus() > 0) { // this is to check to see if we were actually trying to send a message. To prevent traceroutes etc from showing (D)
+									cannedMessageModule->setDeliveryStatus(2);
+								}
+								// cannedMessageModule->setDeliveryStatus(2);
 							}
 #endif
                 LOG_DEBUG("Received an ack for 0x%x, stopping retransmissions\n", ackId);

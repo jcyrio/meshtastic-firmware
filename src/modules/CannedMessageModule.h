@@ -91,6 +91,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     }
 #ifdef SIMPLE_TDECK
 		void setDeliveryStatus(uint8_t status);
+		uint8_t getDeliveryStatus();
 #endif
 
   protected:

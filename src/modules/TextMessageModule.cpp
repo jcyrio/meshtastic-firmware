@@ -7,7 +7,15 @@
 #ifdef SIMPLE_TDECK
 // #include "graphics/Screen.cpp"
 // using namespace graphics;
+
+// #define FOR_GUESTS
+// #define MONASTERY_FRIENDS
+#define FATHERS_NODES
+// #define SECURITY
+// #define HELPERS
+// #define GATE_SECURITY
 #endif
+
 TextMessageModule *textMessageModule;
 
 ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp)

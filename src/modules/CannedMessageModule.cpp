@@ -133,9 +133,15 @@ void CannedMessageModule::setDeliveryStatus(uint8_t status) {
 		case 2:
 			screen->removeFunctionSymbal(">>> ");
 			screen->setFunctionSymbal("(D) "); break;
+		case 3:
+			screen->removeFunctionSymbal("(D) ");
+			screen->removeFunctionSymbal(">>> "); break;
 	}
 	deliveryStatus = status;
+	// if (status != 2) deliveryStatus = status;
+	// else deliveryStatus = 0; // to make it so that the traceroutes etc don't show as acked
 }
+uint8_t CannedMessageModule::getDeliveryStatus() { return deliveryStatus; }
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -612,7 +618,7 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     p->want_ack = true;
 // add totalMessagesSent to beginning of message
 #ifdef SIMPLE_TDECK
-		setDeliveryStatus(0);
+		setDeliveryStatus(3); //3 means actually tried to send a message. Setting in order to stop traceroutes and other packets from setting delivery status as 2 later on
 		this->totalMessagesSent++;
 		// LOG_INFO("Total messages sent: %d\n", this->totalMessagesSent);
 		if (strcmp(message, " ") == 0) {
@@ -716,6 +722,7 @@ int32_t CannedMessageModule::runOnce()
 		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
 		alreadySentFirstMessage = 1;
+		setDeliveryStatus(0); // to make it so that the traceroutes etc don't show as acked
 	}
 #endif
     if (((!moduleConfig.canned_message.enabled) && !CANNED_MESSAGE_MODULE_ENABLE) ||
