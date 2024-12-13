@@ -902,3 +902,16 @@ AdminModule::AdminModule() : ProtobufModule("Admin", meshtastic_PortNum_ADMIN_AP
     // restrict to the admin channel for rx
     boundChannel = Channels::adminChannel;
 }
+
+void disableBluetooth()
+{
+#if HAS_BLUETOOTH
+#ifdef ARCH_ESP32
+    if (nimbleBluetooth)
+        nimbleBluetooth->deinit();
+#elif defined(ARCH_NRF52)
+    if (nrf52Bluetooth)
+        nrf52Bluetooth->shutdown();
+#endif
+#endif
+}

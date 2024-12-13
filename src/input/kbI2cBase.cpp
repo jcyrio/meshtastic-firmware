@@ -295,6 +295,10 @@ int32_t KbI2cBase::runOnce()
             case 0xac: // fn+m
             case 0x9e: // fn+g
             case 0xaf: // fn+space
+#ifdef SIMPLE_TDECK
+						case 0xAA: // TODO: does not work, key not detected. fn+b      bluetooth toggle FrC SIMPLE_TDECK
+            case 0x1f: // flashlight toggle
+#endif
                 // just pass those unmodified
                 e.inputEvent = ANYKEY;
                 e.kbchar = c;

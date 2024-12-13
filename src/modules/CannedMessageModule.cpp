@@ -21,6 +21,9 @@
 #if defined(USE_EINK) && defined(USE_EINK_DYNAMICDISPLAY)
 #include "graphics/EInkDynamicDisplay.h" // To select between full and fast refresh on E-Ink displays
 #endif
+#ifdef SIMPLE_TDECK
+#include "modules/AdminModule.h"
+#endif
 
 // OPTIONAL
 // #define FOR_GUESTS
@@ -457,6 +460,23 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #endif
             break;
 #endif
+#ifdef SIMPLE_TDECK
+				case 0xAA: // TODO: DOES NOT WORK, key not detected. alt-b, toggle Bluetooth on/off
+            if (config.bluetooth.enabled == true) {
+                config.bluetooth.enabled = false;
+                LOG_INFO("User toggled Bluetooth");
+                nodeDB->saveToDisk();
+                disableBluetooth();
+                showTemporaryMessage("Bluetooth OFF");
+            } else if (config.bluetooth.enabled == false) {
+                config.bluetooth.enabled = true;
+                LOG_INFO("User toggled Bluetooth");
+                nodeDB->saveToDisk();
+                rebootAtMsec = millis() + 2000;
+                showTemporaryMessage("Bluetooth ON\nReboot");
+            }
+            break;
+#endif
         case 0xaf: // fn+space send network ping like double press does
             service->refreshLocalMeshNode();
             if (service->trySendPosition(NODENUM_BROADCAST, true)) {
@@ -775,12 +795,30 @@ int32_t CannedMessageModule::runOnce()
 								} else {
 									showTemporaryMessage("No previous\nmessage to resend");
 								}
-							// } else if ((this->freetext == "BTon") || (this->freetext == "bton")) {
-							// 	setBluetoothEnable(true);
-							// 	showTemporaryMessage("Bluetooth\nEnabled");
-							// } else if ((this->freetext == "BToff") || (this->freetext == "btoff")) {
-							// 	setBluetoothEnable(false);
-							// 	showTemporaryMessage("Bluetooth\nDisabled");
+							} else if (this->freetext == "bt0") {
+                config.bluetooth.enabled = false;
+                LOG_INFO("User toggled Bluetooth");
+                nodeDB->saveToDisk();
+                disableBluetooth();
+                showTemporaryMessage("Bluetooth OFF");
+							} else if (this->freetext == "bt1") {
+									config.bluetooth.enabled = true;
+									LOG_INFO("User toggled Bluetooth");
+									nodeDB->saveToDisk();
+									rebootAtMsec = millis() + 2000;
+									showTemporaryMessage("Bluetooth ON\nReboot");
+							} else if (this->freetext == "ps1") {
+									config.power.is_power_saving = true;
+									LOG_INFO("User toggled PowerSave");
+									nodeDB->saveToDisk();
+									rebootAtMsec = millis() + 2000;
+									showTemporaryMessage("PowerSave ON\nReboot");
+							} else if (this->freetext == "ps0") {
+									config.power.is_power_saving = false;
+									LOG_INFO("User toggled PowerSave");
+									nodeDB->saveToDisk();
+									rebootAtMsec = millis() + 2000;
+									showTemporaryMessage("PowerSave OFF\nReboot");
 							} else if (this->freetext == "c") { // clear all previous messages
 																									// check if it's from SP2, and if so, send msg to SP4 'clr'
 								// below is for auto clearing other device
