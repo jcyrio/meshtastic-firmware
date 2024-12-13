@@ -44,7 +44,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #endif
 #ifdef HELPERS
     {4184751652, "Kitchen"},
-    {2579205344, "Fr Theoktist"},
+    {667570636, "Fr Theoktist"},
 #endif
 #ifdef SECURITY
     {667627820, "Gate Security"},
@@ -64,7 +64,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {202935032, "Fr Evgeni"},
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
-    {2579205344, "Fr Theoktist"},
+    {667570636, "Fr Theoktist"},
 		{207139432, "Matrix"},
 		{207216020, "Ronin"},
 		{3771733328, "Athos"}, //Pete
@@ -86,7 +86,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667627820, "Gate Security"},
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
-    {2579205344, "Fr Theoktist"},
+    {667570636, "Fr Theoktist"},
 #endif
     // {2864386355, "Kitchen"}, // was old virtual node
 		///REMOVE LATER!!!!
