@@ -89,9 +89,11 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
             return false;
         }
     }
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK // public
 		void setDeliveryStatus(uint8_t status);
 		uint8_t getDeliveryStatus();
+		int leftScrollCount;
+		int rightScrollCount;
 #endif
 
   protected:
@@ -153,7 +155,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     char messageStore[CANNED_MESSAGE_MODULE_MESSAGES_SIZE + 1];
     char *messages[CANNED_MESSAGE_MODULE_MESSAGE_MAX_COUNT];
     int messagesCount = 0;
-#ifdef SIMPLE_TDECK
+#ifdef SIMPLE_TDECK // protected
 		int previousMessageIndex = 0;
 		int totalMessagesSent = 0;
 		bool flashlightOn = 0;

@@ -121,8 +121,28 @@ std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::st
         return "";  // Return an empty string or handle the error appropriately
     }
 }
-uint8_t keyCountLoopForDeliveryStatus = 0;
-uint8_t deliveryStatus = 0;
+uint8_t keyCountLoopForDeliveryStatus = 0, deliveryStatus = 0;
+int leftScrollCount = 0, rightScrollCount = 0, nodeIndex = 0;
+
+int scrollLeft() {
+    leftScrollCount++;
+    rightScrollCount = 0; // Reset the opposite direction counter
+    if (leftScrollCount == 2) {
+        nodeIndex = (nodeIndex + 1) % MYNODES.size();
+        leftScrollCount = 0; // Reset after registering the event
+    }
+		return nodeIndex;
+}
+
+int scrollRight() {
+    rightScrollCount++;
+    leftScrollCount = 0; // Reset the opposite direction counter
+    if (rightScrollCount == 2) {
+        nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size();
+        rightScrollCount = 0; // Reset after registering the event
+    }
+		return nodeIndex;
+}
 
 void CannedMessageModule::setDeliveryStatus(uint8_t status) {
 	LOG_INFO("setDeliveryStatus(%d)\n", status);
@@ -1160,10 +1180,13 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
-							nodeIndex = (nodeIndex + 1) % MYNODES.size();
+								// scrollLeft();
+							nodeIndex = scrollLeft();
+							// nodeIndex = (nodeIndex + 1) % MYNODES.size();
+
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
-							
+
 			// snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 							// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
@@ -1188,8 +1211,8 @@ int32_t CannedMessageModule::runOnce()
             }
             break;
         case 0xb7: // right
-			    if (screen->keyboardLockMode == true) break;
 #ifdef SIMPLE_TDECK
+			    if (screen->keyboardLockMode == true) break;
           if (1 == 1) {
 // this always allows to change the destination with scrolling
 #else
@@ -1232,7 +1255,10 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
-							nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
+								// scrollRight();
+							nodeIndex = scrollRight();
+							// nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
+
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							this->dest = MYNODES[nodeIndex].first;
