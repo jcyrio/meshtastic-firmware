@@ -820,7 +820,7 @@ int32_t CannedMessageModule::runOnce()
 							} else if (this->freetext == "bt0") {
 								if (!config.bluetooth.enabled) {
 									showTemporaryMessage("Bluetooth already OFF");
-								}
+								} else {
 									config.bluetooth.enabled = false;
 									LOG_INFO("User toggled Bluetooth");
 									nodeDB->saveToDisk();
@@ -830,7 +830,7 @@ int32_t CannedMessageModule::runOnce()
 							} else if (this->freetext == "bt1") {
 								if (config.bluetooth.enabled) {
 									showTemporaryMessage("Bluetooth already ON");
-								}
+								} else {
 									config.bluetooth.enabled = true;
 									LOG_INFO("User toggled Bluetooth");
 									nodeDB->saveToDisk();
@@ -850,7 +850,7 @@ int32_t CannedMessageModule::runOnce()
 							} else if (this->freetext == "ps0") {
 								if (!config.power.is_power_saving) {
 									showTemporaryMessage("PowerSave already OFF");
-								}
+								} else {
 									config.power.is_power_saving = false;
 									LOG_INFO("User toggled PowerSave");
 									nodeDB->saveToDisk();
