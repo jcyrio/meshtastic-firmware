@@ -818,29 +818,45 @@ int32_t CannedMessageModule::runOnce()
 									showTemporaryMessage("No previous\nmessage to resend");
 								}
 							} else if (this->freetext == "bt0") {
-                config.bluetooth.enabled = false;
-                LOG_INFO("User toggled Bluetooth");
-                nodeDB->saveToDisk();
-                disableBluetooth();
-                showTemporaryMessage("Bluetooth OFF");
+								if (!config.bluetooth.enabled) {
+									showTemporaryMessage("Bluetooth already OFF");
+								}
+									config.bluetooth.enabled = false;
+									LOG_INFO("User toggled Bluetooth");
+									nodeDB->saveToDisk();
+									disableBluetooth();
+									showTemporaryMessage("Bluetooth OFF");
+								}
 							} else if (this->freetext == "bt1") {
+								if (config.bluetooth.enabled) {
+									showTemporaryMessage("Bluetooth already ON");
+								}
 									config.bluetooth.enabled = true;
 									LOG_INFO("User toggled Bluetooth");
 									nodeDB->saveToDisk();
 									rebootAtMsec = millis() + 2000;
 									showTemporaryMessage("Bluetooth ON\nReboot");
+								}
 							} else if (this->freetext == "ps1") {
+								if (config.power.is_power_saving) {
+									showTemporaryMessage("PowerSave already ON");
+								} else {
 									config.power.is_power_saving = true;
 									LOG_INFO("User toggled PowerSave");
 									nodeDB->saveToDisk();
 									rebootAtMsec = millis() + 2000;
 									showTemporaryMessage("PowerSave ON\nReboot");
+								}
 							} else if (this->freetext == "ps0") {
+								if (!config.power.is_power_saving) {
+									showTemporaryMessage("PowerSave already OFF");
+								}
 									config.power.is_power_saving = false;
 									LOG_INFO("User toggled PowerSave");
 									nodeDB->saveToDisk();
 									rebootAtMsec = millis() + 2000;
 									showTemporaryMessage("PowerSave OFF\nReboot");
+								}
 							} else if (this->freetext == "c") { // clear all previous messages
 																									// check if it's from SP2, and if so, send msg to SP4 'clr'
 								// below is for auto clearing other device

@@ -26,7 +26,7 @@
 #endif
 
 #ifdef SIMPLE_TDECK
-#define HAS_TOUCHSCREEN 0
+#define HAS_TOUCHSCREEN 1
 //#define MESHTASTIC_EXCLUDE_GPS 1 //can't do this, messes up time on the network
 #define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR 1
 #else
