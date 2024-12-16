@@ -87,7 +87,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {202935032, "Fr Evgeni"},
-    {207089188, "Spare1"},
+    // {207089188, "Spare1"},
     {667627820, "Gate Security"},
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
@@ -125,24 +125,42 @@ std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::st
 }
 uint8_t keyCountLoopForDeliveryStatus = 0, deliveryStatus = 0;
 int leftScrollCount = 0, rightScrollCount = 0, nodeIndex = 0;
+bool wasTouchEvent = false;
 
-int scrollLeft() {
+void CannedMessageModule::setWasTouchEvent(bool value) { this->wasTouchEvent = value; }
+bool CannedMessageModule::getWasTouchEvent() { return this->wasTouchEvent; }
+
+int CannedMessageModule::scrollLeft() {
+	if (this->getWasTouchEvent()) {
+		LOG_INFO("Was Touch!\n");
+		nodeIndex = (nodeIndex + 1) % MYNODES.size();
+		this->setWasTouchEvent(false);
+	} else {
+		LOG_INFO("Not Touch!\n");
     leftScrollCount++;
     rightScrollCount = 0; // Reset the opposite direction counter
     if (leftScrollCount == 2) {
         nodeIndex = (nodeIndex + 1) % MYNODES.size();
         leftScrollCount = 0; // Reset after registering the event
     }
+	}
 		return nodeIndex;
 }
 
-int scrollRight() {
+int CannedMessageModule::scrollRight() {
+	if (this->getWasTouchEvent()) {
+		LOG_INFO("Was Touch!\n");
+		nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size();
+		this->setWasTouchEvent(false);
+	} else {
+		LOG_INFO("Not Touch!\n");
     rightScrollCount++;
     leftScrollCount = 0; // Reset the opposite direction counter
     if (rightScrollCount == 2) {
         nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size();
         rightScrollCount = 0; // Reset after registering the event
     }
+	}
 		return nodeIndex;
 }
 
@@ -357,16 +375,39 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
         this->notifyObservers(&e);
     }
+#ifndef SIMPLE_TDECK
     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) ||
         (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
         (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT))) {
+#else
+    if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) ||
+        (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
+        (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT))  || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)))
+		{
+#endif
+//     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
+//         (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) ||
+// 				(event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)))
+// {
 
-#if defined(T_WATCH_S3) || defined(RAK14014)
+// #if defined(T_WATCH_S3) || defined(RAK14014)
+#if defined(T_WATCH_S3) || defined(RAK14014) || defined(SIMPLE_TDECK) // enabling TDeck here allows scrolling through node names
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
             this->payload = 0xb4;
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
             this->payload = 0xb7;
         }
+#ifdef SIMPLE_TDECK
+		else if (event->inputEvent ==
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+			if (this->getWasTouchEvent()) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
+						this->payload = 0x23;
+			}
+} else if (event->inputEvent ==
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
+						this->payload = 0x08;
+}
+#endif
 #else
         // tweak for left/right events generated via trackball/touch with empty kbchar
         if (!event->kbchar) {
@@ -385,9 +426,13 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         }
 #endif
 
+#ifdef SIMPLE_TDECK
+					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+#endif
         this->lastTouchMillis = millis();
         validEvent = true;
     }
+
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
 #ifdef SIMPLE_TDECK
 				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX)) 
@@ -1022,7 +1067,7 @@ int32_t CannedMessageModule::runOnce()
     } else if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT || this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) {
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
-				case 0x23: // # sign, for exiting freetext
+				case 0x23: // # sign or Q key long hold, for exiting freetext
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					this->lastTouchMillis = millis();
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
@@ -1199,7 +1244,7 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 								// scrollLeft();
-							nodeIndex = scrollLeft();
+							nodeIndex = this->scrollLeft();
 							// nodeIndex = (nodeIndex + 1) % MYNODES.size();
 
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
@@ -1274,7 +1319,7 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 								// scrollRight();
-							nodeIndex = scrollRight();
+							nodeIndex = this->scrollRight();
 							// nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
 
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);

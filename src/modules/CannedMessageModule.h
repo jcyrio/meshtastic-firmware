@@ -92,8 +92,11 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 #ifdef SIMPLE_TDECK // public
 		void setDeliveryStatus(uint8_t status);
 		uint8_t getDeliveryStatus();
-		int leftScrollCount;
-		int rightScrollCount;
+		int leftScrollCoun, rightScrollCount;
+		int scrollLeft(), scrollRight();
+		void setWasTouchEvent(bool wasTouchEvent);
+		bool wasTouchEvent;
+		bool getWasTouchEvent();
 #endif
 
   protected:
