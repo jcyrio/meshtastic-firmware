@@ -58,6 +58,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		{3771733328, "Athos"}, //Pete
 		{3771735168, "Rambo"}, //Perry
 		{3771734404, "Chopani"}, //Niko
+		{207036432, "Chip"},
 #endif
 #ifdef GATE_SECURITY
     {3014898611, "Bookstore"},
@@ -73,6 +74,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		{3771733328, "Athos"}, //Pete
 		{3771735168, "Rambo"}, //Perry
 		{3771734404, "Chopani"}, //Niko
+		{207036432, "Chip"},
 #endif
 #ifdef MONASTERY_FRIENDS
 		{1127590756, "Fr Andre"},
