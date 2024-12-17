@@ -247,6 +247,8 @@ CannedMessageModule::CannedMessageModule()
 		);
 		// screen->removeFunctionSymbal("ACK");
 		this->dest = NODENUM_RPI5;
+
+		if (config.bluetooth.enabled == true) screen->setFunctionSymbal("BT");
 #endif
 }
 
@@ -897,6 +899,7 @@ int32_t CannedMessageModule::runOnce()
 									nodeDB->saveToDisk();
 									disableBluetooth();
 									showTemporaryMessage("Bluetooth OFF");
+									screen->removeFunctionSymbal("BT");
 								}
 							} else if (this->freetext == "bt1") {
 								if (config.bluetooth.enabled) {
