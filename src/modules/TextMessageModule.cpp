@@ -10,10 +10,10 @@
 
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-// #define FATHERS_NODES
+#define FATHERS_NODES
 // #define SECURITY
 // #define HELPERS
-#define GATE_SECURITY
+// #define GATE_SECURITY
 #endif
 
 TextMessageModule *textMessageModule;
