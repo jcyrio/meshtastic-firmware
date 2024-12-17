@@ -94,9 +94,9 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		uint8_t getDeliveryStatus();
 		int leftScrollCoun, rightScrollCount;
 		int scrollLeft(), scrollRight();
-		void setWasTouchEvent(bool wasTouchEvent);
+		// void setWasTouchEvent(bool wasTouchEvent);
 		bool wasTouchEvent;
-		bool getWasTouchEvent();
+		// bool getWasTouchEvent();
 #endif
 
   protected:

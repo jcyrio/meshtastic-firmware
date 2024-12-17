@@ -127,14 +127,14 @@ uint8_t keyCountLoopForDeliveryStatus = 0, deliveryStatus = 0;
 int leftScrollCount = 0, rightScrollCount = 0, nodeIndex = 0;
 bool wasTouchEvent = false;
 
-void CannedMessageModule::setWasTouchEvent(bool value) { this->wasTouchEvent = value; }
-bool CannedMessageModule::getWasTouchEvent() { return this->wasTouchEvent; }
+// void CannedMessageModule::setWasTouchEvent(bool value) { this->wasTouchEvent = value; }
+// bool CannedMessageModule::getWasTouchEvent() { return this->wasTouchEvent; }
 
 int CannedMessageModule::scrollLeft() {
-	if (this->getWasTouchEvent()) {
+	if (this->wasTouchEvent) {
 		LOG_INFO("Was Touch!\n");
 		nodeIndex = (nodeIndex + 1) % MYNODES.size();
-		this->setWasTouchEvent(false);
+		this->wasTouchEvent = false;
 	} else {
 		LOG_INFO("Not Touch!\n");
     leftScrollCount++;
@@ -148,10 +148,10 @@ int CannedMessageModule::scrollLeft() {
 }
 
 int CannedMessageModule::scrollRight() {
-	if (this->getWasTouchEvent()) {
+	if (this->wasTouchEvent) {
 		LOG_INFO("Was Touch!\n");
 		nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size();
-		this->setWasTouchEvent(false);
+		this->wasTouchEvent = false;
 	} else {
 		LOG_INFO("Not Touch!\n");
     rightScrollCount++;
@@ -400,7 +400,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #ifdef SIMPLE_TDECK
 		else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-			if (this->getWasTouchEvent()) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
+			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
 						this->payload = 0x23;
 			}
 } else if (event->inputEvent ==
@@ -433,9 +433,13 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
         validEvent = true;
     }
 
+#ifndef SIMPLE_TDECK
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
+#else
+    if ((event->inputEvent == static_cast<char>(ANYKEY)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN))) {
+#endif
 #ifdef SIMPLE_TDECK
-				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX)) 
+				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX))
 				// FIXME: later on try to make it detect if the LED is on first
 					// externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
 					externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
@@ -443,7 +447,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
-					
+
 #ifdef SIMPLE_TDECK
 			if (this->skipNextFreetextMode == false) {
 			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
