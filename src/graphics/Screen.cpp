@@ -167,10 +167,10 @@ public:
         MessageRecord& record = messages[currentIndex];
         strncpy(record.content, content, MAX_MESSAGE_LENGTH - 1);
         record.content[MAX_MESSAGE_LENGTH - 1] = '\0';
-        
+
 				strncpy(record.nodeName, nodeName, MAX_NODE_NAME_LENGTH - 1);
         record.nodeName[MAX_NODE_NAME_LENGTH - 1] = '\0';
-        
+
         record.timestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
         totalMessageCount++;
         lastMessageWasPreviousMsgs = false;
@@ -1794,7 +1794,7 @@ static void drawNodeInfo(OLEDDisplay *display, OLEDDisplayUiState *state, int16_
 #else
     display->setFont(FONT_SMALL);
 #endif
-		
+
 
     // The coordinates define the left starting point of the text
     display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -3171,7 +3171,7 @@ void DebugInfo::drawFrameSettings(OLEDDisplay *display, OLEDDisplayUiState *stat
 	String title = "Monastery Messenger (" + String(monthNumber) + "." + String(day) + ")";
 #endif
 	// Serial.println(dateTimeString);
-		
+
     // const char *title = "Monastery Messenger  v4.29a";
     display->setFont(FONT_SMALL);
     // display->drawString(x + getStringCenteredX(title), y + SCREEN_HEIGHT - FONT_HEIGHT_SMALL * 2, title);

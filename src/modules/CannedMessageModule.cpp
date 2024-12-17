@@ -28,10 +28,10 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-#define FATHERS_NODES
+// #define FATHERS_NODES
 // #define SECURITY
 // #define HELPERS
-// #define GATE_SECURITY
+#define GATE_SECURITY
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -391,22 +391,27 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 // {
 
 // #if defined(T_WATCH_S3) || defined(RAK14014)
-#if defined(T_WATCH_S3) || defined(RAK14014) || defined(SIMPLE_TDECK) // enabling TDeck here allows scrolling through node names
+#if defined(T_WATCH_S3) || defined(RAK14014) || defined(SIMPLE_TDECK) // enabling TDeck here allows scrolling through node names. NOTE: I don't know why I couldn't move this down below. It wasn't registering all the touch events below. should try to fix later to make cleaner
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
             this->payload = 0xb4;
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
             this->payload = 0xb7;
         }
 #ifdef SIMPLE_TDECK
+// 		if (event->inputEvent ==
+// static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
+// 				this->payload = 0xb4;
+// 		} else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
+// 				this->payload = 0xb7;
 		else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
-						this->payload = 0x23;
+				this->payload = 0x23;
 			}
-} else if (event->inputEvent ==
+		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
-						this->payload = 0x08;
-}
+				this->payload = 0x08;
+		}
 #endif
 #else
         // tweak for left/right events generated via trackball/touch with empty kbchar
@@ -809,8 +814,25 @@ int32_t CannedMessageModule::runOnce()
 {
 #ifdef SIMPLE_TDECK
 	if (alreadySentFirstMessage == 0) {
-		char startupMessage[20];
-		snprintf(startupMessage, sizeof(startupMessage), "%s ON", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+		String date = __DATE__; // format: "MMM DD YYYY"
+		String time = __TIME__; // format: "HH:MM:SS"
+		String month = date.substring(0, 3);
+		int monthNumber;
+		if (month == "Jan") monthNumber = 1;
+		else if (month == "Feb") monthNumber = 2;
+		else if (month == "Mar") monthNumber = 3;
+		else if (month == "Apr") monthNumber = 4;
+		else if (month == "May") monthNumber = 5;
+		else if (month == "Jun") monthNumber = 6;
+		else if (month == "Jul") monthNumber = 7;
+		else if (month == "Aug") monthNumber = 8;
+		else if (month == "Sep") monthNumber = 9;
+		else if (month == "Oct") monthNumber = 10;
+		else if (month == "Nov") monthNumber = 11;
+		else if (month == "Dec") monthNumber = 12;
+		int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
+		char startupMessage[30];
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
 		alreadySentFirstMessage = 1;
 		setDeliveryStatus(0); // to make it so that the traceroutes etc don't show as acked
