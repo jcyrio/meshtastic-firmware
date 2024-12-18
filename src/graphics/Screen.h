@@ -232,9 +232,10 @@ class Screen : public concurrency::OSThread
   public:
     explicit Screen(ScanI2C::DeviceAddress, meshtastic_Config_DisplayConfig_OledType, OLEDDISPLAY_GEOMETRY);
 #ifdef SIMPLE_TDECK
-    bool isOnFrame(int frameNumber) const {
-			return ui->getUiState()->currentFrame == frameNumber;
-    }
+   //  bool isOnFrame(int frameNumber) const {
+			// return ui->getUiState()->currentFrame == frameNumber;
+   //  }
+		bool isOnPreviousMsgsScreen = false;
 #endif
 
     ~Screen();

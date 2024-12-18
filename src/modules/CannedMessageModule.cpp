@@ -333,9 +333,24 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
         if (this->messagesCount > 0) {
+					LOG_INFO("Down with messagesCount: %d\n", this->messagesCount);
             this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_DOWN;
+#ifdef SIMPLE_TDECK // fixes touch scroll down, but still messes up existing freetext when using trackball scrolling
+							this->cursor = this->freetext.length();
+#endif
             validEvent = true;
-        }
+        } else {
+					// frc temp trying to ignore downpress here unless is on prevmsgs screen
+					LOG_INFO("Down with messagesCount at 0\n");
+					LOG_INFO("Run state: %d\n", this->runState);
+					LOG_INFO("Was touch event: %d\n", this->wasTouchEvent);
+					if (screen->isOnPreviousMsgsScreen) {
+						LOG_INFO("on PREVMSGS screen!\n");
+					} else {
+						LOG_INFO("not on PREVMSGS screen!\n");
+					}
+
+				}
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_SELECT)) {
 
@@ -409,10 +424,12 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
 				this->payload = 0x23;
+				// this->touchDirection = 2; //UP
 			}
 		} else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 				this->payload = 0x08;
+				// this->touchDirection = 1; //DOWN
 		}
 #endif
 #else
@@ -428,13 +445,19 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
             // pass the pressed key
 					//FRC TEMP
 					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
-#endif
+					// TODO: below doesn't seem to do anything 12-18 testing
+					if (event->kbchar != 0) { // for ignoring up trackball event when in freetext mode
+						LOG_INFO("HERE\n");
             this->payload = event->kbchar;
+					} else LOG_INFO("HERE2\n");
+#else
+            this->payload = event->kbchar;
+#endif
         }
 #endif
 
 #ifdef SIMPLE_TDECK
-					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+					LOG_DEBUG("Canned message event2 (%x)\n", event->kbchar);
 #endif
         this->lastTouchMillis = millis();
         validEvent = true;
@@ -443,13 +466,39 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 #ifndef SIMPLE_TDECK
     if (event->inputEvent == static_cast<char>(ANYKEY)) {
 #else
-    if ((event->inputEvent == static_cast<char>(ANYKEY)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN))) {
+    if ((event->inputEvent == static_cast<char>(ANYKEY)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP))) {
 #endif
 #ifdef SIMPLE_TDECK
 				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX))
 				// FIXME: later on try to make it detect if the LED is on first
 					// externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
+			LOG_INFO("Got DOWN here\n");
+			LOG_INFO("was touch event: %d\n", this->wasTouchEvent);
+			LOG_INFO("event->inputEvent: %d\n", event->inputEvent);
+			LOG_INFO("event->kbchar: %d\n", event->kbchar);
+			LOG_INFO("runState: %d\n", this->runState);
 					externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+			if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP))) {
+				if (this->wasTouchEvent == false) {
+					LOG_INFO("Got UP or DOWN here! Was not touch event, ignoring\n");
+					// NOTE: this finally fixed the problem where trackball up down was messing up freetext mode
+					return 0;
+				} else {
+					LOG_INFO("was touch event here\n");
+		if (event->inputEvent ==
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+			LOG_INFO("Got UP here\n");
+				// this->payload = 0x23;
+				this->touchDirection = 2; //UP
+			}
+		else if (event->inputEvent ==
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+			LOG_INFO("Got DOWN here\n");
+				// this->payload = 0x08;
+				this->touchDirection = 1; //DOWN
+		}
+	}
+			}
 #endif
         // when inactive, this will switch to the freetext mode
         if ((this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) || (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE) ||
@@ -460,6 +509,8 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
 #endif
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						LOG_INFO("HERE, RUN_STATE_FREETEXT\n");
+						// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
 #ifdef SIMPLE_TDECK
 			// }
 			} else this->skipNextFreetextMode = false;
@@ -582,6 +633,9 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 						requestFocus();
 				// 		// runOnce();
 				break;
+			// case 0x00:  // up down trackball events
+			// 	LOG_INFO("Trackball event, ignoring\n");
+			// 	break;
 #endif
         default:
             // pass the pressed key
@@ -1097,6 +1151,8 @@ int32_t CannedMessageModule::runOnce()
         switch (this->payload) {
 #ifdef SIMPLE_TDECK
 				case 0x23: // # sign or Q key long hold, for exiting freetext
+					LOG_INFO("Got case 0x23\n");
+					LOG_INFO("was touch event: %d\n", this->wasTouchEvent);
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					this->lastTouchMillis = millis();
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
@@ -1205,13 +1261,49 @@ int32_t CannedMessageModule::runOnce()
 					break;
 				case 0x5f: // _, cursorScrollMode
 					//toggle cursor scroll mode
-					if (this->cursorScrollMode == 0) {
-						this->cursorScrollMode = 1;
-						screen->setFunctionSymbal("Scrl"); // add the S symbol to the bottom right corner
-					} else {
-						this->cursorScrollMode = 0;
-						this->cursor = this->freetext.length();
-						screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
+					LOG_INFO("got 0x5f");
+					if (!wasTouchEvent) {
+						LOG_INFO("was not touch event, toggle cursor scroll mode");
+						if (this->cursorScrollMode == 0) {
+							this->cursorScrollMode = 1;
+							screen->setFunctionSymbal("Scrl"); // add the S symbol to the bottom right corner
+						} else {
+							this->cursorScrollMode = 0;
+							this->cursor = this->freetext.length();
+							screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
+						}
+					} else { // was touch event
+						LOG_INFO("was touch event, no scrolling!");
+						// NOTE: below does same thing twice. Currently having both up and down touch scroll exit freetext mode. maybe unify or change
+						if (this->touchDirection == 2) { // up, exit freetext mode, go to previous messages screen
+							LOG_INFO("UP\n");
+							this->wasTouchEvent = false;
+							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+							this->lastTouchMillis = millis();
+							e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+							requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+							this->notifyObservers(&e);
+						} else { // down, freetext screen
+							LOG_INFO("DOWN\n");
+							this->wasTouchEvent = false;
+							this->cursor = this->freetext.length();
+							// this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+							// e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+							this->lastTouchMillis = millis();
+							this->notifyObservers(&e);
+							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+							// this->skipNextRletter = true;
+							requestFocus();
+
+
+							// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+							// this->lastTouchMillis = millis();
+							// 	e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+							// 	requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+							// this->notifyObservers(&e);
+						}
+
 					}
 					break;
         case 0x1e: // shift-$, toggle brightness
@@ -1294,7 +1386,7 @@ int32_t CannedMessageModule::runOnce()
                     this->cursor--;
                 }
 						}
-								
+
 #endif
             } else {
                 if (this->cursor > 0) {
@@ -1924,7 +2016,7 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
             if (display->getWidth() > 128) {
 #ifdef SIMPLE_TDECK
 						// display->drawStringf(0 + x, 0 + y, buffer, "To: %s", cannedMessageModule->getNodeName(this->dest));
-						LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+						// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
             display->setColor(WHITE);
             display->fillRect(0 + x, 0 + y, x + display->getWidth(), y + FONT_HEIGHT_LARGE);
             display->setColor(BLACK);

@@ -71,11 +71,15 @@ int32_t TouchScreenBase::runOnce()
             if (adx > ady && adx > TOUCH_THRESHOLD_X) {
                 if (0 > dx) { // swipe right to left
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_LEFT);
+#ifdef SIMPLE_TDECK
 										cannedMessageModule->wasTouchEvent = true;
+#endif
                     LOG_DEBUG("action SWIPE: right to left\n");
                 } else { // swipe left to right
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_RIGHT);
+#ifdef SIMPLE_TDECK
 										cannedMessageModule->wasTouchEvent = true;
+#endif
                     LOG_DEBUG("action SWIPE: left to right\n");
                 }
             }
@@ -83,10 +87,15 @@ int32_t TouchScreenBase::runOnce()
             else if (ady > adx && ady > TOUCH_THRESHOLD_Y) {
                 if (0 > dy) { // swipe bottom to top
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_UP);
-                    LOG_DEBUG("action SWIPE: bottom to top\n");
+#ifdef SIMPLE_TDECK
 										cannedMessageModule->wasTouchEvent = true;
+#endif
+                    LOG_DEBUG("action SWIPE: bottom to top\n");
                 } else { // swipe top to bottom
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_DOWN);
+#ifdef SIMPLE_TDECK
+										cannedMessageModule->wasTouchEvent = true;
+#endif
                     LOG_DEBUG("action SWIPE: top to bottom\n");
                 }
             }

@@ -171,6 +171,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int nodeIndex = 0;
 		bool alreadySentFirstMessage = 0;
 		bool skipNextFreetextMode = false;
+		int touchDirection = 0;
 #endif
     unsigned long lastTouchMillis = 0;
     String temporaryMessage;

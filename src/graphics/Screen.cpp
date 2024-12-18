@@ -2544,7 +2544,7 @@ void Screen::setFrames(FrameFocus focus)
     //
     // Since frames are basic function pointers, we have to use a helper to
     // call a method on debugInfo object.
-    
+
 #ifndef SIMPLE_TDECK // hide debug info frame
     fsi.positions.log = numframes;
     normalFrames[numframes++] = &Screen::drawDebugInfoTrampoline;
@@ -2678,6 +2678,7 @@ void Screen::clearHistory() {
 	totalReceivedMessagesSinceBoot = 0;
 	history.clear();
 }
+
 // void Screen::showFirstBrightnessLevel() {
 // 	setFunctionSymbal(std::string(1, brightnessLevel));
 // }
@@ -2686,7 +2687,7 @@ void Screen::clearHistory() {
 void Screen::increaseBrightness()
 {
 #ifdef SIMPLE_TDECK
-	// 4 levels we want are 1, 130, 192, 254 
+	// 4 levels we want are 1, 130, 192, 254
 	// if (brightnessLevel == '1') {
 	// 	brightness = 110; brightnessLevel = '2';
 	// } else if (brightnessLevel == '2') {
@@ -3317,6 +3318,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 	LOG_INFO("Frame: %d\n", this->ui->getUiState()->currentFrame);
 	if (this->ui->getUiState()->currentFrame == 0) {  //on previous msg screen
 		LOG_INFO("On previous msg screen\n");
+		this->isOnPreviousMsgsScreen = true;
 		if (this->keyboardLockMode == false) {
 			if (showedLastPreviousMessage) {
 				// LOG_INFO("Showed last previous message\n");
@@ -3345,9 +3347,11 @@ int Screen::handleInputEvent(const InputEvent *event)
 			}
 			showedLastPreviousMessage = false;
 		} // end keyboardLockMode == true
-}
+} else {
+		this->isOnPreviousMsgsScreen = false;
+	}
 #endif
-		
+
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
 #ifdef SIMPLE_TDECK

@@ -1,5 +1,6 @@
 #include "TrackballInterruptBase.h"
 #include "configuration.h"
+#include "modules/CannedMessageModule.h"
 
 TrackballInterruptBase::TrackballInterruptBase(const char *name) : concurrency::OSThread(name), _originName(name) {}
 
@@ -46,9 +47,17 @@ int32_t TrackballInterruptBase::runOnce()
         e.inputEvent = this->_eventPressed;
     } else if (this->action == TB_ACTION_UP) {
         // LOG_DEBUG("Trackball event UP\n");
+#ifdef SIMPLE_TDECK
+        LOG_INFO("Trackball event UP\n");
+				cannedMessageModule->wasTouchEvent = false;
+#endif
         e.inputEvent = this->_eventUp;
     } else if (this->action == TB_ACTION_DOWN) {
         // LOG_DEBUG("Trackball event DOWN\n");
+#ifdef SIMPLE_TDECK
+        LOG_INFO("Trackball event DOWN\n");
+				cannedMessageModule->wasTouchEvent = false;
+#endif
         e.inputEvent = this->_eventDown;
     } else if (this->action == TB_ACTION_LEFT) {
         // LOG_DEBUG("Trackball event LEFT\n");
