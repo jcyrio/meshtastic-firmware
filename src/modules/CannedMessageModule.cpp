@@ -399,7 +399,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #else
     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) ||
         (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
-        (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT))  || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)))
+        (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT))  || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)))
 		{
 #endif
 //     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
@@ -421,13 +421,17 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 // 		} else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 // 				this->payload = 0xb7;
 		else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
 				this->payload = 0x23;
 				// this->touchDirection = 2; //UP
 			}
+// 		} else if (event->inputEvent ==
+// static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+// 				this->payload = 0x08;
+// 				// this->touchDirection = 1; //DOWN
 		} else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
 				this->payload = 0x08;
 				// this->touchDirection = 1; //DOWN
 		}
@@ -486,13 +490,13 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 				} else {
 					LOG_INFO("was touch event here\n");
 		if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			LOG_INFO("Got UP here\n");
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
 			}
 		else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			LOG_INFO("Got DOWN here\n");
 				// this->payload = 0x08;
 				this->touchDirection = 1; //DOWN
