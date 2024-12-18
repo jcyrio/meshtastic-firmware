@@ -424,16 +424,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
 				this->payload = 0x23;
-				// this->touchDirection = 2; //UP
 			}
-// 		} else if (event->inputEvent ==
-// static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-// 				this->payload = 0x08;
-// 				// this->touchDirection = 1; //DOWN
 		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
 				this->payload = 0x08;
-				// this->touchDirection = 1; //DOWN
 		}
 #endif
 #else
@@ -474,14 +468,18 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 #endif
 #ifdef SIMPLE_TDECK
 				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX))
-				// FIXME: later on try to make it detect if the LED is on first
-					// externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
-			LOG_INFO("Got DOWN here\n");
+			LOG_INFO("Got UP here\n");
 			LOG_INFO("was touch event: %d\n", this->wasTouchEvent);
 			LOG_INFO("event->inputEvent: %d\n", event->inputEvent);
 			LOG_INFO("event->kbchar: %d\n", event->kbchar);
 			LOG_INFO("runState: %d\n", this->runState);
-					externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+				// FIXME: later on try to make it detect if the LED is on first
+					// externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
+			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
+
+			// if (this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) return 0;
+			// 3 is freetext mode, 1/inactive is normal mode
+			// trying to solve: want to scroll down when on no more prev msgs, so that can go to freetext mode after scroll down. but not when in middle of prv msgs
 			if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP))) {
 				if (this->wasTouchEvent == false) {
 					LOG_INFO("Got UP or DOWN here! Was not touch event, ignoring\n");
@@ -492,6 +490,13 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 		if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			LOG_INFO("Got UP here\n");
+			// if (screen->isOnFirstPreviousMsgsPage == 0) {
+			// 	LOG_INFO("isOnFirstPreviousMsgsPage is 0\n");
+			// 	return 0;
+			// } else {
+			// 	LOG_INFO("isOnFirstPreviousMsgsPage is 1\n");
+			// }
+
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
 			}

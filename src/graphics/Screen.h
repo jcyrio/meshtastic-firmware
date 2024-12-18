@@ -236,6 +236,7 @@ class Screen : public concurrency::OSThread
 			// return ui->getUiState()->currentFrame == frameNumber;
    //  }
 		bool isOnPreviousMsgsScreen = false;
+		bool isOnFirstPreviousMsgsPage = false;
 #endif
 
     ~Screen();

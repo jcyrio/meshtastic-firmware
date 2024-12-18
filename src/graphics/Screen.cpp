@@ -1235,6 +1235,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			LOG_INFO("Received new message!\n");
 			receivedNewMessage = true;
 			previousMessagePage = 0;
+			this->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			// Below is for deciding when to add a message to the history
 			if (strcmp(history.firstMessageToIgnore, currentMsgContent) != 0) {
 				// Get the most recent message to check for duplicates
@@ -1257,6 +1258,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		if (previousMessagePage == 0) {
 			// LOG_INFO("on first message page\n");
 			char currentNodeName[5] = {'\0'};
+			this->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 			else strcpy(currentNodeName, "???");
 
@@ -1318,6 +1320,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			} // end if historyMessageCount == 1
 		} else { // not on first msg page, handle history display
 			// LOG_INFO("Not on first msg page\n");
+			this->isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			if (previousMessagePage < historyMessageCount) {
 					const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
