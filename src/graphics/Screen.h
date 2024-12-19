@@ -5,6 +5,9 @@
 #include "detect/ScanI2C.h"
 #include "mesh/generated/meshtastic/config.pb.h"
 #include <OLEDDisplay.h>
+#ifdef SIMPLE_TDECK
+#include "modules/CannedMessageModule.h"
+#endif
 
 #if !HAS_SCREEN
 #include "power.h"
@@ -236,7 +239,6 @@ class Screen : public concurrency::OSThread
 			// return ui->getUiState()->currentFrame == frameNumber;
    //  }
 		bool isOnPreviousMsgsScreen = false;
-		bool isOnFirstPreviousMsgsPage = false;
 #endif
 
     ~Screen();

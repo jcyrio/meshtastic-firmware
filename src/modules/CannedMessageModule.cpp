@@ -341,11 +341,15 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
             validEvent = true;
         } else {
 					// frc temp trying to ignore downpress here unless is on prevmsgs screen
+					// I think the below is irrelevant because this->messagesCount probably doesn't matter for us.
+					// 12-18
 					LOG_INFO("Down with messagesCount at 0\n");
 					LOG_INFO("Run state: %d\n", this->runState);
 					LOG_INFO("Was touch event: %d\n", this->wasTouchEvent);
 					if (screen->isOnPreviousMsgsScreen) {
 						LOG_INFO("on PREVMSGS screen!\n");
+						if (this->isOnFirstPreviousMsgsPage) LOG_INFO("is on first page\n");
+						else LOG_INFO("is NOT on first page\n");
 					} else {
 						LOG_INFO("not on PREVMSGS screen!\n");
 					}
@@ -399,7 +403,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 #else
     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) ||
         (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
-        (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT))  || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)))
+        (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT))  || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) || (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)))
 		{
 #endif
 //     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) ||
@@ -421,9 +425,24 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 // 		} else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 // 				this->payload = 0xb7;
 		else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
+				// NOTE: messy below, not sure what's needed, if anything. Might've started working after added touchDirection = 2, but not sure.
+				this->touchDirection = 2; //UP
 				this->payload = 0x23;
+			}
+		} else if (event->inputEvent ==
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+			if (this->wasTouchEvent) { // only enters freetext mode if was touchscreen DOWN, not from trackball UP which is too sensitive
+				LOG_INFO("was touch event here\n");
+				if (this->isOnFirstPreviousMsgsPage) { // only allow to go to freetext page if its on the first prev msgs page
+					LOG_INFO("IS ON FIRST PREV MSGS PAGE\n");
+							this->cursor = this->freetext.length();
+							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+							this->lastTouchMillis = millis();
+							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+							requestFocus();
+				} else LOG_INFO("IS ON FIRST PREV MSGS PAGE\n");
 			}
 		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
@@ -468,7 +487,6 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 #endif
 #ifdef SIMPLE_TDECK
 				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX))
-			LOG_INFO("Got UP here\n");
 			LOG_INFO("was touch event: %d\n", this->wasTouchEvent);
 			LOG_INFO("event->inputEvent: %d\n", event->inputEvent);
 			LOG_INFO("event->kbchar: %d\n", event->kbchar);
@@ -488,20 +506,13 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 				} else {
 					LOG_INFO("was touch event here\n");
 		if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			LOG_INFO("Got UP here\n");
-			// if (screen->isOnFirstPreviousMsgsPage == 0) {
-			// 	LOG_INFO("isOnFirstPreviousMsgsPage is 0\n");
-			// 	return 0;
-			// } else {
-			// 	LOG_INFO("isOnFirstPreviousMsgsPage is 1\n");
-			// }
-
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
 			}
 		else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			LOG_INFO("Got DOWN here\n");
 				// this->payload = 0x08;
 				this->touchDirection = 1; //DOWN
@@ -517,8 +528,10 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)
 			if (this->skipNextFreetextMode == false) {
 			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
 #endif
+				if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 						LOG_INFO("HERE, RUN_STATE_FREETEXT\n");
+				}
 						// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
 #ifdef SIMPLE_TDECK
 			// }
@@ -1294,6 +1307,8 @@ int32_t CannedMessageModule::runOnce()
 							this->notifyObservers(&e);
 						} else { // down, freetext screen
 							LOG_INFO("DOWN\n");
+						if (this->isOnFirstPreviousMsgsPage) {
+							LOG_INFO("IS on first page\n");
 							this->wasTouchEvent = false;
 							this->cursor = this->freetext.length();
 							// this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
@@ -1304,6 +1319,7 @@ int32_t CannedMessageModule::runOnce()
 							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 							// this->skipNextRletter = true;
 							requestFocus();
+						} else LOG_INFO("IS NOT on first page\n");
 
 
 							// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
