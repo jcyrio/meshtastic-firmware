@@ -512,6 +512,9 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)
 			LOG_INFO("Got UP here\n");
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
+							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) { // if exiting freetext
+								this->goBackToFirstPreviousMessage = true;
+							}
 				// if (this->isOnLastPreviousMsgsPage) {
             // this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 						// LOG_INFO("HERE2, RUN_STATE_FREETEXT\n");
@@ -536,8 +539,14 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 				LOG_INFO("event->kbchar: %x\n", event->kbchar);
 				// if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
 				if (this->isOnFirstPreviousMsgsPage || event->kbchar != 0x5f) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
+					if (event->kbchar != 0x7e) {
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-						LOG_INFO("HERE, RUN_STATE_FREETEXT\n");
+						LOG_INFO("setting RUN_STATE_FREETEXT\n");
+					} else {
+						LOG_INFO("got 0 key press on prev mesgs screen\n");
+						// below doesn't work
+						// this->goBackToFirstPreviousMessage = true;
+					}
 				}
 						// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
 			// }
@@ -1307,12 +1316,8 @@ int32_t CannedMessageModule::runOnce()
 							this->wasTouchEvent = false;
 							this->lastTouchMillis = millis();
 							// learned that it only ever gets here if run state is 3 / freetext, when set from somewhere else. It's not actually on freetext mode every time though. there's another section that is scrolling for us
-							if (this->runState == 3) LOG_INFO("runState is 3\n");
-							else LOG_INFO("runState is not 3\n");
 							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) LOG_INFO("runState is CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
 							else LOG_INFO("runState is not CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
-							// if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) { // if exiting freetext
-								// this->goBackToFirstPreviousMessage = true;
 						// if (this->isOnLastPreviousMsgsPage && this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
 						// 	LOG_INFO("IS on last page, entering freetext mode\n");
 						// 	this->wasTouchEvent = false;

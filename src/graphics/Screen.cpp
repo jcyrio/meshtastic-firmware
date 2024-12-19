@@ -3303,9 +3303,13 @@ int Screen::handleInputEvent(const InputEvent *event)
 				if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 					if ((previousMessagePage < MAX_MESSAGE_HISTORY) && (previousMessagePage < historyMessageCount - 1)) {
 						if (cannedMessageModule->goBackToFirstPreviousMessage) { // here because otherwise when we scroll up from freetext mode to go back to previous msgs page, it registers the UP and puts it on the 2nd msg instead returning to the first
+							LOG_INFO("going back to first previous message\n");
 							previousMessagePage = 0;
 							cannedMessageModule->goBackToFirstPreviousMessage = false;
-						} else previousMessagePage++;
+						} else {
+							LOG_INFO("going up\n");
+							previousMessagePage++;
+						}
 						LOG_INFO("Previous message page: %d\n", previousMessagePage);
 						LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
 						// setCPUFastest();
