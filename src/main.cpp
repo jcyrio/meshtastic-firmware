@@ -421,7 +421,8 @@ void setup()
     // otherwise keyboard and touch screen will not work
 #ifdef SIMPLE_TDECK
 		// NOTE: if you ever start using the touch screen might have to increase this delay
-    delay(350);
+    // delay(350);
+    delay(200);
 		// NOTE: go back to 200 if you find this doesn't fix the apostrophe problem. I think it's more likely related to connecting via serial monitor at very start
 #else
     delay(800);

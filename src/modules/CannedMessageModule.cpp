@@ -32,6 +32,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
+// #define TESTING
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -43,6 +44,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #ifdef FOR_GUESTS
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
+		{1127590756, "Fr Andre"},
     // {205167532, "Dcn Michael"},
 #endif
 #ifdef HELPERS
@@ -81,13 +83,18 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3014898611, "Bookstore"},
     {NODENUM_BROADCAST, "BROADCAST"},
 #endif
+#ifdef TESTING
+		{1127590756, "Fr Andre"},
+    {667676428, "Spare4"},
+    {207089188, "Spare7"},
+    // {205167532, "Dcn Michael"},
+#endif
 #ifdef FATHERS_NODES  //fathers
     {3014898611, "Bookstore"},
     {4184751652, "Kitchen"},
     {207141012, "Fr Jerome"},
     {NODENUM_BROADCAST, "BROADCAST"},
     {202935032, "Fr Evgeni"},
-    // {207089188, "Spare1"},
     {667627820, "Gate Security"},
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
@@ -95,6 +102,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #endif
     // {2864386355, "Kitchen"}, // was old virtual node
 		///REMOVE LATER!!!!
+    // {207089188, "Spare1"},
 		// {1127590756, "Fr Andre"},
     // {2864390690, "Fr Michael"}, //old virtual node
     // {205167532, "Fr Michael"},
@@ -104,9 +112,9 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     // {219520199, "test"}, // for testing
     // {2297825467, "W3"}, // for testing
 		// below for Geronda only
-		// {207036432, "CHIP"}, 
+		// {207036432, "CHIP"},
 		// {3771734928, "Birdman"},
-		// 
+		//
 		// {NODENUM_BROADCAST, "Broadcast"},
 };
 unsigned int getNodeNumberByIndex(const std::vector<std::pair<unsigned int, std::string>>& nodes, int index) {
@@ -312,7 +320,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 				// below added temp frc trying make lock mode work
 				// FIXME: maybe don't want to check for 0x22 here, might be irrelevant
 				// I think this helped, but not positive
-				if ((screen->keyboardLockMode == true) && (event->kbchar != 0x22)) return 0;
+				if ((screen->keyboardLockMode) && (event->kbchar != 0x22)) return 0;
     if ((strlen(moduleConfig.canned_message.allow_input_source) > 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, event->source) != 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, "_any") != 0)) {
@@ -512,6 +520,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)
 			LOG_INFO("Got UP here\n");
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
+							// below finally worked here, wasn't working in other places
 							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) { // if exiting freetext
 								this->goBackToFirstPreviousMessage = true;
 							}
@@ -545,7 +554,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 					} else {
 						LOG_INFO("got 0 key press on prev mesgs screen\n");
 						// below doesn't work
-						// this->goBackToFirstPreviousMessage = true;
+						this->goBackToFirstPreviousMessage = true;
 					}
 				}
 						// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
@@ -687,7 +696,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								keyCountLoopForDeliveryStatus = 0;
 							}
 						}
-						if (screen->keyboardLockMode == false) {
+						if (!screen->keyboardLockMode) {
 							if (this->skipNextRletter) {
 								this->skipNextRletter = false;
 							} else {
@@ -698,7 +707,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 #ifdef SIMPLE_TDECK
 							}
 						}
-						else if ((screen->keyboardLockMode == true) && (event->kbchar == 0x22)) {
+						else if ((screen->keyboardLockMode) && (event->kbchar == 0x22)) {
 							screen->keyboardLockMode = false;
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 							screen->removeFunctionSymbal("KL");
@@ -1102,8 +1111,8 @@ int32_t CannedMessageModule::runOnce()
 								LOG_INFO("previousDest: %x, previousFreetext: %s\n", this->previousDest, this->previousFreetext.c_str());
 								LOG_INFO("dest: %x, freetext: %s\n", this->dest, this->freetext.c_str());
 								//disable scrolling mode after sending msg
-								this->cursorScrollMode = 0;
-								screen->removeFunctionSymbal("S"); // remove the S symbol from the bottom right corner
+								this->cursorScrollMode = false;
+								screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
 							}
 #else
                 sendText(this->dest, indexChannels[this->channel], this->freetext.c_str(), true);
@@ -1260,7 +1269,7 @@ int32_t CannedMessageModule::runOnce()
 				case 0x22: // " , toggle new keyboard lock mode
 					if (this->freetext.length() > 0) break;
 					LOG_INFO("Got \", Toggle Keyboard Lock Mode\n");
-					if (screen->keyboardLockMode == false) {
+					if (!screen->keyboardLockMode) {
 						LOG_INFO("Keyboard Lock Mode on\n");
 						screen->keyboardLockMode = true;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
@@ -1271,7 +1280,7 @@ int32_t CannedMessageModule::runOnce()
 						screen->keyboardLockMode = false;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
-						screen->removeFunctionSymbal("L");
+						screen->removeFunctionSymbal("KL");
 					}
 					break;
 				case 0x1f: // alt-f, toggle flashlight
@@ -1298,11 +1307,11 @@ int32_t CannedMessageModule::runOnce()
 					LOG_INFO("got 0x5f\n");
 					if (!wasTouchEvent) {
 						LOG_INFO("was not touch event, toggle cursor scroll mode");
-						if (this->cursorScrollMode == 0) {
-							this->cursorScrollMode = 1;
+						if (!this->cursorScrollMode) {
+							this->cursorScrollMode = true;
 							screen->setFunctionSymbal("Scrl"); // add the S symbol to the bottom right corner
 						} else {
-							this->cursorScrollMode = 0;
+							this->cursorScrollMode = false;
 							this->cursor = this->freetext.length();
 							screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
 						}
@@ -1372,7 +1381,7 @@ int32_t CannedMessageModule::runOnce()
 					break;
 #endif
         case 0xb4: // left
-			    if (screen->keyboardLockMode == true) break;
+			    if (screen->keyboardLockMode) break;
 #ifdef SIMPLE_TDECK
 // this always allows to change the destination with scrolling
           if (1 == 1) {
@@ -1410,7 +1419,7 @@ int32_t CannedMessageModule::runOnce()
                     this->channel--;
                 }
 #else  // SIMPLE_TDECK
-						if (this->cursorScrollMode == 0) {
+						if (!this->cursorScrollMode) {
 								LOG_INFO("CursorScrollMode is off\n");
 							// do {
 							// 	LOG_INFO("CursorScrollMode is off, do while\n");
@@ -1450,7 +1459,7 @@ int32_t CannedMessageModule::runOnce()
             break;
         case 0xb7: // right
 #ifdef SIMPLE_TDECK
-			    if (screen->keyboardLockMode == true) break;
+			    if (screen->keyboardLockMode) break;
           if (1 == 1) {
 // this always allows to change the destination with scrolling
 #else
@@ -1485,7 +1494,7 @@ int32_t CannedMessageModule::runOnce()
                     this->channel++;
                 }
 #else  // SIMPLE_TDECK
-						if (this->cursorScrollMode == 0) {
+						if (!this->cursorScrollMode) {
 							LOG_INFO("CursorScrollMode is off\n");
 							// do {
 							// 	LOG_INFO("CursorScrollMode is off, do while\n");

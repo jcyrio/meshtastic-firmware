@@ -330,5 +330,5 @@ int32_t KbI2cBase::runOnce()
     default:
         LOG_WARN("Unknown kb_model 0x%02x\n", kb_model);
     }
-    return 100;
+    return 100; //frc simple_tdeck
 }
