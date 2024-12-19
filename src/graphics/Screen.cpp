@@ -117,6 +117,9 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
+				addMessage("1", "FCyr");
+				addMessage("2", "FCyr");
+				addMessage("3", "FCyr");
 				// addMessage("This is my last message in history", "FCyr");
 				// addMessage("Messages are stored locally in RAM", "FCyr");
 				// addMessage("Currently no local disc storage", "FCyr");
@@ -1257,11 +1260,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     uint32_t days = hours / 24;
 
 		if (previousMessagePage == 0) {
+			cannedMessageModule->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			// LOG_INFO("on first message page\n");
 			char currentNodeName[5] = {'\0'};
 			// Screen::setIsOnFirstPreviousMsgsPage(1);  // for allowing cmm to do touchscreen scroll down to freetext mode
 			// Screen::isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			cannedMessageModule->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 			else strcpy(currentNodeName, "???");
 
@@ -1270,56 +1273,34 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					LOG_INFO("First message is short and there exists a 2nd msg\n");
 					const MessageRecord* secondMsg = history.getMessageAt(1);
 					if (secondMsg && strlen(secondMsg->content) <= 65) { //2nd msg exists and is also short, display 2 msgs on screen
-						// LOG_INFO("Second message exists and is also short, display 2 msgs on screen\n");
-						// LOG_INFO("Current message: %s\n", currentMsgContent);
-						// LOG_INFO("Second message: %s\n", secondMsg->content);
-						// LOG_INFO("Current node name: %s\n", currentNodeName);
-						// LOG_INFO("Second node name: %s\n", secondMsg->nodeName);
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
 						displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
 					} else { // 2nd msg is long, don't display both at same time
 						// LOG_INFO("2nd msg is long, don't display both at same time\n");
-						// if (totalReceivedMessagesSinceBoot == 1 && currentMsgContent[0] == '*') {
-						// LOG_INFO("received 1 msg only but it was a previousHistory msg from Router\n");
-						// LOG_INFO("totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
-						// LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
-						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
-						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
 					}
 				} else { // 1st message is long, display alone
-					// LOG_INFO("GOT HERE: Displaying only one message\n");
 					// if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
 					if (totalReceivedMessagesSinceBoot > 0) {
-					// if (totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
 						// LOG_INFO("received at least 1 real message\n");
-						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
-						// if (totalReceivedMessagesSinceBoot == 1 && currentMsgContent[0] == '*') {
-						// LOG_INFO("received 1 msg only but it was a previousHistory msg from Router\n");
-						// LOG_INFO("totalReceivedMessagesSinceBoot: %d\n", totalReceivedMessagesSinceBoot);
-						// LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
-						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
-						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
 					} else { // want to ignore first bootup message
 						LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
 					}
+					cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
 				} // end 1st message is long display alone
 				} else { // there is only 1 message
 				// LOG_INFO("historyMessageCount is not greater than 1, there is only 1 msg\n");
 				// HERE IS WHERE YOU HAVE TO DISPLAY THE SINGLE MESSAGE
-
 					if ((totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
-						// LOG_INFO("received 1 message\n");
-						// LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
-						// LOG_INFO("currentNodeName: %s\n", currentNodeName);
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
 					} else { // want to ignore first bootup message
 						// LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
 					}
-
+					cannedMessageModule->isOnLastPreviousMsgsPage = 1; // allows cmm to do touchscreen scroll up to freetext mode
 			} // end if historyMessageCount == 1
 		} else { // not on first msg page, handle history display
 			// LOG_INFO("Not on first msg page\n");
@@ -1329,7 +1310,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
 					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
-					// const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2); // just for checking if nextMsg will be displayed alone because thirdMsg is too large, in which case skip showing nextMsg alone because it was already shown
 
 					if (currentMsg) {
 						uint8_t msgLen = strlen(currentMsg->content);
@@ -1344,23 +1324,13 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 									// enabling this causes to jump by 2 pags instead of "smooth" scrolling 1 at a time
 									// previousMessagePage++;
 							} else { // Display single message, but only if it's not because the next message is too long (and this one is short, so it was already displayed)
-											 // TOOD: can remove extra parenthesis below??
-									// if ((strlen(currentMsg->content) <= 65) && (strlen(nextMsg->content) > 65) && (strlen(prevMsg->content) <= 65)) { // if current message is short and next message is too long, don't display currentMsg alone, but rather skip it because it was already shown
-									// 	previousMessagePage++;
-									// } else {
-
-									// LOG_INFO("Displaying only single message\n");
-									// if the length is over 180 char, then make font small
-									// LOG_INFO("currentMsg->content: %s\n", currentMsg->content);
-									// LOG_INFO("currentMsg->nodeName: %s\n", currentMsg->nodeName);
-									// LOG_INFO("previousMessagePage: %d\n", previousMessagePage);
-									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
-							// }
+								// LOG_INFO("Displaying only single message\n");
+								// if the length is over 180 char, then make font small
+								displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
 					} // end if currentMsg
 					else showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
 			}
     }
-					LOG_INFO("onFirstPreviousMsgsPage: %d\n", cannedMessageModule->isOnFirstPreviousMsgsPage);
 		showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
 // return;
 #ifdef THISISDISABLED
@@ -3332,13 +3302,21 @@ int Screen::handleInputEvent(const InputEvent *event)
 				// LOG_INFO("Showed last previous message\n");
 				if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 					if ((previousMessagePage < MAX_MESSAGE_HISTORY) && (previousMessagePage < historyMessageCount - 1)) {
-						previousMessagePage++;
+						if (cannedMessageModule->goBackToFirstPreviousMessage) { // here because otherwise when we scroll up from freetext mode to go back to previous msgs page, it registers the UP and puts it on the 2nd msg instead returning to the first
+							previousMessagePage = 0;
+							cannedMessageModule->goBackToFirstPreviousMessage = false;
+						} else previousMessagePage++;
 						LOG_INFO("Previous message page: %d\n", previousMessagePage);
+						LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
 						// setCPUFastest();
 						setCPUFast(true);
 						screen->forceDisplay();
 						targetFramerate = 30;
 						ui->setTargetFPS(30);
+						if (previousMessagePage == historyMessageCount - 1) {
+							LOG_INFO("HERE, PREVIOUS MESSAGE PAGE == HISTORY MESSAGE COUNT - 1\n");
+							cannedMessageModule->isOnLastPreviousMsgsPage = 1; // allows cmm to do touchscreen scroll up to freetext mode when on last message
+						}
 					}
 				}
 				else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {

@@ -239,7 +239,7 @@ CannedMessageModule::CannedMessageModule()
 		// LOG_INFO("Own node name: %s\n", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		// skipNodes.push_back(cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
 		MYNODES.erase(
-				std::remove_if(MYNODES.begin(), MYNODES.end(), 
+				std::remove_if(MYNODES.begin(), MYNODES.end(),
 											 [&](const std::pair<unsigned int, std::string>& node) {
 													 return node.first == nodeDB->getNodeNum();  // Compare the first element of the pair
 											 }),
@@ -248,7 +248,8 @@ CannedMessageModule::CannedMessageModule()
 		// screen->removeFunctionSymbal("ACK");
 		this->dest = NODENUM_RPI5;
 
-		if (config.bluetooth.enabled == true) screen->setFunctionSymbal("BT");
+		if (config.bluetooth.enabled) screen->setFunctionSymbal("BT");
+		if (config.power.is_power_saving) screen->setFunctionSymbal("PS");
 #endif
 }
 
@@ -345,7 +346,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 					// 12-18
 					LOG_INFO("Down with messagesCount at 0\n");
 					LOG_INFO("Run state: %d\n", this->runState);
-					LOG_INFO("Was touch event: %d\n", this->wasTouchEvent);
+					LOG_INFO("Was touch eventB: %d\n", this->wasTouchEvent);
 					if (screen->isOnPreviousMsgsScreen) {
 						LOG_INFO("on PREVMSGS screen!\n");
 						if (this->isOnFirstPreviousMsgsPage) LOG_INFO("is on first page\n");
@@ -428,13 +429,14 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
 				// NOTE: messy below, not sure what's needed, if anything. Might've started working after added touchDirection = 2, but not sure.
+				LOG_INFO("Was touch event, setting touchDirection 2 here and payload 0x23\n");
 				this->touchDirection = 2; //UP
 				this->payload = 0x23;
 			}
 		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			if (this->wasTouchEvent) { // only enters freetext mode if was touchscreen DOWN, not from trackball UP which is too sensitive
-				LOG_INFO("was touch event here\n");
+				LOG_INFO("was touch event hereA\n");
 				if (this->isOnFirstPreviousMsgsPage) { // only allow to go to freetext page if its on the first prev msgs page
 					LOG_INFO("IS ON FIRST PREV MSGS PAGE\n");
 							this->cursor = this->freetext.length();
@@ -442,7 +444,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							this->lastTouchMillis = millis();
 							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 							requestFocus();
-				} else LOG_INFO("IS ON FIRST PREV MSGS PAGE\n");
+				} else LOG_INFO("IS NOT ON FIRST PREV MSGS PAGE\n");
 			}
 		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
@@ -487,9 +489,9 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 #endif
 #ifdef SIMPLE_TDECK
 				// if (moduleConfig.external_notification.enabled && (externalNotificationModule->nagCycleCutoff != UINT32_MAX))
-			LOG_INFO("was touch event: %d\n", this->wasTouchEvent);
-			LOG_INFO("event->inputEvent: %d\n", event->inputEvent);
-			LOG_INFO("event->kbchar: %d\n", event->kbchar);
+			LOG_INFO("was touch eventC: %d\n", this->wasTouchEvent);
+			LOG_INFO("event->inputEvent: %h\n", event->inputEvent);
+			LOG_INFO("event->kbchar: %h\n", event->kbchar);
 			LOG_INFO("runState: %d\n", this->runState);
 				// FIXME: later on try to make it detect if the LED is on first
 					// externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
@@ -504,12 +506,16 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 					// NOTE: this finally fixed the problem where trackball up down was messing up freetext mode
 					return 0;
 				} else {
-					LOG_INFO("was touch event here\n");
+					LOG_INFO("was touch event hereB\n");
 		if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			LOG_INFO("Got UP here\n");
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
+				// if (this->isOnLastPreviousMsgsPage) {
+            // this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						// LOG_INFO("HERE2, RUN_STATE_FREETEXT\n");
+				// }
 			}
 		else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
@@ -527,13 +533,13 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 #ifdef SIMPLE_TDECK
 			if (this->skipNextFreetextMode == false) {
 			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
-#endif
-				if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
+				LOG_INFO("event->kbchar: %x\n", event->kbchar);
+				// if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
+				if (this->isOnFirstPreviousMsgsPage || event->kbchar != 0x5f) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 						LOG_INFO("HERE, RUN_STATE_FREETEXT\n");
 				}
 						// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
-#ifdef SIMPLE_TDECK
 			// }
 			} else this->skipNextFreetextMode = false;
 #endif
@@ -544,10 +550,6 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
         // Run modifier key code below, (doesnt inturrupt typing or reset to start screen page)
         switch (event->kbchar) { //note: showTemporaryMessage doesn't work here
 				// case 0xf: // alt-f, toggle flashlight
-				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
-				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
-				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
-				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
 				// 	LOG_INFO("Got ALT-F, Flashlight toggle\n");
 				// 	if (this->flashlightOn == 1) {
 				// 		LOG_INFO("Flashlight off\n");
@@ -677,15 +679,15 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							}
 						}
 						if (screen->keyboardLockMode == false) {
-#endif
 							if (this->skipNextRletter) {
 								this->skipNextRletter = false;
 							} else {
+#endif
 								this->payload = event->kbchar;
 								this->lastTouchMillis = millis();
 								validEvent = true;
-							}
 #ifdef SIMPLE_TDECK
+							}
 						}
 						else if ((screen->keyboardLockMode == true) && (event->kbchar == 0x22)) {
 							screen->keyboardLockMode = false;
@@ -1174,7 +1176,7 @@ int32_t CannedMessageModule::runOnce()
 #ifdef SIMPLE_TDECK
 				case 0x23: // # sign or Q key long hold, for exiting freetext
 					LOG_INFO("Got case 0x23\n");
-					LOG_INFO("was touch event: %d\n", this->wasTouchEvent);
+					LOG_INFO("was touch eventA: %d\n", this->wasTouchEvent);
 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 					this->lastTouchMillis = millis();
             e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
@@ -1182,6 +1184,8 @@ int32_t CannedMessageModule::runOnce()
 					this->notifyObservers(&e);
 					break;
 				case 0x7e: // mic / 0 key, clear line
+					LOG_INFO("Got case 0x7e\n");
+					LOG_INFO("this->runState: %d\n", this->runState);
 					if (this->freetext.length() > 0) {
 						LOG_INFO("more than 1 char is on freetext line, deleting line\n");
 						this->freetext = ""; // clear freetext
@@ -1207,12 +1211,11 @@ int32_t CannedMessageModule::runOnce()
 						if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
 						this->freetext = this->previousFreetext;
 						this->cursor = this->freetext.length();
-						// this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
             this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
             // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
 						// this->lastTouchMillis = millis();
 						// this->notifyObservers(&e);
-            this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 						this->skipNextRletter = true;
 						requestFocus();
             // setIntervalFromNow(0); // on fast keypresses, this isn't fast enough.
@@ -1283,7 +1286,7 @@ int32_t CannedMessageModule::runOnce()
 					break;
 				case 0x5f: // _, cursorScrollMode
 					//toggle cursor scroll mode
-					LOG_INFO("got 0x5f");
+					LOG_INFO("got 0x5f\n");
 					if (!wasTouchEvent) {
 						LOG_INFO("was not touch event, toggle cursor scroll mode");
 						if (this->cursorScrollMode == 0) {
@@ -1295,28 +1298,49 @@ int32_t CannedMessageModule::runOnce()
 							screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
 						}
 					} else { // was touch event
-						LOG_INFO("was touch event, no scrolling!");
+						LOG_INFO("was touch event, don't enter cursor scroll mode\n");
 						// NOTE: below does same thing twice. Currently having both up and down touch scroll exit freetext mode. maybe unify or change
 						if (this->touchDirection == 2) { // up, exit freetext mode, go to previous messages screen
+							// NOTE that this also is required for flipping through the previous messages pages. It's not just for exiting freetext mode.
 							LOG_INFO("UP\n");
+							LOG_INFO("runState: %d\n", this->runState);
 							this->wasTouchEvent = false;
-							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 							this->lastTouchMillis = millis();
+							// learned that it only ever gets here if run state is 3 / freetext, when set from somewhere else. It's not actually on freetext mode every time though. there's another section that is scrolling for us
+							if (this->runState == 3) LOG_INFO("runState is 3\n");
+							else LOG_INFO("runState is not 3\n");
+							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) LOG_INFO("runState is CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
+							else LOG_INFO("runState is not CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
+							// if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) { // if exiting freetext
+								// this->goBackToFirstPreviousMessage = true;
+						// if (this->isOnLastPreviousMsgsPage && this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
+						// 	LOG_INFO("IS on last page, entering freetext mode\n");
+						// 	this->wasTouchEvent = false;
+						// 	this->cursor = this->freetext.length();
+						// 	this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						// 	this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+						// 	// e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+						// 	this->lastTouchMillis = millis();
+						// 	this->notifyObservers(&e);
+						// 	// this->skipNextRletter = true;
+						// 	requestFocus();
+						// } else {
+						// 	LOG_INFO("IS NOT on last page\n");
+							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; // this line is required for exiting freetext mode
 							e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
 							requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
 							this->notifyObservers(&e);
+						// }
 						} else { // down, freetext screen
 							LOG_INFO("DOWN\n");
 						if (this->isOnFirstPreviousMsgsPage) {
-							LOG_INFO("IS on first page\n");
+							LOG_INFO("IS on first page, entering freetext mode\n");
 							this->wasTouchEvent = false;
 							this->cursor = this->freetext.length();
-							// this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-							// e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
 							this->lastTouchMillis = millis();
 							this->notifyObservers(&e);
-							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 							// this->skipNextRletter = true;
 							requestFocus();
 						} else LOG_INFO("IS NOT on first page\n");

@@ -92,6 +92,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 #ifdef SIMPLE_TDECK // public
 		void setDeliveryStatus(uint8_t status);
 		bool isOnFirstPreviousMsgsPage = false;
+		bool isOnLastPreviousMsgsPage = false;
+		bool goBackToFirstPreviousMessage = false;
 		uint8_t getDeliveryStatus();
 		int leftScrollCoun, rightScrollCount;
 		int scrollLeft(), scrollRight();
