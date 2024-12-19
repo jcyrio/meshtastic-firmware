@@ -1188,8 +1188,9 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     else if (strcmp(messageContent, "\xf0\x9f\xa4\xa3") == 0 || strcmp(messageContent, "rofl") == 0) {
         display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, haha_width, haha_height, haha);
 		}
-		else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
-			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
+		else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0 ||
+			strcmp(messageContent, u8"❤️") == 0) {
+				display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
 		}
 		else {
 			if (msgLen > 170) display->setFont(FONT_SMALL);

@@ -99,6 +99,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {667570636, "Fr Theoktist"},
+    {205167532, "Dcn Michael"},
 #endif
     // {2864386355, "Kitchen"}, // was old virtual node
 		///REMOVE LATER!!!!
@@ -826,6 +827,39 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     strncpy(modifiableMessage, message, bufferSize - 1);
     modifiableMessage[bufferSize - 1] = '\0'; // Ensure null-termination
 
+// const char *target1 = "sss";
+// const char *emoji1 = "😊";
+// const char *target2 = "ttt";
+// const char *emoji2 = "👍";
+// const char *target3 = "hhh";
+// const char *emoji3 = "❤️";
+// const char *target4 = "rofl";
+// const char *emoji4 = "🤣";
+//
+// char result[bufferSize] = {0};
+// char *currentPos = modifiableMessage;
+// char *resultPos = result;
+// size_t remaining = bufferSize - 1; // Keep track of remaining space
+//
+// while (*currentPos != '\0' && remaining > 0) {
+//     if (strncmp(currentPos, target1, strlen(target1)) == 0) {
+//         size_t len = strlen(emoji1);
+//         if (len > remaining) break;
+//         memcpy(resultPos, emoji1, len);
+//         resultPos += len;
+//         remaining -= len;
+//         currentPos += strlen(target1);
+//     }
+//     // Similar blocks for target2, target3, target4
+//     else {
+//         *resultPos++ = *currentPos++;
+//         remaining--;
+//     }
+// }
+//
+// *resultPos = '\0';
+
+		
     // Replace "sss" with the smiley emoji (😊) and "ttt" with thumbs-up emoji (👍)
     const char *target1 = "sss";
     const char *emoji1 = "😊";
@@ -835,6 +869,8 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     const char *emoji3 = "❤️";
     const char *target4 = "rofl";
 		const char *emoji4 = "🤣";
+    const char *target5 = "fff";
+		const char *emoji5 = "🙏";
 
     char result[bufferSize] = {0}; // Buffer to hold the final message
     char *currentPos = modifiableMessage;
@@ -861,6 +897,11 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
             strncat(resultPos, emoji4, bufferSize - strlen(result) - 1);
             resultPos += strlen(emoji4);
             currentPos += strlen(target4);
+				} // check for "fff"
+        else if (strncmp(currentPos, target5, strlen(target5)) == 0) {
+            strncat(resultPos, emoji5, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji5);
+            currentPos += strlen(target5);
 				}
         // Copy the current character
         else *resultPos++ = *currentPos++;
