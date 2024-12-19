@@ -69,6 +69,9 @@ int32_t TouchScreenBase::runOnce()
 
             // swipe horizontal
             if (adx > ady && adx > TOUCH_THRESHOLD_X) {
+#ifdef SIMPLE_TDECK
+							if (!screen->keyboardLockMode) {
+#endif
                 if (0 > dx) { // swipe right to left
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_LEFT);
 #ifdef SIMPLE_TDECK
@@ -81,10 +84,16 @@ int32_t TouchScreenBase::runOnce()
 										cannedMessageModule->wasTouchEvent = true;
 #endif
                     LOG_DEBUG("action SWIPE: left to right\n");
+									}
+#ifdef SIMPLE_TDECK
                 }
+#endif
             }
             // swipe vertical
             else if (ady > adx && ady > TOUCH_THRESHOLD_Y) {
+#ifdef SIMPLE_TDECK
+							if (!screen->keyboardLockMode) {
+#endif
                 if (0 > dy) { // swipe bottom to top
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_UP);
 #ifdef SIMPLE_TDECK
@@ -98,9 +107,15 @@ int32_t TouchScreenBase::runOnce()
 #endif
                     LOG_DEBUG("action SWIPE: top to bottom\n");
                 }
+#ifdef SIMPLE_TDECK
+                }
+#endif
             }
             // tap
             else {
+#ifdef SIMPLE_TDECK
+							if (!screen->keyboardLockMode) {
+#endif
                 if (duration > 0 && duration < TIME_LONG_PRESS) {
                     if (_tapped) {
                         _tapped = false;
@@ -114,22 +129,37 @@ int32_t TouchScreenBase::runOnce()
                 }
             }
         }
+#ifdef SIMPLE_TDECK
+        }
+#endif
     }
     _touchedOld = touched;
 
     // fire TAP event when no 2nd tap occured within time
     if (_tapped && (time_t(millis()) - _start) > TIME_LONG_PRESS - 50) {
+#ifdef SIMPLE_TDECK
+		if (!screen->keyboardLockMode) {
+#endif
         _tapped = false;
         e.touchEvent = static_cast<char>(TOUCH_ACTION_TAP);
         LOG_DEBUG("action TAP(%d/%d)\n", _last_x, _last_y);
+#ifdef SIMPLE_TDECK
+		}
+#endif
     }
 
     // fire LONG_PRESS event without the need for release
     if (touched && (time_t(millis()) - _start) > TIME_LONG_PRESS) {
+#ifdef SIMPLE_TDECK
+		if (!screen->keyboardLockMode) {
+#endif
         // tricky: prevent reoccurring events and another touch event when releasing
         _start = millis() + 30000;
         e.touchEvent = static_cast<char>(TOUCH_ACTION_LONG_PRESS);
         LOG_DEBUG("action LONG PRESS(%d/%d)\n", _last_x, _last_y);
+#ifdef SIMPLE_TDECK
+		}
+#endif
     }
 
     if (e.touchEvent != TOUCH_ACTION_NONE) {
