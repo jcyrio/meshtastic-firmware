@@ -1251,6 +1251,10 @@ int32_t CannedMessageModule::runOnce()
 						this->cursor = 0;
 						this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
 						requestFocus();
+					} else { //return to router node
+						LOG_INFO("zero pressed and there's no text, returning to router node\n");
+						nodeIndex = 0;
+						this->dest = MYNODES[nodeIndex].first;
 					}
 					break;
 				case 0x1a: // alt-w/1, previous Messages1
