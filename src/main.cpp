@@ -233,6 +233,17 @@ void setup()
 #ifdef SIMPLE_TDECK
     setCpuFrequencyMhz(240);
 #endif
+#if defined(T_DECK)
+    // GPIO10 manages all peripheral power supplies
+    // Turn on peripheral power immediately after MUC starts.
+    // If some boards are turned on late, ESP32 will reset due to low voltage.
+    // ESP32-C3(Keyboard) , MAX98357A(Audio Power Amplifier) , 
+    // TF Card , Display backlight(AW9364DNR) , AN48841B(Trackball) , ES7210(Decoder)
+    pinMode(KB_POWERON, OUTPUT);
+    digitalWrite(KB_POWERON, HIGH);
+    delay(100);
+#endif
+
     concurrency::hasBeenSetup = true;
 #if ARCH_PORTDUINO
     SPISettings spiSettings(settingsMap[spiSpeed], MSBFIRST, SPI_MODE0);
@@ -411,22 +422,6 @@ void setup()
     // RAK-12039 set pin for Air quality sensor
     pinMode(AQ_SET_PIN, OUTPUT);
     digitalWrite(AQ_SET_PIN, HIGH);
-#endif
-
-#ifdef T_DECK
-    // enable keyboard
-    pinMode(KB_POWERON, OUTPUT);
-    digitalWrite(KB_POWERON, HIGH);
-    // There needs to be a delay after power on, give LILYGO-KEYBOARD some startup time
-    // otherwise keyboard and touch screen will not work
-#ifdef SIMPLE_TDECK
-		// NOTE: if you ever start using the touch screen might have to increase this delay
-    // delay(350);
-    delay(200);
-		// NOTE: go back to 200 if you find this doesn't fix the apostrophe problem. I think it's more likely related to connecting via serial monitor at very start
-#else
-    delay(800);
-#endif
 #endif
 
     // Currently only the tbeam has a PMU

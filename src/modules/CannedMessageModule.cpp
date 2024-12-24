@@ -550,6 +550,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 				// if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
 				if (this->isOnFirstPreviousMsgsPage || event->kbchar != 0x5f) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
 					if (event->kbchar != 0x7e) {
+					// if ((event->kbchar != 0x7e) && (event->kbchar != 0x5e)) { // this one ignores up-down on some, testing
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
 						LOG_INFO("setting RUN_STATE_FREETEXT\n");
 					} else {
@@ -702,9 +703,23 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								this->skipNextRletter = false;
 							} else {
 #endif
+								if (event->kbchar != 0x5e) {
 								this->payload = event->kbchar;
 								this->lastTouchMillis = millis();
 								validEvent = true;
+								} else {
+									LOG_INFO("touchDirection: %d", this->touchDirection);
+									if (this->touchDirection == 1) { // down, entering freetext mode
+										this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+										this->lastTouchMillis = millis();
+										validEvent = true;
+									} else if (this->touchDirection == 2) { // up, exit freetext mode
+										this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+										this->lastTouchMillis = millis();
+										validEvent = true;
+									}
+								}
+
 #ifdef SIMPLE_TDECK
 							}
 						}
@@ -971,7 +986,7 @@ int32_t CannedMessageModule::runOnce()
 		else if (month == "Dec") monthNumber = 12;
 		int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
 		char startupMessage[30];
-		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON%d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
 		alreadySentFirstMessage = 1;
 		setDeliveryStatus(0); // to make it so that the traceroutes etc don't show as acked
