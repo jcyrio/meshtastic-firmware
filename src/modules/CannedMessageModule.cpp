@@ -521,8 +521,11 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)
 			LOG_INFO("Got UP here\n");
 				// this->payload = 0x23;
 				this->touchDirection = 2; //UP
+				LOG_INFO("setting touchDirection: %d", this->touchDirection);
+							// this->wasTouchEvent = true; //new 12-27 test
 							// below finally worked here, wasn't working in other places
 							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) { // if exiting freetext
+								LOG_INFO("exiting freetext, setting goBackToFirstPreviousMessage\n");
 								this->goBackToFirstPreviousMessage = true;
 							}
 				// if (this->isOnLastPreviousMsgsPage) {
@@ -534,7 +537,9 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
 			LOG_INFO("Got DOWN here\n");
 				// this->payload = 0x08;
-				this->touchDirection = 1; //DOWN
+			this->touchDirection = 1; //DOWN
+			LOG_INFO("setting touchDirection: %d", this->touchDirection);
+							// this->wasTouchEvent = true; //new 12-27 test
 		}
 	}
 			}
@@ -548,7 +553,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
 				LOG_INFO("event->kbchar: %x\n", event->kbchar);
 				// if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
-				if (this->isOnFirstPreviousMsgsPage || event->kbchar != 0x5f) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
+				if (this->isOnFirstPreviousMsgsPage || (event->kbchar != 0x5f && event->kbchar != 0x60)) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
 					if (event->kbchar != 0x7e) {
 					// if ((event->kbchar != 0x7e) && (event->kbchar != 0x5e)) { // this one ignores up-down on some, testing
             this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
@@ -684,12 +689,23 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
         default:
             // pass the pressed key
             LOG_DEBUG("Canned message ANYKEY (%x)\n", event->kbchar);
+#ifdef SIMPLE_TDECK
 						// want to display value of skipNextFreetextMode
 						// LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
 						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
-#ifdef SIMPLE_TDECK
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
+            LOG_INFO("Canned message ANYKEY (%x)\n", event->kbchar);
+						LOG_INFO("touchDirection here: %d", this->touchDirection);
+						LOG_INFO("wasTouchEvent here: %d", this->wasTouchEvent);
+						// if (this->wasTouchEvent) {
+						// 	this->wasTouchEvent = false;
+						// 	return 0;
+							// 2 ways to proceed here: 
+							// either here do exit-enter freetext mode (worth a test, but also might have to find other spots and remove them)
+							// or go further down and just skip adding the apostrophe character when it was a touch event
+						// }
+
 						if (deliveryStatus == 2) { // means ACKed, showing (D)
 						 LOG_INFO("deliveryStatus == 2\n");
 							keyCountLoopForDeliveryStatus++;
@@ -703,7 +719,8 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								this->skipNextRletter = false;
 							} else {
 #endif
-								if (event->kbchar != 0x5e) {
+								// if (event->kbchar != 0x5e) {
+								if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // this is the apostrophe character
 								this->payload = event->kbchar;
 								this->lastTouchMillis = millis();
 								validEvent = true;
@@ -1362,6 +1379,7 @@ int32_t CannedMessageModule::runOnce()
 					// this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
 					// delay(500); //debounce
 					break;
+				// case 0x60: //testing 12-27 for strange apostrophe bug, try make 60 count as 5f
 				case 0x5f: // _, cursorScrollMode
 					//toggle cursor scroll mode
 					LOG_INFO("got 0x5f\n");
@@ -1627,6 +1645,7 @@ int32_t CannedMessageModule::runOnce()
 						case 0x3c: // shift-speaker toggle brightness, some tdecks with black keyboards
 						case 0x24: // $ sign
 						case 0x1f: // alt-f, flashlight
+						// case 0x60: // testing 12-27
 						case 0x5f: // _, toggle cursorScrollMode
 						case 0x1a: // alt-1, previous messages 1
 						// case 0x2a: // alt-2, previous messages 2
