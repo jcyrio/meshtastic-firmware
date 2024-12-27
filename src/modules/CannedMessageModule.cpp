@@ -741,14 +741,19 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								// if (event->kbchar != 0x5e) {
 								if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // this is the apostrophe character
 									LOG_INFO("HERE ENTERING TEXT\n");
-									LOG_INFO("event->kbchar: %x\n", event->kbchar)
+									LOG_INFO("event->kbchar: %x\n", event->kbchar);
 								this->payload = event->kbchar;
 								this->lastTouchMillis = millis();
 								validEvent = true;
 								} else {
-									LOG_INFO("touchDirection: %d", this->touchDirection);
+									LOG_INFO("touchDirectionDD: %d", this->touchDirection);
 									if (this->touchDirection == 1) { // down, entering freetext mode
 										this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+										if (this->freetext.length() > 0) {
+											this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+											this->cursor = this->freetext.length();
+										} else this->cursor = 0;
+							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 										this->lastTouchMillis = millis();
 										validEvent = true;
 									} else if (this->touchDirection == 2) { // up, exit freetext mode
