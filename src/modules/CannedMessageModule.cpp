@@ -438,9 +438,17 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
 				// NOTE: messy below, not sure what's needed, if anything. Might've started working after added touchDirection = 2, but not sure.
-				LOG_INFO("Was touch event, setting touchDirection 2 here and payload 0x23\n");
+				LOG_INFO("Was touch event\n");
 				this->touchDirection = 2; //UP
-				this->payload = 0x23;
+				// this->payload = 0x23;
+				// 12-27 testing, used to be 0x23 line above, but was messing up some other stuff
+					// LOG_INFO("Got case 0x23\n");
+					LOG_INFO("was touch eventA: %d\n", this->wasTouchEvent);
+					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+					this->lastTouchMillis = millis();
+            // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+            requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+					// this->notifyObservers(&e);
 			}
 		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
@@ -519,14 +527,19 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 		if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 			LOG_INFO("Got UP here\n");
-				// this->payload = 0x23;
-				this->touchDirection = 2; //UP
-				LOG_INFO("setting touchDirection: %d", this->touchDirection);
+				// this->payload = 0x23; //bad
+				// this->touchDirection = 2; //UP
+				// LOG_INFO("setting touchDirection: %d", this->touchDirection);
 							// this->wasTouchEvent = true; //new 12-27 test
 							// below finally worked here, wasn't working in other places
 							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) { // if exiting freetext
 								LOG_INFO("exiting freetext, setting goBackToFirstPreviousMessage\n");
 								this->goBackToFirstPreviousMessage = true;
+				// this->touchDirection = 1; //DOWN. For some reason this fixed going to prevMsg screen when exit freetext mode
+				this->touchDirection = 1; //DOWN. For some reason this fixed going to prevMsg screen when exit freetext mode
+				// this->wasTouchEvent = true;
+        this->lastTouchMillis = millis();
+        validEvent = true;
 							}
 				// if (this->isOnLastPreviousMsgsPage) {
             // this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
@@ -549,24 +562,30 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
             (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)) {
 
 #ifdef SIMPLE_TDECK
-			if (this->skipNextFreetextMode == false) {
-			// if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
-				LOG_INFO("event->kbchar: %x\n", event->kbchar);
-				// if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
-				if (this->isOnFirstPreviousMsgsPage || (event->kbchar != 0x5f && event->kbchar != 0x60)) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
-					if (event->kbchar != 0x7e) {
-					// if ((event->kbchar != 0x7e) && (event->kbchar != 0x5e)) { // this one ignores up-down on some, testing
-            this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-						LOG_INFO("setting RUN_STATE_FREETEXT\n");
-					} else {
-						LOG_INFO("got 0 key press on prev mesgs screen\n");
-						// below doesn't work
-						this->goBackToFirstPreviousMessage = true;
-					}
-				}
-						// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
-			// }
-			} else this->skipNextFreetextMode = false;
+					// 12-27 disabled all below, not sure consequences
+			// if (this->skipNextFreetextMode == false) {
+			// // if (this->lastTrackballMillis + 10000 > millis()) { // this stops it from entering freetext mode if you're just pressing the 0-Mic key to enable the trackball scrolling
+			// 	LOG_INFO("event->kbchar: %x\n", event->kbchar);
+			// 	// if (this->isOnFirstPreviousMsgsPage) { // only go to freetext mode if scrolling from newest prev msgs page
+			// 	// FIXME: I think below has the wrong type of if check. I think you'll probably want a different check to see if you're trying to exit freetext mode
+			// 	LOG_INFO("this->runState: %d\n", this->runState);
+			// 	if (this->isOnFirstPreviousMsgsPage || (event->kbchar != 0x5f && event->kbchar != 0x60)) { // only go to freetext mode if scrolling from newest prev msgs page and was scrolling upwards (5f)
+			// 	// if (this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE) {
+			// 		LOG_INFO("this->payload: %x\n", this->payload);
+			// 		if (event->kbchar != 0x7e) {
+			// 		// if ((event->kbchar != 0x7e) && (event->kbchar != 0x5e)) { // this one ignores up-down on some, testing
+   //          this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+			// 			LOG_INFO("setting RUN_STATE_FREETEXT\n");
+			// 			LOG_INFO("event->kbchar2: %x\n", event->kbchar);
+			// 		} else {
+			// 			LOG_INFO("got 0 key press on prev mesgs screen\n");
+			// 			// below doesn't work
+			// 			this->goBackToFirstPreviousMessage = true;
+			// 		}
+			// 	}
+			// 			// validEvent = true; // TESTING 12-18, not sure if does anything, trying to fix trackball up-down bug with freetext cursor
+			// // }
+			// } else this->skipNextFreetextMode = false;
 #endif
         }
 
@@ -696,8 +715,8 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
             LOG_INFO("Canned message ANYKEY (%x)\n", event->kbchar);
-						LOG_INFO("touchDirection here: %d", this->touchDirection);
-						LOG_INFO("wasTouchEvent here: %d", this->wasTouchEvent);
+						LOG_INFO("touchDirection here: %d\n", this->touchDirection);
+						LOG_INFO("wasTouchEvent here: %d\n", this->wasTouchEvent);
 						// if (this->wasTouchEvent) {
 						// 	this->wasTouchEvent = false;
 						// 	return 0;
@@ -721,6 +740,8 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 #endif
 								// if (event->kbchar != 0x5e) {
 								if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // this is the apostrophe character
+									LOG_INFO("HERE ENTERING TEXT\n");
+									LOG_INFO("event->kbchar: %x\n", event->kbchar)
 								this->payload = event->kbchar;
 								this->lastTouchMillis = millis();
 								validEvent = true;
@@ -731,6 +752,11 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 										this->lastTouchMillis = millis();
 										validEvent = true;
 									} else if (this->touchDirection == 2) { // up, exit freetext mode
+										// the below 3 are the ones that fixed exiting freetext mode 12-27
+						UIFrameEvent e;
+            e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+            requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+					this->notifyObservers(&e);
 										this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 										this->lastTouchMillis = millis();
 										validEvent = true;
