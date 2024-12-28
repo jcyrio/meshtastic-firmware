@@ -28,11 +28,12 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-#define FATHERS_NODES
+// #define FATHERS_NODES
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
 // #define TESTING
+#define VASILI
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -62,6 +63,8 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		{3771734404, "Chopani"}, //Niko
 		{207036432, "Chip"},
 #endif
+#ifdef VASILI
+#endif
 #ifdef GATE_SECURITY
     {3014898611, "Bookstore"},
     {4184751652, "Kitchen"},
@@ -83,7 +86,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3014898611, "Bookstore"},
     {NODENUM_BROADCAST, "BROADCAST"},
 #endif
-#ifdef TESTING
+#ifdef TESTING2
 		{1127590756, "Fr Andre"},
     {667676428, "Spare4"},
     {207089188, "Spare7"},
@@ -135,6 +138,7 @@ std::string getNodeNameByIndex(const std::vector<std::pair<unsigned int, std::st
 uint8_t keyCountLoopForDeliveryStatus = 0, deliveryStatus = 0;
 int leftScrollCount = 0, rightScrollCount = 0, nodeIndex = 0;
 bool wasTouchEvent = false;
+bool justEnteredFreetext = false; // prevents scrolling through nodes when first entering freetext mode
 
 // void CannedMessageModule::setWasTouchEvent(bool value) { this->wasTouchEvent = value; }
 // bool CannedMessageModule::getWasTouchEvent() { return this->wasTouchEvent; }
@@ -720,7 +724,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 						// if (this->wasTouchEvent) {
 						// 	this->wasTouchEvent = false;
 						// 	return 0;
-							// 2 ways to proceed here: 
+							// 2 ways to proceed here:
 							// either here do exit-enter freetext mode (worth a test, but also might have to find other spots and remove them)
 							// or go further down and just skip adding the apostrophe character when it was a touch event
 						// }
@@ -738,30 +742,64 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								this->skipNextRletter = false;
 							} else {
 #endif
+								// below works to fix problem where it was doing scrollLeft() when entering freetext mode on swipe up/down. But also I'm not sure if it messes up anything else 12-28. Might have to move it somewhere else
+								this->justEnteredFreetext = true; // prevents scrolling through nodes when first entering freetext mode
 								// if (event->kbchar != 0x5e) {
-								if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // this is the apostrophe character
+								// if (event->kbchar == 0x60 || event->kbchar == 0x5f || event->kbchar == 0x7e) { // this is the apostrophe character
+								// 	LOG_INFO("HERE ENTERING TEXTBB\n");
+								// 	if (this->freetext.length() > 0) {
+								// 		LOG_INFO("HERE ENTERING TEXTCC\n");
+								// 		this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+								// 		this->cursor = this->freetext.length();
+								// 	}
+								// }
+								if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // checking to make sure it is not the apostrophe character
 									LOG_INFO("HERE ENTERING TEXT\n");
 									LOG_INFO("event->kbchar: %x\n", event->kbchar);
-								this->payload = event->kbchar;
-								this->lastTouchMillis = millis();
-								validEvent = true;
+									this->payload = event->kbchar;
+									this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT; // 12-27 added this line, fixed freetext mode on entering any key
+									this->lastTouchMillis = millis();
+									validEvent = true;
 								} else {
 									LOG_INFO("touchDirectionDD: %d", this->touchDirection);
+
 									if (this->touchDirection == 1) { // down, entering freetext mode
 										this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-										if (this->freetext.length() > 0) {
-											this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
-											this->cursor = this->freetext.length();
-										} else this->cursor = 0;
-							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+										LOG_INFO("this->freetext.length(): %d\n", this->freetext.length());
+				LOG_INFO("this->freetext.length(): %d\n", this->freetext.length());
+				LOG_INFO("this->freetext: %s\n", this->freetext.c_str());
+				if (this->freetext == "") {
+					LOG_INFO("YES GOT EMPTY\n");
+					if (this->freetext.length() == 1) {
+						LOG_INFO("YES GOT EMPTY 2\n");
+						this->freetext = "";
+						this->cursor = 0;
+				LOG_INFO("this->freetext.length(): %d\n", this->freetext.length());
+					}
+				}
+				// TODO 12-28 might want to re-enable below
+										// if (this->freetext.length() > 0) {
+										// 	this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+										// 	this->cursor = this->freetext.length();
+										// } else {
+										// 	LOG_INFO("HERE2\n");
+										// 	this->freetext = "";
+										// 	this->cursor = 0;
+										// 	// not sure if all this is necessary, unfinished here. problem with first run through still not showing cursor 12-28
+										// 	this->currentMessageIndex = -1;
+										// 	this->freetext = this->freetext.substring(0, this->freetext.length() - 1);
+										// 	requestFocus();
+										// }
+										this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 										this->lastTouchMillis = millis();
 										validEvent = true;
+
 									} else if (this->touchDirection == 2) { // up, exit freetext mode
 										// the below 3 are the ones that fixed exiting freetext mode 12-27
-						UIFrameEvent e;
-            e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-            requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
-					this->notifyObservers(&e);
+										UIFrameEvent e;
+										e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+										requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+										this->notifyObservers(&e);
 										this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
 										this->lastTouchMillis = millis();
 										validEvent = true;
@@ -1035,7 +1073,9 @@ int32_t CannedMessageModule::runOnce()
 		int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
 		char startupMessage[30];
 		snprintf(startupMessage, sizeof(startupMessage), "%s ON%d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
+#ifndef TESTING
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
+#endif
 		alreadySentFirstMessage = 1;
 		setDeliveryStatus(0); // to make it so that the traceroutes etc don't show as acked
 	}
@@ -1528,7 +1568,9 @@ int32_t CannedMessageModule::runOnce()
                     this->channel--;
                 }
 #else  // SIMPLE_TDECK
-						if (!this->cursorScrollMode) {
+						// if (!this->cursorScrollMode && this->touchDirection != 1) { // 12-27 it's possible the touchdirection check here fixed scrolling through nodes on swipe up-down to enter freetext. It might've messed up something else though.
+						if (!this->cursorScrollMode && !this->justEnteredFreetext) {
+							LOG_INFO("this->runStateHere: %d\n", this->runState);
 								LOG_INFO("CursorScrollMode is off\n");
 							// do {
 							// 	LOG_INFO("CursorScrollMode is off, do while\n");
@@ -1558,6 +1600,7 @@ int32_t CannedMessageModule::runOnce()
                     this->cursor--;
                 }
 						}
+						this->justEnteredFreetext = false;
 
 #endif
             } else {

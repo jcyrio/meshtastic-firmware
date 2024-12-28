@@ -14,6 +14,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
+// #define VASILI
 #endif
 
 TextMessageModule *textMessageModule;

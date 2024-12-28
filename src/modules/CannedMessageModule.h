@@ -99,6 +99,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int scrollLeft(), scrollRight();
 		// void setWasTouchEvent(bool wasTouchEvent);
 		bool wasTouchEvent;
+		bool justEnteredFreetext;
 		// bool getWasTouchEvent();
 #endif
 
