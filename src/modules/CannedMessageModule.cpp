@@ -32,8 +32,8 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-// #define TESTING
-#define VASILI
+#define TESTING
+// #define VASILI
 
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -743,7 +743,6 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							} else {
 #endif
 								// below works to fix problem where it was doing scrollLeft() when entering freetext mode on swipe up/down. But also I'm not sure if it messes up anything else 12-28. Might have to move it somewhere else
-								this->justEnteredFreetext = true; // prevents scrolling through nodes when first entering freetext mode
 								// if (event->kbchar != 0x5e) {
 								// if (event->kbchar == 0x60 || event->kbchar == 0x5f || event->kbchar == 0x7e) { // this is the apostrophe character
 								// 	LOG_INFO("HERE ENTERING TEXTBB\n");
@@ -753,9 +752,27 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								// 		this->cursor = this->freetext.length();
 								// 	}
 								// }
-								if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // checking to make sure it is not the apostrophe character
+								// if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // checking to make sure it is not the apostrophe character  // 12-29 removed this because it was never allowing to enter cursorScrollMode
+								if (event->kbchar != 0x60) { // checking to make sure it is not the apostrophe character
+									this->justEnteredFreetext = true; // prevents scrolling through nodes when first entering freetext mode
+									LOG_INFO("this->justEnteredFreetext: %d\n", this->justEnteredFreetext);
 									LOG_INFO("HERE ENTERING TEXT\n");
 									LOG_INFO("event->kbchar: %x\n", event->kbchar);
+									if (event->kbchar == 0x5f && !this->isOnFirstPreviousMsgsPage) { // this is the apostrophe character
+										LOG_INFO("NOT ENTERING FREETEXT\n");
+										return 0;
+									}
+									// 	LOG_INFO("got 0x5f here1\n");
+									// 	//NOW this detects correctly, try make it so that it doesn't enter freetext
+									// 	if (this->isOnFirstPreviousMsgsPage) {
+									// 		LOG_INFO("got 0x5f here2\n");
+									// 		LOG_INFO("isOnFirstPreviousMsgsPage: %d\n", this->isOnFirstPreviousMsgsPage);
+									// 	} else {
+									// 		LOG_INFO("got 0x5f here3\n");
+									// 		LOG_INFO("isOnFirstPreviousMsgsPage: %d\n", this->isOnFirstPreviousMsgsPage);
+									// 	}
+									//
+									// }
 									this->payload = event->kbchar;
 									this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT; // 12-27 added this line, fixed freetext mode on entering any key
 									this->lastTouchMillis = millis();
@@ -1473,6 +1490,7 @@ int32_t CannedMessageModule::runOnce()
 							LOG_INFO("runState: %d\n", this->runState);
 							this->wasTouchEvent = false;
 							this->lastTouchMillis = millis();
+							this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
 							// learned that it only ever gets here if run state is 3 / freetext, when set from somewhere else. It's not actually on freetext mode every time though. there's another section that is scrolling for us
 							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) LOG_INFO("runState is CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
 							else LOG_INFO("runState is not CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
@@ -1569,7 +1587,8 @@ int32_t CannedMessageModule::runOnce()
                 }
 #else  // SIMPLE_TDECK
 						// if (!this->cursorScrollMode && this->touchDirection != 1) { // 12-27 it's possible the touchdirection check here fixed scrolling through nodes on swipe up-down to enter freetext. It might've messed up something else though.
-						if (!this->cursorScrollMode && !this->justEnteredFreetext) {
+						// if (!this->cursorScrollMode && !this->justEnteredFreetext) { //12-29 removed this because it was doing something weird on first left scroll, doing cursorScroll instead of moving through nodes
+						if (!this->cursorScrollMode) {
 							LOG_INFO("this->runStateHere: %d\n", this->runState);
 								LOG_INFO("CursorScrollMode is off\n");
 							// do {
@@ -1595,7 +1614,7 @@ int32_t CannedMessageModule::runOnce()
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
 						} else {
-								LOG_INFO("CursorScrollMode is on\n");
+								LOG_INFO("CursorScrollMode is on, LEFT\n");
                 if (this->cursor > 0) {
                     this->cursor--;
                 }
@@ -1663,7 +1682,7 @@ int32_t CannedMessageModule::runOnce()
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 						} else {
-								LOG_INFO("CursorScrollMode is on\n");
+								LOG_INFO("CursorScrollMode is on, RIGHT\n");
 								if (this->cursor < this->freetext.length()) {
 										this->cursor++;
 								}
