@@ -156,6 +156,8 @@ void MQTT::onReceive(char *topic, byte *payload, size_t length)
                     LOG_INFO("Received MQTT topic %s, len=%u\n", topic, length);
                     meshtastic_MeshPacket *p = packetPool.allocCopy(*e.packet);
                     p->via_mqtt = true; // Mark that the packet was received via MQTT
+										p->rx_snr = 0;
+										p->rx_rssi = 0;
 
                     if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
                         p->channel = ch.index;
