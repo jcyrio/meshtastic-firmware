@@ -8,5 +8,8 @@
   "[cpp]": {
     "editor.defaultFormatter": "trunk.io"
   },
-  "editor.fontSize": 14
+  "editor.fontSize": 14,
+  "files.associations": {
+    "array": "cpp"
+  }
 }

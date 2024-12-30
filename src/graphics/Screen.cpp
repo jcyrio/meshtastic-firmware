@@ -76,7 +76,7 @@ int totalReceivedMessagesSinceBoot;
 char brightnessLevel = 'H';
 // bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
-bool showedLastPreviousMessage = false;
+// bool showedLastPreviousMessage = false;
 char lastReceivedMessage[237] = {'\0'};
 bool receivedNewMessage = false;
 int historyMessageCount;
@@ -117,9 +117,9 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
-				// addMessage("1", "FCyr");
-				// addMessage("2", "FCyr");
-				// addMessage("3", "FCyr");
+				addMessage("1", "FCyr");
+				addMessage("2", "FCyr");
+				addMessage("3", "FCyr");
 				// addMessage("This is my last message in history", "FCyr");
 				// addMessage("Messages are stored locally in RAM", "FCyr");
 				// addMessage("Currently no local disc storage", "FCyr");
@@ -1329,10 +1329,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 								// if the length is over 180 char, then make font small
 								displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
 					} // end if currentMsg
-					else showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
+					// else showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
 			}
     }
-		showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
+		// showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
 // return;
 #ifdef THISISDISABLED
     // For timestamp
@@ -3299,55 +3299,62 @@ int Screen::handleInputEvent(const InputEvent *event)
 		LOG_INFO("On previous msg screen\n");
 		this->isOnPreviousMsgsScreen = true;
 		if (!this->keyboardLockMode) {
-			if (showedLastPreviousMessage) {
-				// LOG_INFO("Showed last previous message\n");
-						if (cannedMessageModule->goBackToFirstPreviousMessage) { // this is for when scrolling through previous messages, when the 0 key is pressed, it goes back to the newest message
-							LOG_INFO("going back to first previous message1\n");
-							previousMessagePage = 0;
-							// NEXT I think below is the problem. It stops it from doing it below
-							// cannedMessageModule->goBackToFirstPreviousMessage = false;
-							setCPUFast(true);
-							screen->forceDisplay();
-							targetFramerate = 30;
-							ui->setTargetFPS(30);
-						}
-				if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-					if ((previousMessagePage < MAX_MESSAGE_HISTORY) && (previousMessagePage < historyMessageCount - 1)) {
-						if (cannedMessageModule->goBackToFirstPreviousMessage) { // here because otherwise when we scroll up from freetext mode to go back to previous msgs page, it registers the UP and puts it on the 2nd msg instead returning to the first
-							LOG_INFO("going back to first previous message2\n");
-							previousMessagePage = 0;
-						} else {
-							LOG_INFO("going up\n");
-							previousMessagePage++;
-						}
-						LOG_INFO("Previous message page: %d\n", previousMessagePage);
-						LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
-						// setCPUFastest();
-						setCPUFast(true);
-						screen->forceDisplay();
-						targetFramerate = 30;
-						ui->setTargetFPS(30);
-						if (previousMessagePage == historyMessageCount - 1) {
-							LOG_INFO("HERE, PREVIOUS MESSAGE PAGE == HISTORY MESSAGE COUNT - 1\n");
-							cannedMessageModule->isOnLastPreviousMsgsPage = 1; // allows cmm to do touchscreen scroll up to freetext mode when on last message
-						}
+		// if (showedLastPreviousMessage) {
+					// LOG_INFO("Showed last previous message\n");
+			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+				if ((previousMessagePage < MAX_MESSAGE_HISTORY) && (previousMessagePage < historyMessageCount - 1)) {
+					// if (cannedMessageModule->goBackToFirstPreviousMessage) { // this is for when scrolling through previous messages, when the 0 key is pressed, it goes back to the newest message
+					// if (cannedMessageModule->exitingFreetextMode) {
+					if (cannedMessageModule->exitingFreetextMode && cannedMessageModule->wasTouchEvent) {
+						cannedMessageModule->exitingFreetextMode = false;
+						cannedMessageModule->wasTouchEvent = false;
+						LOG_INFO("going back to first previous message1\n");
+						previousMessagePage = 0;
+						// NEXT I think below is the problem. It stops it from doing it below
+						// cannedMessageModule->goBackToFirstPreviousMessage = false;
+						// setCPUFast(true);
+						// screen->forceDisplay();
+						// targetFramerate = 30;
+						// ui->setTargetFPS(30);
+					} else {
+						LOG_INFO("going up here2\n");
+						previousMessagePage++;
 					}
-					cannedMessageModule->goBackToFirstPreviousMessage = false;
+					// if (cannedMessageModule->goBackToFirstPreviousMessage) { // here because otherwise when we scroll up from freetext mode to go back to previous msgs page, it registers the UP and puts it on the 2nd msg instead returning to the first
+					// 	LOG_INFO("going back to first previous message2\n");
+					// 	previousMessagePage = 0;
+					// } else {
+					// 	LOG_INFO("going up\n");
+					// 	previousMessagePage++;
+					// }
+					LOG_INFO("Previous message page: %d\n", previousMessagePage);
+					LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
+					// setCPUFastest();
+					setCPUFast(true);
+					screen->forceDisplay();
+					targetFramerate = 30;
+					ui->setTargetFPS(30);
+					if (previousMessagePage == historyMessageCount - 1) {
+						LOG_INFO("HERE, PREVIOUS MESSAGE PAGE == HISTORY MESSAGE COUNT - 1\n");
+						cannedMessageModule->isOnLastPreviousMsgsPage = 1; // allows cmm to do touchscreen scroll up to freetext mode when on last message
+					}
 				}
-				else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-					if (previousMessagePage > 0) {
-						previousMessagePage--;
-						LOG_INFO("Previous message page: %d\n", previousMessagePage);
-						// setCPUFastest();
-						setCPUFast(true);
-						screen->forceDisplay();
-						targetFramerate = 30;
-						ui->setTargetFPS(30);
-					}
+				cannedMessageModule->goBackToFirstPreviousMessage = false;
+			}
+			else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+				if (previousMessagePage > 0) {
+					previousMessagePage--;
+					LOG_INFO("Previous message page: %d\n", previousMessagePage);
+					// setCPUFastest();
+					setCPUFast(true);
+					screen->forceDisplay();
+					targetFramerate = 30;
+					ui->setTargetFPS(30);
 				}
 			}
-			showedLastPreviousMessage = false;
-		} // end keyboardLockMode == true
+		// } else LOG_INFO("didn't show last previous message\n");
+		// showedLastPreviousMessage = false;
+	} // end keyboardLockMode == true
 } else {
 		this->isOnPreviousMsgsScreen = false;
 	}

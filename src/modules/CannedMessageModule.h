@@ -93,6 +93,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		void setDeliveryStatus(uint8_t status);
 		bool isOnFirstPreviousMsgsPage = false;
 		bool isOnLastPreviousMsgsPage = false;
+		bool exitingFreetextMode = false;
 		bool goBackToFirstPreviousMessage = false;
 		uint8_t getDeliveryStatus();
 		int leftScrollCoun, rightScrollCount;
