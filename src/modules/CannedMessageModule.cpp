@@ -32,7 +32,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-#define TESTING
+// #define TESTING
 // #define VASILI
 
 #ifdef SIMPLE_TDECK
@@ -45,7 +45,8 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #ifdef FOR_GUESTS
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
-		{1127590756, "Fr Andre"},
+		// {1127590756, "Fr Andre"},
+		{1127590756, "Grace"}, //same as Fr Andre's device
     // {205167532, "Dcn Michael"},
 #endif
 #ifdef HELPERS
@@ -428,8 +429,10 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 // #if defined(T_WATCH_S3) || defined(RAK14014)
 #if defined(T_WATCH_S3) || defined(RAK14014) || defined(SIMPLE_TDECK) // enabling TDeck here allows scrolling through node names. NOTE: I don't know why I couldn't move this down below. It wasn't registering all the touch events below. should try to fix later to make cleaner
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
+					LOG_INFO("this->runState: %d", this->runState);
             this->payload = 0xb4;
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
+					LOG_INFO("this->runState: %d", this->runState);
             this->payload = 0xb7;
         }
 #ifdef SIMPLE_TDECK
@@ -438,39 +441,45 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 // 				this->payload = 0xb4;
 // 		} else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 // 				this->payload = 0xb7;
+
+
+
+				//NOTE: below is for entering-exiting freetext mode on swipe up/down. It wasn't perfect. In general it was working, except for at startup sometimes. Also, there was a strange bug where it would enter a black screen on swiping near beginning. Note also that this was the main place for entering-exiting freetext mode on swipe. There are other places in the code that are commented out for this feature, but it seems this was the best place to do it. 1-2-24
+// 		else if (event->inputEvent ==
+// static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
+// 			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
+// 				// NOTE: messy below, not sure what's needed, if anything. Might've started working after added touchDirection = 2, but not sure.
+// 				this->wasTouchEvent = false; // fixed can't enter cursor scroll mode after any touch events 12-30
+// 				LOG_INFO("Was touch event\n");
+// 				this->touchDirection = 2; //UP
+// 										// this->exitingFreetextMode = true;
+// 				// this->payload = 0x23;
+// 				// 12-27 testing, used to be 0x23 line above, but was messing up some other stuff
+// 					// LOG_INFO("Got case 0x23\n");
+// 					LOG_INFO("was touch eventA: %d\n", this->wasTouchEvent);
+// 					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+//             // this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_UP; //12-30
+// 					this->lastTouchMillis = millis();
+//             // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+//             requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+// 					// this->notifyObservers(&e);
+// 			}
+// 		} else if (event->inputEvent ==
+// static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
+// 			if (this->wasTouchEvent) { // only enters freetext mode if was touchscreen DOWN, not from trackball UP which is too sensitive
+// 				LOG_INFO("was touch event hereA\n");
+// 				if (this->isOnFirstPreviousMsgsPage) { // only allow to go to freetext page if its on the first prev msgs page
+// 					LOG_INFO("IS ON FIRST PREV MSGS PAGE\n");
+// 							this->cursor = this->freetext.length();
+// 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+// 							this->lastTouchMillis = millis();
+// 							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+// 							requestFocus();
+// 				} else LOG_INFO("IS NOT ON FIRST PREV MSGS PAGE\n");
+// 			}
+		// }
+				//UNCOMMENT TO HERE IF YOU WANT TO TEST UP-DOWN SWIPE TO ENTER-EXIT FREETEXT AGAIN
 		else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-			if (this->wasTouchEvent) { // only exit freetext mode if was touchscreen UP, not from trackball UP which is too sensitive
-				// NOTE: messy below, not sure what's needed, if anything. Might've started working after added touchDirection = 2, but not sure.
-				this->wasTouchEvent = false; // fixed can't enter cursor scroll mode after any touch events 12-30
-				LOG_INFO("Was touch event\n");
-				this->touchDirection = 2; //UP
-										// this->exitingFreetextMode = true;
-				// this->payload = 0x23;
-				// 12-27 testing, used to be 0x23 line above, but was messing up some other stuff
-					// LOG_INFO("Got case 0x23\n");
-					LOG_INFO("was touch eventA: %d\n", this->wasTouchEvent);
-					this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
-            // this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_UP; //12-30
-					this->lastTouchMillis = millis();
-            // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-            requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
-					// this->notifyObservers(&e);
-			}
-		} else if (event->inputEvent ==
-static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-			if (this->wasTouchEvent) { // only enters freetext mode if was touchscreen DOWN, not from trackball UP which is too sensitive
-				LOG_INFO("was touch event hereA\n");
-				if (this->isOnFirstPreviousMsgsPage) { // only allow to go to freetext page if its on the first prev msgs page
-					LOG_INFO("IS ON FIRST PREV MSGS PAGE\n");
-							this->cursor = this->freetext.length();
-							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-							this->lastTouchMillis = millis();
-							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-							requestFocus();
-				} else LOG_INFO("IS NOT ON FIRST PREV MSGS PAGE\n");
-			}
-		} else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) {
 				this->payload = 0x08;
 		}
@@ -533,7 +542,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 					LOG_INFO("was touch event hereB\n");
 		if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
-			LOG_INFO("Got UP here\n");
+			// LOG_INFO("Got UP here\n");
 										// this->exitingFreetextMode = true;
 				// this->payload = 0x23; //bad
 				// this->touchDirection = 2; //UP
@@ -563,12 +572,11 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)
 			}
 		else if (event->inputEvent ==
 static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN)) {
-			LOG_INFO("Got DOWN here\n");
 				// this->payload = 0x08;
-			this->touchDirection = 1; //DOWN
-			LOG_INFO("setting touchDirection: %d", this->touchDirection);
-            // this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_DOWN; //12-30
-							this->wasTouchEvent = true; //new 12-27 test
+			// this->touchDirection = 1; //DOWN
+			// LOG_INFO("Got DOWN here, setting touchDirection: %d", this->touchDirection);
+   //          // this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_DOWN; //12-30
+							// this->wasTouchEvent = true; //new 12-27 test
 		}
 	}
 			}
@@ -731,10 +739,10 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
             LOG_INFO("Canned message ANYKEY (%x)\n", event->kbchar);
-						if (event->kbchar == 0x60) {
-							LOG_INFO("GOT 60\n");
-							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT; // this fixed the problem where touch scrolling up on freetext exited to black screen 12-30
-					}
+					// 	if (event->kbchar == 0x60) {
+					// 		LOG_INFO("GOT 60\n");
+					// 		this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT; // this fixed the problem where touch scrolling up on freetext exited to black screen 12-30
+					// }
 						LOG_INFO("touchDirection here: %d\n", this->touchDirection);
 						LOG_INFO("wasTouchEvent here: %d\n", this->wasTouchEvent);
 						this->wasTouchEvent = false; // fixed can't enter cursor scroll mode after scroll up on freetext 12-30
@@ -768,34 +776,48 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								// 	}
 								// }
 								// if (event->kbchar != 0x60 && event->kbchar != 0x5f) { // checking to make sure it is not the apostrophe character  // 12-29 removed this because it was never allowing to enter cursorScrollMode
-								if (event->kbchar != 0x60) { // checking to make sure it is not the apostrophe character
+
+
+
+
+
+
+								// 1-2-24 added 0x5f below, to stop from entering freetext on some devices
+								if (event->kbchar != 0x60 && event->kbchar != 0x5f && event->kbchar != 0x5e) { // checking to make sure it is not the apostrophe character
 									LOG_INFO("got NOT 0x60 here\n");
-									this->justEnteredFreetext = true; // prevents scrolling through nodes when first entering freetext mode
-									LOG_INFO("this->justEnteredFreetext: %d\n", this->justEnteredFreetext);
+								// 1-2-24 disabled below to stop entering freetext mode on swipe. This was probably the wrong place to do it anyway. look at other notes
+								// 	this->justEnteredFreetext = true; // prevents scrolling through nodes when first entering freetext mode
+								// 	LOG_INFO("this->justEnteredFreetext: %d\n", this->justEnteredFreetext);
 									LOG_INFO("HERE ENTERING TEXT\n");
 									LOG_INFO("event->kbchar: %x\n", event->kbchar);
+									if (event->kbchar == 0x5f) LOG_INFO("GOT1\n");
+									// if (event->kbchar == "5f") LOG_INFO("GOT3\n");
+									if (event->kbchar != 0x5f) LOG_INFO("GOT2\n");
 									if (event->kbchar == 0x5f && !this->isOnFirstPreviousMsgsPage) { // this is the apostrophe character
 										LOG_INFO("NOT ENTERING FREETEXT\n");
 										return 0;
 									}
 									// 	LOG_INFO("got 0x5f here1\n");
-									// 	//NOW this detects correctly, try make it so that it doesn't enter freetext
-									// 	if (this->isOnFirstPreviousMsgsPage) {
-									// 		LOG_INFO("got 0x5f here2\n");
-									// 		LOG_INFO("isOnFirstPreviousMsgsPage: %d\n", this->isOnFirstPreviousMsgsPage);
-									// 	} else {
-									// 		LOG_INFO("got 0x5f here3\n");
-									// 		LOG_INFO("isOnFirstPreviousMsgsPage: %d\n", this->isOnFirstPreviousMsgsPage);
-									// 	}
-									//
-									// }
+								// 	// 	//NOW this detects correctly, try make it so that it doesn't enter freetext
+								// 	// 	if (this->isOnFirstPreviousMsgsPage) {
+								// 	// 		LOG_INFO("got 0x5f here2\n");
+								// 	// 		LOG_INFO("isOnFirstPreviousMsgsPage: %d\n", this->isOnFirstPreviousMsgsPage);
+								// 	// 	} else {
+								// 	// 		LOG_INFO("got 0x5f here3\n");
+								// 	// 		LOG_INFO("isOnFirstPreviousMsgsPage: %d\n", this->isOnFirstPreviousMsgsPage);
+								// 	// 	}
+								// 	//
+								// 	// }
 									this->payload = event->kbchar;
 									this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT; // 12-27 added this line, fixed freetext mode on entering any key
 									this->lastTouchMillis = millis();
 									validEvent = true;
-								} else {
+							} else {
+								// end prevent swipe from entering freetext mode
+								// if (event->kbchar == 0x60) { // checking to make sure it is not the apostrophe character
 									LOG_INFO("got 0x60 here\n");
 									LOG_INFO("touchDirectionDD: %d\n", this->touchDirection);
+								}
 
 									// BELOW WAS THE ENTIRE PROBLEM, don't use. maybe move elsewhere. couldn't get it to exit freetext mode reliably while still allowing scrolling through previous messages 12-30
 				// 					if (this->touchDirection == 1) { // down, entering freetext mode
@@ -848,7 +870,6 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 				// 						// this->goBackToFirstPreviousMessage = true; // this one breaks the ability to scroll through previous messages. It does though fix when exiting freetext mode going up to the first prev msg
 				// 						validEvent = true;
 				// 					}
-								}
 
 #ifdef SIMPLE_TDECK
 							}

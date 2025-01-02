@@ -117,9 +117,9 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
-				addMessage("1", "FCyr");
-				addMessage("2", "FCyr");
-				addMessage("3", "FCyr");
+				// addMessage("1", "FCyr");
+				// addMessage("2", "FCyr");
+				// addMessage("3", "FCyr");
 				// addMessage("This is my last message in history", "FCyr");
 				// addMessage("Messages are stored locally in RAM", "FCyr");
 				// addMessage("Currently no local disc storage", "FCyr");
@@ -1249,7 +1249,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					char currentNodeName[5] = {'\0'};
 					if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 					else strcpy(currentNodeName, "???");
-					// history.addMessage(currentMsgContent, currentNodeName, getValidTime(RTCQuality::RTCQualityDevice, true));
 					history.addMessage(currentMsgContent, currentNodeName);
 				} else LOG_INFO("Skipping adding message to history because it's a duplicate\n");
 			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
