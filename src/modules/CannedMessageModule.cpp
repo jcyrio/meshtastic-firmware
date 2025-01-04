@@ -32,7 +32,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-// #define TESTING
+#define TESTING
 // #define VASILI
 
 #ifdef SIMPLE_TDECK
@@ -633,6 +633,76 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 				// 	this->runState = CANNED_MESSAGE_RUN_STATE_ACTION_SELECT; //this is what fixed the first screen going to freetext mode
 				// 	delay(200); //debounce
 				// 	break;
+				case 0x5f: // _, cursorScrollMode
+					//toggle cursor scroll mode
+					LOG_INFO("got 0x5f\n");
+					if (!wasTouchEvent) {
+						LOG_INFO("was not touch event, toggle cursor scroll mode");
+						if (!this->cursorScrollMode) {
+							this->cursorScrollMode = true;
+							screen->setFunctionSymbal("Scrl"); // add the S symbol to the bottom right corner
+						} else {
+							this->cursorScrollMode = false;
+							this->cursor = this->freetext.length();
+							screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
+						}
+					} else { // was touch event
+						LOG_INFO("was touch event, don't enter cursor scroll mode\n");
+						// NOTE: below does same thing twice. Currently having both up and down touch scroll exit freetext mode. maybe unify or change
+						if (this->touchDirection == 2) { // up, exit freetext mode, go to previous messages screen
+							// NOTE that this also is required for flipping through the previous messages pages. It's not just for exiting freetext mode.
+							LOG_INFO("UP\n");
+							LOG_INFO("runState: %d\n", this->runState);
+							this->wasTouchEvent = false;
+							this->lastTouchMillis = millis();
+							this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
+							// learned that it only ever gets here if run state is 3 / freetext, when set from somewhere else. It's not actually on freetext mode every time though. there's another section that is scrolling for us
+							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) LOG_INFO("runState is CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
+							else LOG_INFO("runState is not CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
+						// if (this->isOnLastPreviousMsgsPage && this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
+						// 	LOG_INFO("IS on last page, entering freetext mode\n");
+						// 	this->wasTouchEvent = false;
+						// 	this->cursor = this->freetext.length();
+						// 	this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						// 	this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+						// 	// e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+						// 	this->lastTouchMillis = millis();
+						// 	this->notifyObservers(&e);
+						// 	// this->skipNextRletter = true;
+						// 	requestFocus();
+						// } else {
+						// 	LOG_INFO("IS NOT on last page\n");
+							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; // this line is required for exiting freetext mode
+        UIFrameEvent e;
+							e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+							requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+							this->notifyObservers(&e);
+						// }
+						} else { // down, freetext screen
+							LOG_INFO("DOWN\n");
+						if (this->isOnFirstPreviousMsgsPage) {
+							LOG_INFO("IS on first page, entering freetext mode\n");
+							this->wasTouchEvent = false;
+							this->cursor = this->freetext.length();
+							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
+							this->lastTouchMillis = millis();
+							UIFrameEvent e;
+							this->notifyObservers(&e);
+							// this->skipNextRletter = true;
+							requestFocus();
+						} else LOG_INFO("IS NOT on first page\n");
+
+
+							// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
+							// this->lastTouchMillis = millis();
+							// 	e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+							// 	requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+							// this->notifyObservers(&e);
+						}
+
+					}
+					break;
         case 0x11: // make screen brighter
             if (screen)
                 screen->increaseBrightness();
@@ -1137,7 +1207,7 @@ int32_t CannedMessageModule::runOnce()
 		else if (month == "Dec") monthNumber = 12;
 		int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
 		char startupMessage[30];
-		snprintf(startupMessage, sizeof(startupMessage), "%s ON%d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
 #ifndef TESTING
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
 #endif
@@ -1516,74 +1586,6 @@ int32_t CannedMessageModule::runOnce()
 					// delay(500); //debounce
 					break;
 				// case 0x60: //testing 12-27 for strange apostrophe bug, try make 60 count as 5f
-				case 0x5f: // _, cursorScrollMode
-					//toggle cursor scroll mode
-					LOG_INFO("got 0x5f\n");
-					if (!wasTouchEvent) {
-						LOG_INFO("was not touch event, toggle cursor scroll mode");
-						if (!this->cursorScrollMode) {
-							this->cursorScrollMode = true;
-							screen->setFunctionSymbal("Scrl"); // add the S symbol to the bottom right corner
-						} else {
-							this->cursorScrollMode = false;
-							this->cursor = this->freetext.length();
-							screen->removeFunctionSymbal("Scrl"); // remove the S symbol from the bottom right corner
-						}
-					} else { // was touch event
-						LOG_INFO("was touch event, don't enter cursor scroll mode\n");
-						// NOTE: below does same thing twice. Currently having both up and down touch scroll exit freetext mode. maybe unify or change
-						if (this->touchDirection == 2) { // up, exit freetext mode, go to previous messages screen
-							// NOTE that this also is required for flipping through the previous messages pages. It's not just for exiting freetext mode.
-							LOG_INFO("UP\n");
-							LOG_INFO("runState: %d\n", this->runState);
-							this->wasTouchEvent = false;
-							this->lastTouchMillis = millis();
-							this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
-							// learned that it only ever gets here if run state is 3 / freetext, when set from somewhere else. It's not actually on freetext mode every time though. there's another section that is scrolling for us
-							if (this->runState == CANNED_MESSAGE_RUN_STATE_FREETEXT) LOG_INFO("runState is CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
-							else LOG_INFO("runState is not CANNED_MESSAGE_RUN_STATE_FREETEXT\n");
-						// if (this->isOnLastPreviousMsgsPage && this->runState != CANNED_MESSAGE_RUN_STATE_FREETEXT) {
-						// 	LOG_INFO("IS on last page, entering freetext mode\n");
-						// 	this->wasTouchEvent = false;
-						// 	this->cursor = this->freetext.length();
-						// 	this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-						// 	this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-						// 	// e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-						// 	this->lastTouchMillis = millis();
-						// 	this->notifyObservers(&e);
-						// 	// this->skipNextRletter = true;
-						// 	requestFocus();
-						// } else {
-						// 	LOG_INFO("IS NOT on last page\n");
-							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; // this line is required for exiting freetext mode
-							e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-							requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
-							this->notifyObservers(&e);
-						// }
-						} else { // down, freetext screen
-							LOG_INFO("DOWN\n");
-						if (this->isOnFirstPreviousMsgsPage) {
-							LOG_INFO("IS on first page, entering freetext mode\n");
-							this->wasTouchEvent = false;
-							this->cursor = this->freetext.length();
-							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
-							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
-							this->lastTouchMillis = millis();
-							this->notifyObservers(&e);
-							// this->skipNextRletter = true;
-							requestFocus();
-						} else LOG_INFO("IS NOT on first page\n");
-
-
-							// this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
-							// this->lastTouchMillis = millis();
-							// 	e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-							// 	requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
-							// this->notifyObservers(&e);
-						}
-
-					}
-					break;
         case 0x1e: // shift-$, toggle brightness
         case 0x3c: // shift-speaker toggle brightness, some newer tdecks black keyboards
         case 0x3e: // > sign
@@ -1662,10 +1664,13 @@ int32_t CannedMessageModule::runOnce()
 							// nodeDB->getMeshNode(3664080480));
 							// this->dest = nodeDB->getMeshNodeByIndex(nextNode)->num;
 						} else {
-								LOG_INFO("CursorScrollMode is on, LEFT\n");
-                if (this->cursor > 0) {
-                    this->cursor--;
-                }
+							LOG_INFO("CursorScrollMode is on, LEFT\n");
+							if (this->wasTouchEvent) {
+								this->wasTouchEvent = false;
+								if (this->cursor < this->freetext.length()) this->cursor++;
+							} else {
+                if (this->cursor > 0) this->cursor--;
+							}
 						}
 						this->justEnteredFreetext = false;
 
@@ -1730,10 +1735,13 @@ int32_t CannedMessageModule::runOnce()
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 						} else {
-								LOG_INFO("CursorScrollMode is on, RIGHT\n");
-								if (this->cursor < this->freetext.length()) {
-										this->cursor++;
-								}
+							LOG_INFO("CursorScrollMode is on, RIGHT\n");
+							if (this->wasTouchEvent) {
+								this->wasTouchEvent = false;
+                if (this->cursor > 0) this->cursor--;
+							} else {
+								if (this->cursor < this->freetext.length()) this->cursor++;
+							}
 						}
 #endif
             } else {
