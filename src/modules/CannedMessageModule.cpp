@@ -87,6 +87,9 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3014898611, "Bookstore"},
     {NODENUM_BROADCAST, "BROADCAST"},
 #endif
+#ifdef TESTING
+    {219520199, "test"}, // for testing
+#endif
 #ifdef TESTING2
 		{1127590756, "Fr Andre"},
     {667676428, "Spare4"},
@@ -326,7 +329,9 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 				// below added temp frc trying make lock mode work
 				// FIXME: maybe don't want to check for 0x22 here, might be irrelevant
 				// I think this helped, but not positive
-				if ((screen->keyboardLockMode) && (event->kbchar != 0x22)) return 0;
+#ifdef SIMPLE_TDECK
+		if ((screen->keyboardLockMode) && (event->kbchar != 0x22)) return 0;
+#endif
     if ((strlen(moduleConfig.canned_message.allow_input_source) > 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, event->source) != 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, "_any") != 0)) {
@@ -496,7 +501,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 #ifdef SIMPLE_TDECK
             // pass the pressed key
 					//FRC TEMP
-					LOG_DEBUG("Canned message event (%x)\n", event->kbchar);
+					LOG_INFO("Canned message event (%x)\n", event->kbchar);
 					// TODO: below doesn't seem to do anything 12-18 testing
 					if (event->kbchar != 0) { // for ignoring up trackball event when in freetext mode
 						LOG_INFO("HERE\n");
@@ -509,7 +514,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BAC
 #endif
 
 #ifdef SIMPLE_TDECK
-					LOG_DEBUG("Canned message event2 (%x)\n", event->kbchar);
+				LOG_INFO("Canned message event2 (%h)\n", event->kbchar);
 #endif
         this->lastTouchMillis = millis();
         validEvent = true;
@@ -1583,6 +1588,9 @@ int32_t CannedMessageModule::runOnce()
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->setFunctionSymbal("KL");
+											UIFrameEvent e;
+											e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+											this->notifyObservers(&e);
 					} else {
 						LOG_INFO("Keyboard Lock Mode off\n");
 						screen->keyboardLockMode = false;
@@ -2204,18 +2212,19 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
 						if (deliveryStatus != 2) setDeliveryStatus(1);  // this prevents problem where if you're sending to a nearby node, right after getting set to 2 it gets immediately set back to 1 and so the (D) doesn't show at all
         // display->drawString(display->getWidth() / 2 - 50, 0 + y + 12 + (3 * FONT_HEIGHT_LARGE), "En route...");
         } else {
-					if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
-						this->deliveryFailedCount = 1;
-            // displayString = "Delivery failed\nRetrying...";
-						showTemporaryMessage("Delivery failed\nRetrying...");
-						LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
-						sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
-					} else {
-						this->deliveryFailedCount = 0;
+					// removed below 1-6-25
+					// if ((this->deliveryFailedCount == 0) && (this->previousFreetext.length() > 0)) {
+					// 	this->deliveryFailedCount = 1;
+     //        // displayString = "Delivery failed\nRetrying...";
+					// 	showTemporaryMessage("Delivery failed\nRetrying...");
+					// 	LOG_DEBUG("Resending previous message to %x: %s\n", this->previousDest, this->previousFreetext.c_str());
+					// 	sendText(this->previousDest, 0, this->previousFreetext.c_str(), true);
+					// } else {
+						// this->deliveryFailedCount = 0;
 						setDeliveryStatus(0);
             // displayString = "Delivery failed";
 						showTemporaryMessage("Delivery failed\n");
-					}
+					// }
 				}
 #else
         if (this->ack) {

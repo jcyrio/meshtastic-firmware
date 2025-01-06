@@ -172,7 +172,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		String previousFreetext;
 		bool dontACK = 0;
 		bool skipNextRletter = false;
-		int deliveryFailedCount = 0;
+		// int deliveryFailedCount = 0;
 		int nodeIndex = 0;
 		bool alreadySentFirstMessage = 0;
 		bool skipNextFreetextMode = false;
