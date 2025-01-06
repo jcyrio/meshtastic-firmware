@@ -33,7 +33,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 		// }
 // #endif
 // #ifdef FATHERS_NODES
-#if defined(FATHERS_NODES) || defined(FOR_GUESTS)
+#if defined(FATHERS_NODES) || defined(FOR_GUESTS) || defined(VASILI)
 		// char channelName[20];
 		// snprintf(channelName, sizeof(channelName), "%s", channels.getName(mp.channel));
 		// LOG_DEBUG("Channel Name: %s\n", channelName);
@@ -67,11 +67,63 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 
     // We only store/display messages destined for us.
     // Keep a copy of the most recent text message.
+#ifdef SIMPLE_TDECK
+		if (mp.to == 0xffffffff) { // if was broadcast, add prefix to message
+ 		  meshtastic_MeshPacket modifiedPacket = mp;
+			const char* prefix = "ALL: ";
+			const pb_size_t prefixLen = strlen(prefix);
+			// Make sure we don't exceed buffer size
+			if (prefixLen + mp.decoded.payload.size > sizeof(modifiedPacket.decoded.payload.bytes)) {
+					// Handle overflow case - truncate the message if needed
+					pb_size_t messageLen = sizeof(modifiedPacket.decoded.payload.bytes) - prefixLen;
+					memmove(
+							modifiedPacket.decoded.payload.bytes + prefixLen,
+							mp.decoded.payload.bytes,
+							messageLen
+					);
+			} else {
+					// Enough space for both prefix and message
+					memmove(
+							modifiedPacket.decoded.payload.bytes + prefixLen,
+							mp.decoded.payload.bytes,
+							mp.decoded.payload.size
+					);
+			}
+			// Copy prefix at the start
+			memcpy(modifiedPacket.decoded.payload.bytes, prefix, prefixLen);
+			modifiedPacket.decoded.payload.size = prefixLen + mp.decoded.payload.size;
+
+
+
+
+			// meshtastic_MeshPacket modifiedPacket = mp;
+			// const char* prefix = "ALL: ";
+			// size_t prefixLen = strlen(prefix); // Create new buffer with space for prefix + original message
+			// size_t newSize = prefixLen + mp.decoded.payload.size;
+			// uint8_t* newBuffer = new uint8_t[newSize];
+			// memcpy(newBuffer, prefix, prefixLen); // Copy prefix
+			// memcpy(newBuffer + prefixLen, mp.decoded.payload.bytes, mp.decoded.payload.size); // Copy original message
+			// modifiedPacket.decoded.payload.bytes = newBuffer; // Update the payload
+			// modifiedPacket.decoded.payload.size = newSize;
+			// devicestate.rx_text_message = modifiedPacket;
+			// devicestate.has_rx_text_message = true;
+			// powerFSM.trigger(EVENT_RECEIVED_MSG);
+			// notifyObservers(&modifiedPacket);
+			// delete[] newBuffer; // Clean up
+		} else { // was not broadcast
+			devicestate.rx_text_message = mp;
+			devicestate.has_rx_text_message = true;
+
+			powerFSM.trigger(EVENT_RECEIVED_MSG);
+			notifyObservers(&mp);
+		}
+#else
     devicestate.rx_text_message = mp;
     devicestate.has_rx_text_message = true;
 
     powerFSM.trigger(EVENT_RECEIVED_MSG);
     notifyObservers(&mp);
+#endif
 
     return ProcessMessage::CONTINUE; // Let others look at this message also if they want
 }
