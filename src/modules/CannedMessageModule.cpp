@@ -4,6 +4,7 @@
 #endif
 #if HAS_SCREEN
 #include "CannedMessageModule.h"
+#include "graphics/Screen.h"
 #include "Channels.h"
 #include "FSCommon.h"
 #include "MeshService.h"
@@ -36,6 +37,10 @@
 // #define VASILI
 
 #ifdef SIMPLE_TDECK
+// namespace graphics {
+	MessageHistory history;
+// }
+
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
 std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "qt", "qm", "qd", "qh", "aim", "aif", "aiff", "aih", "aid", "frcs", "wa "};
 std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", "f", "w", "k", "rp", "s", "wf"};
@@ -1199,6 +1204,7 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 
     LOG_INFO("Sending message id=%d, dest=%x, msg=%.*s\n", p->id, p->to, p->decoded.payload.size, p->decoded.payload.bytes);
 
+		history.addMessage(p->decoded.payload.bytes, this->getNodeName(p->to));
     service->sendToMesh(
         p, RX_SRC_LOCAL,
         true); // send to mesh, cc to phone. Even if there's no phone connected, this stores the message to match ACKs

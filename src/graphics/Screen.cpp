@@ -85,18 +85,34 @@ static uint8_t previousMessagePage = 0;
 static uint8_t lastPreviousMessagePage = 0;
 // uint32_t totalMessageCount = 0;
 
-constexpr size_t MAX_MESSAGE_HISTORY = 20;
-constexpr size_t MAX_MESSAGE_LENGTH = 237;
-constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+// constexpr size_t MAX_MESSAGE_HISTORY = 30;
+// constexpr size_t MAX_MESSAGE_LENGTH = 237;
+// constexpr size_t MAX_NODE_NAME_LENGTH = 5;
 
+// struct MessageRecord {
+//     char content[MAX_MESSAGE_LENGTH];
+//     char nodeName[MAX_NODE_NAME_LENGTH];
+//     uint32_t timestamp;
+//
+//     MessageRecord() {
+//         clear();
+//     }
+//
+//     void clear() {
+//         content[0] = '\0';
+//         nodeName[0] = '\0';
+//         timestamp = 0;
+//     }
+// };
+
+namespace graphics
+{
+#ifdef SIMPLE_TDECK
 struct MessageRecord {
     char content[MAX_MESSAGE_LENGTH];
     char nodeName[MAX_NODE_NAME_LENGTH];
     uint32_t timestamp;
-
-    MessageRecord() {
-        clear();
-    }
+    MessageRecord() { clear(); }
 
     void clear() {
         content[0] = '\0';
@@ -104,7 +120,6 @@ struct MessageRecord {
         timestamp = 0;
     }
 };
-
 class MessageHistory {
 private:
     std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
@@ -117,9 +132,9 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
-				addMessage("1a", "FCyr");
-				addMessage("2a", "FCyr");
-				addMessage("3a", "FCyr");
+				// addMessage("1a", "FCyr");
+				// addMessage("2a", "FCyr");
+				// addMessage("3a", "FCyr");
 				// addMessage("This is my last message in history", "FCyr");
 				// addMessage("Messages are stored locally in RAM", "FCyr");
 				// addMessage("Currently no local disc storage", "FCyr");
@@ -206,9 +221,8 @@ public:
 };
 
 MessageHistory history;
+#endif
 
-namespace graphics
-{
 // This means the *visible* area (sh1106 can address 132, but shows 128 for example)
 #define IDLE_FRAMERATE 1 // in fps
 

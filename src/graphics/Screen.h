@@ -13,45 +13,7 @@
 #include "power.h"
 namespace graphics
 {
-
-constexpr size_t MAX_MESSAGE_HISTORY = 10;
-constexpr size_t MAX_MESSAGE_LENGTH = 237;
-constexpr size_t MAX_NODE_NAME_LENGTH = 5;
-
-struct MessageRecord {
-    char content[MAX_MESSAGE_LENGTH];
-    char nodeName[MAX_NODE_NAME_LENGTH];
-    uint32_t timestamp;
-    MessageRecord();
-    void clear();
-};
-
-class MessageHistory {
-public:
-    MessageHistory();
-
-		void clear();
-    // Main method for adding new messages
-    void addMessage(const char* content, const char* nodeName);
-
-    // Accessor methods
-    const MessageRecord* getMessageAt(size_t position) const;
-    uint32_t getSecondsSince(size_t position) const;
-    uint32_t getTotalMessageCount() const;
-    bool wasLastMessagePreviousMsgs() const;
-    void setFirstMessageToIgnore(const char* msg);
-		const char* getFirstMessageToIgnore() const;
-
-private:
-    std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
-    size_t currentIndex;
-    uint32_t totalMessageCount;
-    bool firstRunThrough;
-    char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
-    bool lastMessageWasPreviousMsgs;
-};
-
-extern MessageHistory history;
+	extern MessageHistory history;
 
 // Noop class for boards without screen.
 class Screen
@@ -61,10 +23,6 @@ class Screen
     void onPress() {}
     void setup() {}
     void setOn(bool) {}
-
-	  // int getTotalMessages() const { return totalReceivedMessagesSinceBoot; }
-   //  void setTotalMessages(int value) { totalReceivedMessagesSinceBoot = value; }
-	 MessageHistory();
 
     void print(const char *) {}
     void doDeepSleep() {}
@@ -78,7 +36,7 @@ class Screen
     void decreaseBrightness() {}
     void setFunctionSymbal(std::string) {}
     void removeFunctionSymbal(std::string) {}
-		void clearHistory() {}
+		// void clearHistory() {} // removed 1-6-25 trying to clean
     void startAlert(const char *) {}
     void endAlert() {}
 };
@@ -143,6 +101,47 @@ class Screen
 
 /// Convert an integer GPS coords to a floating point
 #define DegD(i) (i * 1e-7)
+
+#ifdef SIMPLE_TDECK
+// constexpr size_t MAX_MESSAGE_HISTORY;
+// constexpr size_t MAX_MESSAGE_LENGTH;
+// constexpr size_t MAX_NODE_NAME_LENGTH;
+constexpr size_t MAX_MESSAGE_HISTORY = 30;
+constexpr size_t MAX_MESSAGE_LENGTH = 237;
+constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+
+// struct MessageRecord {
+//     char content[MAX_MESSAGE_LENGTH];
+//     char nodeName[MAX_NODE_NAME_LENGTH];
+//     uint32_t timestamp;
+//     MessageRecord();
+//     void clear();
+// };
+
+// class MessageHistory {
+// public:
+//     MessageHistory();
+//
+// 		void clear();
+//     void addMessage(const char* content, const char* nodeName);
+//
+//     // Accessor methods
+//     const MessageRecord* getMessageAt(size_t position) const;
+//     uint32_t getSecondsSince(size_t position) const;
+//     uint32_t getTotalMessageCount() const;
+//     bool wasLastMessagePreviousMsgs() const;
+//     void setFirstMessageToIgnore(const char* msg);
+// 		const char* getFirstMessageToIgnore() const;
+//
+// private:
+//     std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
+//     size_t currentIndex;
+//     uint32_t totalMessageCount;
+//     bool firstRunThrough;
+//     char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
+//     bool lastMessageWasPreviousMsgs;
+// };
+#endif
 
 namespace
 {
