@@ -685,6 +685,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							this->wasTouchEvent = false;
 							this->cursor = this->freetext.length();
 							this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+							screen->isOnPreviousMsgsScreen = false;
 							this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NONE;
 							this->lastTouchMillis = millis();
 							UIFrameEvent e;
@@ -858,14 +859,25 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								// 1-2-24 disabled below to stop entering freetext mode on swipe. This was probably the wrong place to do it anyway. look at other notes
 								// 	this->justEnteredFreetext = true; // prevents scrolling through nodes when first entering freetext mode
 								// 	LOG_INFO("this->justEnteredFreetext: %d\n", this->justEnteredFreetext);
-									LOG_INFO("HERE ENTERING TEXT\n");
-									LOG_INFO("event->kbchar: %x\n", event->kbchar);
+									LOG_INFO("event->kbchar: %h\n", event->kbchar);
 									if (event->kbchar == 0x5f) LOG_INFO("GOT1\n");
 									// if (event->kbchar == "5f") LOG_INFO("GOT3\n");
 									if (event->kbchar != 0x5f) LOG_INFO("GOT2\n");
 									if (event->kbchar == 0x5f && !this->isOnFirstPreviousMsgsPage) { // this is the apostrophe character
 										LOG_INFO("NOT ENTERING FREETEXT\n");
 										return 0;
+									}
+									if (screen->isOnPreviousMsgsScreen) {
+										if (event->kbchar == 0x7e) { // added 1-6-25, still testing
+											LOG_INFO("Got 0x7e on previousMsgsScreen\n");
+											this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
+											UIFrameEvent e;
+											e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+											this->notifyObservers(&e);
+											// requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+											// validEvent = true;
+											return 0;
+										}
 									}
 									// 	LOG_INFO("got 0x5f here1\n");
 								// 	// 	//NOW this detects correctly, try make it so that it doesn't enter freetext
@@ -878,8 +890,10 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								// 	// 	}
 								// 	//
 								// 	// }
+									LOG_INFO("HERE ENTERING TEXT\n");
 									this->payload = event->kbchar;
 									this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT; // 12-27 added this line, fixed freetext mode on entering any key
+									screen->isOnPreviousMsgsScreen = false;
 									this->lastTouchMillis = millis();
 									validEvent = true;
 							} else {
@@ -1483,6 +1497,16 @@ int32_t CannedMessageModule::runOnce()
 				case 0x7e: // mic / 0 key, clear line
 					LOG_INFO("Got case 0x7e\n");
 					LOG_INFO("this->runState: %d\n", this->runState);
+					// 1-6-25 testing
+					// if (screen->isOnPreviousMsgsScreen) {
+					// 					LOG_INFO("Got 0x7e here3\n");
+					// 					this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
+					// 					UIFrameEvent e;
+					// 					e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+					// 					this->notifyObservers(&e);
+					// 					// requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+					// 					// validEvent = true;
+					// } else
 					if (this->freetext.length() > 0) {
 						LOG_INFO("more than 1 char is on freetext line, deleting line\n");
 						this->freetext = ""; // clear freetext
@@ -1513,6 +1537,7 @@ int32_t CannedMessageModule::runOnce()
 						this->freetext = this->previousFreetext;
 						this->cursor = this->freetext.length();
 						this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						screen->isOnPreviousMsgsScreen = false;
             this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
             // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
 						// this->lastTouchMillis = millis();

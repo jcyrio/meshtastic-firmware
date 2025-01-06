@@ -117,9 +117,9 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
-				// addMessage("1", "FCyr");
-				// addMessage("2", "FCyr");
-				// addMessage("3", "FCyr");
+				addMessage("1a", "FCyr");
+				addMessage("2a", "FCyr");
+				addMessage("3a", "FCyr");
 				// addMessage("This is my last message in history", "FCyr");
 				// addMessage("Messages are stored locally in RAM", "FCyr");
 				// addMessage("Currently no local disc storage", "FCyr");
@@ -3298,6 +3298,11 @@ int Screen::handleInputEvent(const InputEvent *event)
 		LOG_INFO("On previous msg screen\n");
 		this->isOnPreviousMsgsScreen = true;
 		if (!this->keyboardLockMode) {
+			if (cannedMessageModule->goBackToFirstPreviousMessage) { // here because otherwise when we scroll up from freetext mode to go back to previous msgs page, it registers the UP and puts it on the 2nd msg instead returning to the first
+				LOG_INFO("going back to first previous message2\n");
+				previousMessagePage = 0;
+				cannedMessageModule->goBackToFirstPreviousMessage = false;
+			}
 		// if (showedLastPreviousMessage) {
 					// LOG_INFO("Showed last previous message\n");
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
@@ -3354,9 +3359,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 		// } else LOG_INFO("didn't show last previous message\n");
 		// showedLastPreviousMessage = false;
 	} // end keyboardLockMode == true
-} else {
-		this->isOnPreviousMsgsScreen = false;
-	}
+} else this->isOnPreviousMsgsScreen = false;
 #endif
 
         // LOG_DEBUG("Screen::handleInputEvent from %s\n", event->source);
