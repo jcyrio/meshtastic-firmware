@@ -1395,10 +1395,11 @@ int32_t CannedMessageModule::runOnce()
 								if (this->dest == NODENUM_BROADCAST) {
 									LOG_DEBUG("WAS BROADCAST\n");
 									if (this->freetext.length() < 4) return 0;
-									char allMessage[this->freetext.length() + 6];
-									strcpy(allMessage, "ALL: ");
-									strcat(allMessage, this->freetext.c_str());
-									sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
+									// char allMessage[this->freetext.length() + 6];
+									// strcpy(allMessage, "ALL: ");
+									// strcat(allMessage, this->freetext.c_str());
+									// sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
+									sendText(this->dest, 3, this->freetext.c_str(), true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
 								} else sendText(this->dest, 0, this->freetext.c_str(), true);
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								// first check to make sure this->freetext isn't in commandsForRouterOnlyExact
@@ -1588,9 +1589,9 @@ int32_t CannedMessageModule::runOnce()
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->setFunctionSymbal("KL");
-											UIFrameEvent e;
-											e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
-											this->notifyObservers(&e);
+						UIFrameEvent e;
+						e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+						this->notifyObservers(&e);
 					} else {
 						LOG_INFO("Keyboard Lock Mode off\n");
 						screen->keyboardLockMode = false;
