@@ -82,31 +82,6 @@ bool receivedNewMessage = false;
 int historyMessageCount;
 
 static uint8_t previousMessagePage = 0;
-static uint8_t lastPreviousMessagePage = 0;
-// uint32_t totalMessageCount = 0;
-
-// constexpr size_t MAX_MESSAGE_HISTORY = 30;
-// constexpr size_t MAX_MESSAGE_LENGTH = 237;
-// constexpr size_t MAX_NODE_NAME_LENGTH = 5;
-
-// struct MessageRecord {
-//     char content[MAX_MESSAGE_LENGTH];
-//     char nodeName[MAX_NODE_NAME_LENGTH];
-//     uint32_t timestamp;
-//
-//     MessageRecord() {
-//         clear();
-//     }
-//
-//     void clear() {
-//         content[0] = '\0';
-//         nodeName[0] = '\0';
-//         timestamp = 0;
-//     }
-// };
-
-namespace graphics
-{
 #ifdef SIMPLE_TDECK
 struct MessageRecord {
     char content[MAX_MESSAGE_LENGTH];
@@ -221,7 +196,17 @@ public:
 };
 
 MessageHistory history;
+// void addMessageToHistory(const char* content, const char* nodeName) {
+// 		history.addMessage(content, nodeName);
+// }
+void addMessageToHistory(const char* content, const char* nodeName) {
+    std::string prefixedContent = ">" + std::string(content);
+    history.addMessage(prefixedContent.c_str(), nodeName);
+}
 #endif
+
+namespace graphics
+{
 
 // This means the *visible* area (sh1106 can address 132, but shows 128 for example)
 #define IDLE_FRAMERATE 1 // in fps
@@ -279,6 +264,7 @@ static bool heartbeat = false;
 
 #define getStringCenteredX(s) ((SCREEN_WIDTH - display->getStringWidth(s)) / 2)
 
+#ifndef SIMPLE_TDECK
 /// Check if the display can render a string (detect special chars; emoji)
 static bool haveGlyphs(const char *str)
 {
@@ -302,6 +288,7 @@ static bool haveGlyphs(const char *str)
     LOG_DEBUG("haveGlyphs=%d\n", have);
     return have;
 }
+#endif
 
 /**
  * Draw the icon with extra info printed around the corners
@@ -1170,7 +1157,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
 				int hour = hms / SEC_PER_HOUR;
 				int min = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
-				int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
+				// int sec = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
 				if (hour < 10) snprintf(tempBuf, sizeof(tempBuf), "                   %d:%02d", hour, min); // No leading zero for hour
 				else snprintf(tempBuf, sizeof(tempBuf), "                  %02d:%02d", hour, min); // With leading zero for hour
 			} else tempBuf[0] = '\0';
@@ -1182,7 +1169,8 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 				} else if (useTimestamp && daysAgo == 1) {
 					snprintf(tempBuf, sizeof(tempBuf), "%sYest %02hu:%02hu %s", prefixBuf, timestampHours, timestampMinutes, nodeName);
 				} else {
-					snprintf(tempBuf, sizeof(tempBuf), "%s%s ago from %s", prefixBuf, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), nodeName);
+					const char* direction = (messageContent[0] == '>') ? "ago to" : "ago from";
+					snprintf(tempBuf, sizeof(tempBuf), "%s%s %s %s", prefixBuf, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), direction, nodeName);
 				}
 		}
 		display->setColor(WHITE);
@@ -1218,7 +1206,7 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
     // the max length of this buffer is much longer than we can possibly print
-    static char tempBuf[237];
+    // static char tempBuf[237];
 
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
@@ -1269,9 +1257,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 	} else receivedNewMessage = false;
 #endif
     uint32_t seconds = sinceReceived(&mp);
-    uint32_t minutes = seconds / 60;
-    uint32_t hours = minutes / 60;
-    uint32_t days = hours / 24;
+    // uint32_t minutes = seconds / 60;
+    // uint32_t hours = minutes / 60;
+    // uint32_t days = hours / 24;
 
 		if (previousMessagePage == 0) {
 			cannedMessageModule->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
@@ -1321,7 +1309,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 			// Screen::isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			cannedMessageModule->isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
 			if (previousMessagePage < historyMessageCount) {
-					const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
+					// const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
 					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
 
@@ -1662,7 +1650,7 @@ float Screen::estimatedHeading(double lat, double lon)
 
 /// We will skip one node - the one for us, so we just blindly loop over all
 /// nodes
-static size_t nodeIndex;
+// static size_t nodeIndex;
 static int8_t prevFrame = -1;
 
 // Draw the arrow pointing to a node's location

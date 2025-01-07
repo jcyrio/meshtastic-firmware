@@ -91,6 +91,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
     }
 #ifdef SIMPLE_TDECK // public
 		void setDeliveryStatus(uint8_t status);
+		void addToHistory();
 		bool isOnFirstPreviousMsgsPage = false;
 		bool isOnLastPreviousMsgsPage = false;
 		bool exitingFreetextMode = false;
@@ -177,6 +178,8 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		bool alreadySentFirstMessage = 0;
 		bool skipNextFreetextMode = false;
 		int touchDirection = 0;
+		String lastMessageSent;
+		String lastSentNode;
 #endif
     unsigned long lastTouchMillis = 0;
     String temporaryMessage;

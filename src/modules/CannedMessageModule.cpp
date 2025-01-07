@@ -4,7 +4,6 @@
 #endif
 #if HAS_SCREEN
 #include "CannedMessageModule.h"
-#include "graphics/Screen.h"
 #include "Channels.h"
 #include "FSCommon.h"
 #include "MeshService.h"
@@ -30,7 +29,7 @@
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
 #define FATHERS_NODES
-// #define SECURITY
+#define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
 #define TESTING
@@ -38,7 +37,7 @@
 
 #ifdef SIMPLE_TDECK
 // namespace graphics {
-	MessageHistory history;
+	// MessageHistory history;
 // }
 
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
@@ -61,7 +60,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 #ifdef SECURITY
     {667627820, "Gate Security"},
     {3014898611, "Bookstore"},
-    {NODENUM_BROADCAST, "BROADCAST"},
+    {NODENUM_BROADCAST, "BROADCAST Varangians"},
 		{207139432, "Matrix"},
 		{207216020, "Ronin"},
 		{3771733328, "Athos"}, //Pete
@@ -184,6 +183,10 @@ int CannedMessageModule::scrollRight() {
     }
 	}
 		return nodeIndex;
+}
+
+void CannedMessageModule::addToHistory() { // only happens if fully acked in reliable router
+	addMessageToHistory(lastMessageSent.c_str(), lastSentNode.c_str());
 }
 
 void CannedMessageModule::setDeliveryStatus(uint8_t status) {
@@ -1204,7 +1207,15 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 
     LOG_INFO("Sending message id=%d, dest=%x, msg=%.*s\n", p->id, p->to, p->decoded.payload.size, p->decoded.payload.bytes);
 
-		history.addMessage(p->decoded.payload.bytes, this->getNodeName(p->to));
+		LOG_INFO("this->getNodeName(p->to): %s\n", this->getNodeName(p->to));
+		if (p->to != NODENUM_RPI5) { // just for storing. Will get added to message history only if acked in reliable router
+			lastMessageSent = String((const char*)p->decoded.payload.bytes);
+			// lastSentNode = this->getNodeName(p->to);
+			// lastSentNode = this->getNodeName(p->user.short_name);
+			meshtastic_NodeInfoLite *info = nodeDB->getMeshNode(p->to);
+			if (info != NULL) lastSentNode = info->user.short_name;
+			else lastSentNode = "Unknown";
+		}
     service->sendToMesh(
         p, RX_SRC_LOCAL,
         true); // send to mesh, cc to phone. Even if there's no phone connected, this stores the message to match ACKs

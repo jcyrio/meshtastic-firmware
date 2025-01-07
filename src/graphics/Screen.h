@@ -13,7 +13,7 @@
 #include "power.h"
 namespace graphics
 {
-	extern MessageHistory history;
+
 
 // Noop class for boards without screen.
 class Screen
@@ -23,7 +23,6 @@ class Screen
     void onPress() {}
     void setup() {}
     void setOn(bool) {}
-
     void print(const char *) {}
     void doDeepSleep() {}
     void forceDisplay(bool forceUiUpdate = false) {}
@@ -36,7 +35,6 @@ class Screen
     void decreaseBrightness() {}
     void setFunctionSymbal(std::string) {}
     void removeFunctionSymbal(std::string) {}
-		// void clearHistory() {} // removed 1-6-25 trying to clean
     void startAlert(const char *) {}
     void endAlert() {}
 };
@@ -102,47 +100,6 @@ class Screen
 /// Convert an integer GPS coords to a floating point
 #define DegD(i) (i * 1e-7)
 
-#ifdef SIMPLE_TDECK
-// constexpr size_t MAX_MESSAGE_HISTORY;
-// constexpr size_t MAX_MESSAGE_LENGTH;
-// constexpr size_t MAX_NODE_NAME_LENGTH;
-constexpr size_t MAX_MESSAGE_HISTORY = 30;
-constexpr size_t MAX_MESSAGE_LENGTH = 237;
-constexpr size_t MAX_NODE_NAME_LENGTH = 5;
-
-// struct MessageRecord {
-//     char content[MAX_MESSAGE_LENGTH];
-//     char nodeName[MAX_NODE_NAME_LENGTH];
-//     uint32_t timestamp;
-//     MessageRecord();
-//     void clear();
-// };
-
-// class MessageHistory {
-// public:
-//     MessageHistory();
-//
-// 		void clear();
-//     void addMessage(const char* content, const char* nodeName);
-//
-//     // Accessor methods
-//     const MessageRecord* getMessageAt(size_t position) const;
-//     uint32_t getSecondsSince(size_t position) const;
-//     uint32_t getTotalMessageCount() const;
-//     bool wasLastMessagePreviousMsgs() const;
-//     void setFirstMessageToIgnore(const char* msg);
-// 		const char* getFirstMessageToIgnore() const;
-//
-// private:
-//     std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
-//     size_t currentIndex;
-//     uint32_t totalMessageCount;
-//     bool firstRunThrough;
-//     char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
-//     bool lastMessageWasPreviousMsgs;
-// };
-#endif
-
 namespace
 {
 /// A basic 2D point class for drawing
@@ -179,6 +136,43 @@ class Point
 };
 
 } // namespace
+
+#ifdef SIMPLE_TDECK
+constexpr size_t MAX_MESSAGE_HISTORY = 40;
+constexpr size_t MAX_MESSAGE_LENGTH = 237;
+constexpr size_t MAX_NODE_NAME_LENGTH = 5;
+
+// struct MessageRecord {
+//     char content[MAX_MESSAGE_LENGTH];
+//     char nodeName[MAX_NODE_NAME_LENGTH];
+//     uint32_t timestamp;
+//     MessageRecord();
+//     void clear();
+// };
+//
+// class MessageHistory {
+// private:
+//     std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
+//     size_t currentIndex = 0;
+//     uint32_t totalMessageCount = 0;
+//     bool firstRunThrough = true;
+//     bool lastMessageWasPreviousMsgs = false;
+//
+// public:
+//     char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
+//
+//     MessageHistory();
+//     void clear();
+//     void addMessage(const char* content, const char* nodeName);
+//     const MessageRecord* getMessageAt(size_t position) const;
+//     uint32_t getSecondsSince(size_t position) const;
+//     uint32_t getTotalMessageCount() const;
+//     bool wasLastMessagePreviousMsgs() const;
+//     void setFirstMessageToIgnore(const char* msg);
+// };
+
+void addMessageToHistory(const char* content, const char* nodeName);
+#endif
 
 namespace graphics
 {
@@ -340,13 +334,13 @@ class Screen : public concurrency::OSThread
 #ifdef SIMPLE_TDECK
     // void showFirstBrightnessLevel();
 		bool keyboardLockMode = false;
+		void clearHistory();
 #endif
     void increaseBrightness();
     void decreaseBrightness();
 
     void setFunctionSymbal(std::string sym);
     void removeFunctionSymbal(std::string sym);
-		void clearHistory();
 
     /// Stops showing the boot screen.
     void stopBootScreen() { enqueueCmd(ScreenCmd{.cmd = Cmd::STOP_BOOT_SCREEN}); }
