@@ -1151,6 +1151,43 @@ void safeStringCopy(char* dest, const char* src, size_t size) {
     dest[size - 1] = '\0';
 }
 
+bool isEmoji(const char* messageContent) {
+    const char* thumbsUpEmoji = u8"\U0001F44D";
+    const char* smileyEmojis[] = {
+        u8"\U0001F60A", u8"\U0001F600", u8"\U0001F642", u8"\U0001F609", u8"\U0001F601"
+    };
+    const char* foldedHandsEmoji = u8"\U0001F64F";
+    const char* hahaEmojis[] = {
+        "\xf0\x9f\xa4\xa3", "rofl"
+    };
+    const char* heartEmojis[] = {
+        u8"♥️", u8"\U00002764", u8"\U0001F9E1", u8"\U00002763", u8"\U0001F495",
+        u8"\U0001F493", u8"\U0001F497", u8"\U0001F496", u8"❤️"
+    };
+    if (strcmp(messageContent, thumbsUpEmoji) == 0) { // Check thumbs up emoji
+        return true;
+    }
+    for (const auto& emoji : smileyEmojis) { // Check smiley emojis
+        if (strcmp(messageContent, emoji) == 0) {
+            return true;
+        }
+    }
+    if (strcmp(messageContent, foldedHandsEmoji) == 0) { // Check folded hands emoji
+        return true;
+    }
+    for (const auto& emoji : hahaEmojis) { // Check haha emojis
+        if (strcmp(messageContent, emoji) == 0) {
+            return true;
+        }
+    }
+    for (const auto& emoji : heartEmojis) { // Check heart emojis
+        if (strcmp(messageContent, emoji) == 0) {
+            return true;
+        }
+    }
+    return false; // Not an accepted emoji
+}
+
 // Helper function to display time delta and sender
 void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount) {
 	LOG_INFO("displayTimeAndMessage: nodeName=%s, messageContent=%s, msgCount=%d\n", nodeName, messageContent, msgCount);
@@ -1195,20 +1232,20 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 		display->drawString(x, y + FONT_HEIGHT_LARGE * linePosition, tempBuf);
     display->setColor(WHITE);
     if (strcmp(messageContent, u8"\U0001F44D") == 0) {
-			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, thumbs_width, thumbs_height, thumbup);
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 15, thumbs_width, thumbs_height, thumbup);
 		}
 		else if (strcmp(messageContent, u8"\U0001F60A") == 0 || strcmp(messageContent, u8"\U0001F600") == 0 || strcmp(messageContent, u8"\U0001F642") == 0 || strcmp(messageContent, u8"\U0001F609") == 0 || strcmp(messageContent, u8"\U0001F601") == 0) {
-			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, smiley_width, smiley_height, smiley);
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 15, smiley_width, smiley_height, smiley);
 		}
 		else if (strcmp(messageContent, u8"\U0001F64F") == 0) {
-			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, foldedHands_width, foldedHands_height, foldedHands);
+			display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 15, foldedHands_width, foldedHands_height, foldedHands);
 		}
     else if (strcmp(messageContent, "\xf0\x9f\xa4\xa3") == 0 || strcmp(messageContent, "rofl") == 0) {
-        display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, haha_width, haha_height, haha);
+        display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 15, haha_width, haha_height, haha);
 		}
 		else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0 ||
 			strcmp(messageContent, u8"❤️") == 0) {
-				display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 5, heart_width, heart_height, heart);
+				display->drawXbm(x + 15, y + FONT_HEIGHT_LARGE * (linePosition + 2) - 15, heart_width, heart_height, heart);
 		}
 		else {
 			if (msgLen > 170) display->setFont(FONT_SMALL);
@@ -1295,13 +1332,13 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 							LOG_INFO("there is a 3rd message\n");
                 // We have a 3rd message
                 const MessageRecord* thirdMsg = history.getMessageAt(2);
-								const bool firstMsgIsShort = strlen(currentMsgContent) <= 33;
-								const bool secondMsgIsShort = secondMsg && strlen(secondMsg->content) <= 33;
-								const bool thirdMsgIsShort = thirdMsg && strlen(thirdMsg->content) <= 33;
+								const bool firstMsgIsShort = !isEmoji(currentMsgContent) && strlen(currentMsgContent) <= 33;
+								const bool secondMsgIsShort = secondMsg && !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
+								const bool thirdMsgIsShort = thirdMsg && !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
 								const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
-								const bool firstMsgIsTwoLines = strlen(currentMsgContent) >= 33;
-								const bool secondMsgIsTwoLines = secondMsg && strlen(secondMsg->content) >= 33;
-								const bool thirdMsgIsTwoLines = thirdMsg && strlen(thirdMsg->content) >= 33;
+								const bool firstMsgIsTwoLines = isEmoji(currentMsgContent) || strlen(currentMsgContent) > 33;
+								const bool secondMsgIsTwoLines = secondMsg && (isEmoji(secondMsg->content) || strlen(secondMsg->content) > 33);
+								const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(thirdMsg->content) || strlen(thirdMsg->content) > 33);
 								const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
 								const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
 								const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
@@ -1431,17 +1468,18 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
 						if (thirdMsg && (previousMessagePage + 2 < historyMessageCount)) { // there are 3 messages
 							LOG_INFO("there are 3 messages\n");
-							const bool firstMsgIsShort = strlen(firstMsg->content) <= 33;
-							const bool firstMsgIsTwoLines = strlen(firstMsg->content) >= 33;
-							const bool secondMsgIsShort = strlen(secondMsg->content) <= 33;
-							const bool secondMsgIsTwoLines = strlen(secondMsg->content) >= 33;
-							const bool thirdMsgIsShort = strlen(thirdMsg->content) <= 33;
-							const bool thirdMsgIsTwoLines = thirdMsg && strlen(thirdMsg->content) >= 33;
+							const bool firstMsgIsShort = !isEmoji(firstMsg->content) && strlen(firstMsg->content) <= 33;
+							const bool firstMsgIsTwoLines = isEmoji(firstMsg->content) || strlen(firstMsg->content) > 33;
+							const bool secondMsgIsShort = !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
+							const bool secondMsgIsTwoLines = isEmoji(secondMsg->content) || strlen(secondMsg->content) > 33;
+							const bool thirdMsgIsShort = thirdMsg && !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
+							const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(thirdMsg->content) || strlen(thirdMsg->content) > 33);
 							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
 							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
 							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
 							const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
 							const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines || onlyThirdMsgIsTwoLines;
+
 							// Are all three short enough?
 							if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
 								LOG_INFO("all three messages are short enough\n");
