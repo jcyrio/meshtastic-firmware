@@ -1294,37 +1294,57 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
             if (historyMessageCount > 2) {
                 // We have a 3rd message
                 const MessageRecord* thirdMsg = history.getMessageAt(2);
+								const bool firstMsgIsShort = strlen(currentMsgContent) <= 33;
+								const bool secondMsgIsShort = secondMsg && strlen(secondMsg->content) <= 33;
+								const bool thirdMsgIsShort = thirdMsg && strlen(thirdMsg->content) <= 33;
+								const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
+								const bool firstMsgIsTwoLines = strlen(currentMsgContent) <= 65;
+								const bool secondMsgIsTwoLines = secondMsg && strlen(secondMsg->content) <= 65;
+								const bool thirdMsgIsTwoLines = thirdMsg && strlen(thirdMsg->content) <= 65;
+								const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
+								const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
+								const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
+								const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines || onlyThirdMsgIsTwoLines;
 
                 // Are all three short enough?
-                if (strlen(currentMsgContent) <= 65 &&
-                    secondMsg && strlen(secondMsg->content) <= 65 &&
-                    thirdMsg && strlen(thirdMsg->content) <= 65)
-                {
-                    // 1) Show the most recent message (index 0)
-                    displayTimeAndMessage(display, x, y, 0,
-                                          seconds,
-                                          lastMsg->nodeName,
-                                          lastMsg->content,
-                                          1);
+								if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
+									uint8_t firstLinePos = 0;
+									uint8_t secondLinePos = 2;
+									uint8_t thirdLinePos = 4;
 
-                    // 2) Show the second (index 1)
-                    displayTimeAndMessage(display, x, y, 2,
-                                          history.getSecondsSince(1),
-                                          secondMsg->nodeName,
-                                          secondMsg->content,
-                                          2);
+									if (onlyFirstMsgIsTwoLines) {
+										secondLinePos = 3;
+										thirdLinePos = 5;
+									} else if (onlySecondMsgIsTwoLines) {
+										firstLinePos = 0;
+										secondLinePos = 2;
+										thirdLinePos = 5;
+									}
+									// 1) Show the most recent message (index 0)
+									displayTimeAndMessage(display, x, y, firstLinePos,
+																				seconds,
+																				lastMsg->nodeName,
+																				lastMsg->content,
+																				1);
 
-                    // 3) Show the third (index 2)
-                    displayTimeAndMessage(display, x, y, 4,
-                                          history.getSecondsSince(2),
-                                          thirdMsg->nodeName,
-                                          thirdMsg->content,
-                                          3);
+									// 2) Show the second (index 1)
+									displayTimeAndMessage(display, x, y, secondLinePos,
+																				history.getSecondsSince(1),
+																				secondMsg->nodeName,
+																				secondMsg->content,
+																				2);
 
-                    // Potentially set flags
-                    // cannedMessageModule->isOnLastPreviousMsgsPage = ???
+									// 3) Show the third (index 2)
+									displayTimeAndMessage(display, x, y, thirdLinePos,
+																				history.getSecondsSince(2),
+																				thirdMsg->nodeName,
+																				thirdMsg->content,
+																				3);
 
-                    return; // Done drawing 3 short messages
+									// Potentially set flags
+									// cannedMessageModule->isOnLastPreviousMsgsPage = ???
+
+									return; // Done drawing 3 short messages
                 }
             }
             // ----------------------------------------------------------------
