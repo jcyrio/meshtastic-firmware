@@ -435,7 +435,8 @@ void RadioLibInterface::setStandby()
 /** start an immediate transmit */
 void RadioLibInterface::startSend(meshtastic_MeshPacket *txp)
 {
-    printPacket("Starting low level send", txp);
+	    /* NOTE: Minimize the actions before startTransmit() to keep the time between
+             channel scan and actual transmit as low as possible to avoid collisions. */
     if (disabled || !config.lora.tx_enabled) {
         LOG_WARN("startSend is dropping tx packet because we are disabled\n");
         packetPool.release(txp);
@@ -453,6 +454,9 @@ void RadioLibInterface::startSend(meshtastic_MeshPacket *txp)
             completeSending();
             powerMon->clearState(meshtastic_PowerMon_State_Lora_TXOn); // Transmitter off now
             startReceive(); // Restart receive mode (because startTransmit failed to put us in xmit mode)
+				} else {
+						lastTxStart = millis();
+            printPacket("Started Tx", txp);
         }
 
         // Must be done AFTER, starting transmit, because startTransmit clears (possibly stale) interrupt pending register

@@ -349,7 +349,7 @@ int32_t PositionModule::runOnce()
         sleepOnNextExecution = false;
         uint32_t nightyNightMs = Default::getConfiguredOrDefaultMs(config.position.position_broadcast_secs);
         LOG_DEBUG("Sleeping for %ims, then awaking to send position again.\n", nightyNightMs);
-        doDeepSleep(nightyNightMs, false, false);
+        doDeepSleep(nightyNightMs, false);
     }
 
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(nodeDB->getNodeNum());

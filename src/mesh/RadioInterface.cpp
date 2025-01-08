@@ -567,8 +567,6 @@ size_t RadioInterface::beginSending(meshtastic_MeshPacket *p)
     // LOG_DEBUG("sending queued packet on mesh (txGood=%d,rxGood=%d,rxBad=%d)\n", rf95.txGood(), rf95.rxGood(), rf95.rxBad());
     assert(p->which_payload_variant == meshtastic_MeshPacket_encrypted_tag); // It should have already been encoded by now
 
-    lastTxStart = millis();
-
     PacketHeader *h = (PacketHeader *)radiobuf;
 
     h->from = p->from;
