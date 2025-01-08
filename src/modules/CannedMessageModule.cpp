@@ -186,6 +186,11 @@ int CannedMessageModule::scrollRight() {
 }
 
 void CannedMessageModule::addToHistory() { // only happens if fully acked in reliable router
+	LOG_INFO("addToHistory: %s, %s\n", lastMessageSent.c_str(), lastSentNode.c_str());
+            // UIFrameEvent e;
+            // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+            // requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
+            // this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
 	addMessageToHistory(lastMessageSent.c_str(), lastSentNode.c_str());
 }
 

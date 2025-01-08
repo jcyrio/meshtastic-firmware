@@ -73,6 +73,7 @@ const char* NO_MSGS_RECEIVED_MESSAGE = "     No messages received";
 
 using namespace meshtastic; /** @todo remove */
 int totalReceivedMessagesSinceBoot;
+int totalSentMessagesSinceBoot;
 char brightnessLevel = 'H';
 // bool lastMessageWasPreviousMsgs = false;
 bool firstRunThroughMessages = true;
@@ -135,38 +136,45 @@ public:
     }
 
     void addMessage(const char* content, const char* nodeName) {
-        if (!content || content[0] == '*') {
-					//TODO: this is never used!
-            lastMessageWasPreviousMsgs = (content && content[0] == '*');
-            return;
-        }
-
+			LOG_INFO("addMessage: %s, %s\n", content, nodeName);
         // Check if this is a message to ignore
         if (strcmp(firstMessageToIgnore, content) == 0) {
+					LOG_INFO("Ignoring message, was firstMessageToIgnore: %s", content);
             memset(firstMessageToIgnore, 0, MAX_MESSAGE_LENGTH);
             return;
         }
 
         // Check if this is a duplicate of the last message
         if (currentIndex < messages.size() && 
-            strcmp(messages[currentIndex].content, content) == 0) {
-            return;
+					strcmp(messages[currentIndex].content, content) == 0) {
+					LOG_INFO("Ignoring duplicate message: %s", content);
+					return;
         }
 
-        // Update index for circular buffer
-        currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
+    bool isRouterMessage = (content[0] == '*');
+		LOG_INFO("isRouterMessage: %d\n", isRouterMessage);
+    if (!isRouterMessage) currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
+
 
         // Store the new message
         MessageRecord& record = messages[currentIndex];
         strncpy(record.content, content, MAX_MESSAGE_LENGTH - 1);
         record.content[MAX_MESSAGE_LENGTH - 1] = '\0';
-
 				strncpy(record.nodeName, nodeName, MAX_NODE_NAME_LENGTH - 1);
         record.nodeName[MAX_NODE_NAME_LENGTH - 1] = '\0';
-
         record.timestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
         totalMessageCount++;
+				LOG_INFO("totalMessageCount: %d\n", totalMessageCount);
+				LOG_INFO("currentIndex: %d\n", currentIndex);
         lastMessageWasPreviousMsgs = false;
+				// FIXME: only go through up to currentIndex
+				// for (size_t i = 0; i < MAX_MESSAGE_HISTORY; ++i) {
+				for (size_t i = currentIndex + 1; i > 0; --i) {
+        const MessageRecord* message = getMessageAt(i);
+        if (message && message->content[0] != '\0') {  // Check if the message is not empty
+            LOG_INFO("Message %d: Content=%s, NodeName=%s\n", i, message->content, message->nodeName);
+					}
+				}
     }
 
     // Helper methods to access message history
@@ -200,8 +208,10 @@ MessageHistory history;
 // 		history.addMessage(content, nodeName);
 // }
 void addMessageToHistory(const char* content, const char* nodeName) {
-    std::string prefixedContent = ">" + std::string(content);
-    history.addMessage(prefixedContent.c_str(), nodeName);
+	LOG_INFO("addMessageToHistory: %s, %s\n", content, nodeName);
+	totalSentMessagesSinceBoot++;
+	std::string prefixedContent = ">" + std::string(content);
+	history.addMessage(prefixedContent.c_str(), nodeName);
 }
 #endif
 
@@ -1138,6 +1148,7 @@ void safeStringCopy(char* dest, const char* src, size_t size) {
 
 // Helper function to display time delta and sender
 void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t linePosition, uint32_t seconds, const char* nodeName, const char* messageContent, const uint32_t msgCount) {
+	LOG_INFO("displayTimeAndMessage: nodeName=%s, messageContent=%s, msgCount=%d\n", nodeName, messageContent, msgCount);
     uint32_t minutes = seconds / 60;
     uint32_t hours = minutes / 60;
     uint32_t days = hours / 24;
@@ -1212,7 +1223,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
     // uint32_t currentMessageTime = sinceReceived(&mp);
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
-		
+
 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode('!da656e60'));
     // LOG_DEBUG("drawing text message from 0x%x: %s\n", mp.from,
     // mp.decoded.variant.data.decoded.bytes);
@@ -1226,7 +1237,10 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 #ifdef SIMPLE_TDECK
 		const MessageRecord* lastMsg = history.getMessageAt(0);
 		const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+		LOG_INFO("lastMsg: %s\n", lastMsg->content);
+		LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
 		historyMessageCount = history.getTotalMessageCount();
+		LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
     display->setFont(FONT_LARGE);
 // #if !defined(SECURITY) && !defined(FOR_GUESTS)
 		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
@@ -1248,6 +1262,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				// Get the most recent message to check for duplicates
 				bool isDuplicate = lastMsg && (strcmp(lastMsg->content, currentMsgContent) == 0);
 				if (!isDuplicate) {
+					LOG_INFO("Adding message to history\n");
 					char currentNodeName[5] = {'\0'};
 					if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
 					else strcpy(currentNodeName, "???");
@@ -1275,18 +1290,18 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 					LOG_INFO("First message is short and there exists a 2nd msg\n");
 					const MessageRecord* secondMsg = history.getMessageAt(1);
 					if (secondMsg && strlen(secondMsg->content) <= 65) { //2nd msg exists and is also short, display 2 msgs on screen
-						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
 						displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
 					} else { // 2nd msg is long, don't display both at same time
 						// LOG_INFO("2nd msg is long, don't display both at same time\n");
-						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
 						cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
 					}
 				} else { // 1st message is long, display alone
 					// if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
-					if (totalReceivedMessagesSinceBoot > 0) {
+					if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) {
 						// LOG_INFO("received at least 1 real message\n");
-						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
 					} else { // want to ignore first bootup message
 						LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
@@ -1297,7 +1312,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 				// LOG_INFO("historyMessageCount is not greater than 1, there is only 1 msg\n");
 				// HERE IS WHERE YOU HAVE TO DISPLAY THE SINGLE MESSAGE
 					if ((totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
-						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						// displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
 					} else { // want to ignore first bootup message
 						// LOG_INFO("Displaying no messages\n");
 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
@@ -3210,9 +3226,10 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 		//check if msg == 'c'
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
 		const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+		// FIXME: below will run in continuous loop! Either remove (if found in other places) or fix
 		if (strcmp(currentMsgContent, "c") == 0) { // allow clr msg to clear the history
 			// LOG_INFO("Clearing the history\n");
-			history.clear();
+			if (totalReceivedMessagesSinceBoot > 0) history.clear();
 			return 0;
 		}
     // char channelStr[20];

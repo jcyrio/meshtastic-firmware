@@ -117,7 +117,7 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
                 else if (p->hop_start > 0 && p->hop_start == p->hop_limit)
                     sendAckNak(meshtastic_Routing_Error_NONE, getFrom(p), p->id, p->channel, 0);
 
-							
+
             } else {
                 // Send a 'NO_CHANNEL' error on the primary channel if want_ack packet destined for us cannot be decoded
                 sendAckNak(meshtastic_Routing_Error_NO_CHANNEL, getFrom(p), p->id, channels.getPrimaryIndex(),
