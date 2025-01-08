@@ -108,6 +108,7 @@ public:
     char firstMessageToIgnore[MAX_MESSAGE_LENGTH] = {'\0'};
     MessageHistory() {
         for (auto& msg : messages) { msg.clear(); }
+				// totalReceivedMessagesSinceBoot = 3;
 				// addMessage("1a", "FCyr");
 				// addMessage("2a", "FCyr");
 				// addMessage("3a", "FCyr");
@@ -128,6 +129,8 @@ public:
 			}
 				currentIndex = 0;
         totalMessageCount = 0;
+				totalReceivedMessagesSinceBoot = 0;
+				totalSentMessagesSinceBoot = 0;
 				previousMessagePage = 0;
         firstRunThroughMessages = true;
         lastMessageWasPreviousMsgs = false;
@@ -151,10 +154,14 @@ public:
 					return;
         }
 
-    bool isRouterMessage = (content[0] == '*');
+    // bool isRouterMessage = (content[0] == '*');
+    bool isRouterMessage = (messages[currentIndex].content[0] == '*');
 		LOG_INFO("isRouterMessage: %d\n", isRouterMessage);
-    if (!isRouterMessage) currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
-
+    if (!isRouterMessage) {
+			currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
+      totalMessageCount++;
+			LOG_INFO("totalMessageCount: %d\n", totalMessageCount);
+		}
 
         // Store the new message
         MessageRecord& record = messages[currentIndex];
@@ -163,8 +170,6 @@ public:
 				strncpy(record.nodeName, nodeName, MAX_NODE_NAME_LENGTH - 1);
         record.nodeName[MAX_NODE_NAME_LENGTH - 1] = '\0';
         record.timestamp = getValidTime(RTCQuality::RTCQualityDevice, true);
-        totalMessageCount++;
-				LOG_INFO("totalMessageCount: %d\n", totalMessageCount);
 				LOG_INFO("currentIndex: %d\n", currentIndex);
         lastMessageWasPreviousMsgs = false;
 				// FIXME: only go through up to currentIndex
@@ -1213,245 +1218,490 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
 }
 #endif
 
-/// Draw the last text message we received
 static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
-    // the max length of this buffer is much longer than we can possibly print
-    // static char tempBuf[237];
-
     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
-    // uint32_t currentMessageTime = sinceReceived(&mp);
-		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
+    const MessageRecord* lastMsg = history.getMessageAt(0);
+    const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+    LOG_INFO("lastMsg: %s\n", lastMsg->content);
+    LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
 
-		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode('!da656e60'));
-    // LOG_DEBUG("drawing text message from 0x%x: %s\n", mp.from,
-    // mp.decoded.variant.data.decoded.bytes);
+    historyMessageCount = history.getTotalMessageCount();
+    LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
 
-    // Demo for drawStringMaxWidth:
-    // with the third parameter you can define the width after which words will
-    // be wrapped. Currently only spaces and "-" are allowed for wrapping
-    // display->setTextAlignment(TEXT_ALIGN_LEFT);
-
-    // For time delta
-#ifdef SIMPLE_TDECK
-		const MessageRecord* lastMsg = history.getMessageAt(0);
-		const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-		LOG_INFO("lastMsg: %s\n", lastMsg->content);
-		LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
-		historyMessageCount = history.getTotalMessageCount();
-		LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
     display->setFont(FONT_LARGE);
-// #if !defined(SECURITY) && !defined(FOR_GUESTS)
-		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
-			LOG_INFO("In first run through messages\n");
-			history.setFirstMessageToIgnore(currentMsgContent);
-			LOG_INFO("firstMessageToIgnore: %s\n", currentMsgContent);
-			firstRunThroughMessages = false;
-		}
-// #endif
-		if (strcmp(currentMsgContent, lastReceivedMessage) != 0) {
-			lastReceivedMessage[0] = '\0'; strcpy(lastReceivedMessage, currentMsgContent);
-			LOG_INFO("Received new message!\n");
-			receivedNewMessage = true;
-			previousMessagePage = 0;
-			// Screen::isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			cannedMessageModule->isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			// Below is for deciding when to add a message to the history
-			if (strcmp(history.firstMessageToIgnore, currentMsgContent) != 0) {
-				// Get the most recent message to check for duplicates
-				bool isDuplicate = lastMsg && (strcmp(lastMsg->content, currentMsgContent) == 0);
-				if (!isDuplicate) {
-					LOG_INFO("Adding message to history\n");
-					char currentNodeName[5] = {'\0'};
-					if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
-					else strcpy(currentNodeName, "???");
-					history.addMessage(currentMsgContent, currentNodeName);
-				} else LOG_INFO("Skipping adding message to history because it's a duplicate\n");
-			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
-	} else receivedNewMessage = false;
-#endif
-    uint32_t seconds = sinceReceived(&mp);
-    // uint32_t minutes = seconds / 60;
-    // uint32_t hours = minutes / 60;
-    // uint32_t days = hours / 24;
 
-		if (previousMessagePage == 0) {
-			cannedMessageModule->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			// LOG_INFO("on first message page\n");
-			char currentNodeName[5] = {'\0'};
-			// Screen::setIsOnFirstPreviousMsgsPage(1);  // for allowing cmm to do touchscreen scroll down to freetext mode
-			// Screen::isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
-			else strcpy(currentNodeName, "???");
-
-			if (historyMessageCount > 1) { //there exists a 2nd message
-				if (strlen(currentMsgContent) <= 65) { // first msg is short
-					LOG_INFO("First message is short and there exists a 2nd msg\n");
-					const MessageRecord* secondMsg = history.getMessageAt(1);
-					if (secondMsg && strlen(secondMsg->content) <= 65) { //2nd msg exists and is also short, display 2 msgs on screen
-						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
-						displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
-					} else { // 2nd msg is long, don't display both at same time
-						// LOG_INFO("2nd msg is long, don't display both at same time\n");
-						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
-						cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
-					}
-				} else { // 1st message is long, display alone
-					// if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
-					if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) {
-						// LOG_INFO("received at least 1 real message\n");
-						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
-					} else { // want to ignore first bootup message
-						LOG_INFO("Displaying no messages\n");
-						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
-					}
-					cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
-				} // end 1st message is long display alone
-				} else { // there is only 1 message
-				// LOG_INFO("historyMessageCount is not greater than 1, there is only 1 msg\n");
-				// HERE IS WHERE YOU HAVE TO DISPLAY THE SINGLE MESSAGE
-					if ((totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
-						// displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
-						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
-					} else { // want to ignore first bootup message
-						// LOG_INFO("Displaying no messages\n");
-						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
-					}
-					cannedMessageModule->isOnLastPreviousMsgsPage = 1; // allows cmm to do touchscreen scroll up to freetext mode
-			} // end if historyMessageCount == 1
-		} else { // not on first msg page, handle history display
-			// LOG_INFO("Not on first msg page\n");
-			// Screen::isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			cannedMessageModule->isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
-			if (previousMessagePage < historyMessageCount) {
-					// const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
-					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
-					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
-
-					if (currentMsg) {
-						uint8_t msgLen = strlen(currentMsg->content);
-							// Check if current message is short and if there's a next message
-							if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
-									// Display both messages
-									// LOG_INFO("Displaying both messages\n");
-									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
-
-									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
-									// Skip the next message in the next iteration since we displayed it
-									// enabling this causes to jump by 2 pags instead of "smooth" scrolling 1 at a time
-									// previousMessagePage++;
-							} else { // Display single message, but only if it's not because the next message is too long (and this one is short, so it was already displayed)
-								// LOG_INFO("Displaying only single message\n");
-								// if the length is over 180 char, then make font small
-								displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
-					} // end if currentMsg
-					// else showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
-			}
-    }
-		// showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
-// return;
-#ifdef THISISDISABLED
-    // For timestamp
-    uint8_t timestampHours, timestampMinutes;
-    int32_t daysAgo;
-    bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
-
-    // If bold, draw twice, shifting right by one pixel
-    for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
-        // Show a timestamp if received today, but longer than 15 minutes ago
-        if (useTimestamp && minutes >= 15 && daysAgo == 0) {
-					if (historyMessageCount > 0) {
-							display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
-					} else {
-							display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s", historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), (node && node->has_user) ? node->user.short_name : "???");
-					}
-        }
-        // Timestamp yesterday (if display is wide enough)
-        else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
-					if (historyMessageCount > 0) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) Yest %02hu:%02hu from %s", historyMessageCount, timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
-					} else {
-						display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
-					}
-        }
-        // Otherwise, show a time delta
-        else {
-					if (historyMessageCount > 0) {
-            display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s",
-                                 historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
-                                 (node && node->has_user) ? node->user.short_name : "???");
-					} else {
-						display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
-																 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
-																 (node && node->has_user) ? node->user.short_name : "???");
-					}
-        }
+    if (firstRunThroughMessages) {
+        LOG_INFO("In first run through messages\n");
+        history.setFirstMessageToIgnore(currentMsgContent);
+        LOG_INFO("firstMessageToIgnore: %s\n", currentMsgContent);
+        firstRunThroughMessages = false;
     }
 
-    display->setColor(WHITE);
-#ifndef EXCLUDE_EMOJI
-    if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44D") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height,
-                         thumbup);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44E") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height,
-                         thumbdown);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"❓") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - question_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - question_height) / 2 + 2 + 5, question_width, question_height,
-                         question);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"‼️") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - bang_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - bang_height) / 2 + 2 + 5,
-                         bang_width, bang_height, bang);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F4A9") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - poo_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - poo_height) / 2 + 2 + 5,
-                         poo_width, poo_height, poo);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), "\xf0\x9f\xa4\xa3") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - haha_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - haha_height) / 2 + 2 + 5,
-                         haha_width, haha_height, haha);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44B") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - wave_icon_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - wave_icon_height) / 2 + 2 + 5, wave_icon_width,
-                         wave_icon_height, wave_icon);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F920") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - cowboy_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - cowboy_height) / 2 + 2 + 5, cowboy_width, cowboy_height,
-                         cowboy);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F42D") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - deadmau5_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - deadmau5_height) / 2 + 2 + 5, deadmau5_width, deadmau5_height,
-                         deadmau5);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\xE2\x98\x80\xEF\xB8\x8F") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - sun_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - sun_height) / 2 + 2 + 5,
-                         sun_width, sun_height, sun);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\u2614") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - rain_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - rain_height) / 2 + 2 + 10,
-                         rain_width, rain_height, rain);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"☁️") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - cloud_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - cloud_height) / 2 + 2 + 5, cloud_width, cloud_height, cloud);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"🌫️") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - fog_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - fog_height) / 2 + 2 + 5,
-                         fog_width, fog_height, fog);
-    } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\xf0\x9f\x98\x88") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - devil_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - devil_height) / 2 + 2 + 5, devil_width, devil_height, devil);
-		} else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
-        display->drawXbm(x + (SCREEN_WIDTH - heart_width) / 2,
-                         y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
+    // If this is a newly received message
+    if (strcmp(currentMsgContent, lastReceivedMessage) != 0) {
+        lastReceivedMessage[0] = '\0';
+        strcpy(lastReceivedMessage, currentMsgContent);
+
+        LOG_INFO("Received new message!\n");
+        receivedNewMessage = true;
+        previousMessagePage = 0;
+        cannedMessageModule->isOnFirstPreviousMsgsPage = 0;  // for touchscreen scrolling
+
+        // Decide whether to add message to history
+        if (strcmp(history.firstMessageToIgnore, currentMsgContent) != 0) {
+            bool isDuplicate = lastMsg && (strcmp(lastMsg->content, currentMsgContent) == 0);
+            if (!isDuplicate) {
+                LOG_INFO("Adding message to history\n");
+                char currentNodeName[5] = {'\0'};
+                if (node && node->has_user) {
+                    strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+                } else {
+                    strcpy(currentNodeName, "???");
+                }
+                history.addMessage(currentMsgContent, currentNodeName);
+            } else {
+                LOG_INFO("Skipping adding message to history because it's a duplicate\n");
+            }
+        } else {
+            LOG_INFO("Skipping adding message to history because it's firstMessageToIgnore\n");
+        }
     } else {
-        snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-        display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+        receivedNewMessage = false;
     }
-#else
-    snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
-    display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
-#endif
-#endif //THISISDISABLED
+
+    uint32_t seconds = sinceReceived(&mp);
+
+    // ==============================================
+    //         SHOWING THE MOST RECENT MESSAGES
+    // ==============================================
+    if (previousMessagePage == 0) {
+        cannedMessageModule->isOnFirstPreviousMsgsPage = 1;  // for touchscreen
+        char currentNodeName[5] = {'\0'};
+        if (node && node->has_user) {
+            safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+        } else {
+            strcpy(currentNodeName, "???");
+        }
+
+        // We have more than 1 message in history
+        if (historyMessageCount > 1) {
+            // Let's get the second message
+            const MessageRecord* secondMsg = history.getMessageAt(1);
+
+            // --- NEW LOGIC: Check if we can show 3 short messages at once ---
+            if (historyMessageCount > 2) {
+                // We have a 3rd message
+                const MessageRecord* thirdMsg = history.getMessageAt(2);
+
+                // Are all three short enough?
+                if (strlen(currentMsgContent) <= 65 &&
+                    secondMsg && strlen(secondMsg->content) <= 65 &&
+                    thirdMsg && strlen(thirdMsg->content) <= 65)
+                {
+                    // 1) Show the most recent message (index 0)
+                    displayTimeAndMessage(display, x, y, 0,
+                                          seconds,
+                                          lastMsg->nodeName,
+                                          lastMsg->content,
+                                          1);
+
+                    // 2) Show the second (index 1)
+                    displayTimeAndMessage(display, x, y, 2,
+                                          history.getSecondsSince(1),
+                                          secondMsg->nodeName,
+                                          secondMsg->content,
+                                          2);
+
+                    // 3) Show the third (index 2)
+                    displayTimeAndMessage(display, x, y, 4,
+                                          history.getSecondsSince(2),
+                                          thirdMsg->nodeName,
+                                          thirdMsg->content,
+                                          3);
+
+                    // Potentially set flags
+                    // cannedMessageModule->isOnLastPreviousMsgsPage = ???
+
+                    return; // Done drawing 3 short messages
+                }
+            }
+            // ----------------------------------------------------------------
+
+            // If we get here, either there's no 3rd message or they're not all short.
+            // Fall back to your existing "2 message" logic:
+
+            if (strlen(currentMsgContent) <= 65) {
+                LOG_INFO("First message is short, checking 2nd\n");
+                if (secondMsg && strlen(secondMsg->content) <= 65) {
+                    // Display 2 short messages
+                    displayTimeAndMessage(display, x, y, 0,
+                                          seconds,
+                                          lastMsg->nodeName,
+                                          lastMsg->content,
+                                          1);
+
+                    displayTimeAndMessage(display, x, y, 4,
+                                          history.getSecondsSince(1),
+                                          secondMsg->nodeName,
+                                          secondMsg->content,
+                                          2);
+                } else {
+                    // 2nd message is long, show only the 1st
+                    displayTimeAndMessage(display, x, y, 0,
+                                          seconds,
+                                          lastMsg->nodeName,
+                                          lastMsg->content,
+                                          1);
+                    cannedMessageModule->isOnLastPreviousMsgsPage = 0;
+                }
+            } else {
+                // 1st message itself is long, show only the 1st
+                if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) {
+                    displayTimeAndMessage(display, x, y, 0,
+                                          seconds,
+                                          lastMsg->nodeName,
+                                          lastMsg->content,
+                                          1);
+                } else {
+                    // Want to ignore first bootup message
+                    LOG_INFO("Displaying no messages\n");
+                    displayTimeAndMessage(display, x, y, 0,
+                                          seconds,
+                                          currentNodeName,
+                                          NO_MSGS_RECEIVED_MESSAGE,
+                                          1);
+                }
+                cannedMessageModule->isOnLastPreviousMsgsPage = 0;
+            }
+        } else {
+            // There's only 1 message in history
+            if ((totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
+                displayTimeAndMessage(display, x, y, 0,
+                                      seconds,
+                                      lastMsg->nodeName,
+                                      lastMsg->content,
+                                      1);
+            } else {
+                // Want to ignore first bootup message
+                displayTimeAndMessage(display, x, y, 0,
+                                      seconds,
+                                      currentNodeName,
+                                      NO_MSGS_RECEIVED_MESSAGE,
+                                      1);
+            }
+            cannedMessageModule->isOnLastPreviousMsgsPage = 1;
+        }
+
+    } else {
+        // ==============================================
+        //   SHOWING "PREVIOUS MESSAGES" HISTORY PAGE(S)
+        // ==============================================
+        cannedMessageModule->isOnFirstPreviousMsgsPage = 0;
+        if (previousMessagePage < historyMessageCount) {
+            const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
+            const MessageRecord* nextMsg    = history.getMessageAt(previousMessagePage + 1);
+            const MessageRecord* thirdMsg   = history.getMessageAt(previousMessagePage + 2);
+
+            if (currentMsg) {
+                uint8_t msgLen = strlen(currentMsg->content);
+
+                // ---------- Possibly handle 3 short messages here, too ----------
+                if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 &&
+                    thirdMsg && strlen(thirdMsg->content) <= 65 &&
+                    (previousMessagePage + 2 < historyMessageCount))
+                {
+                    // Display three short messages
+                    displayTimeAndMessage(display, x, y, 0,
+                                          history.getSecondsSince(previousMessagePage),
+                                          currentMsg->nodeName,
+                                          currentMsg->content,
+                                          previousMessagePage + 1);
+
+                    displayTimeAndMessage(display, x, y, 4,
+                                          history.getSecondsSince(previousMessagePage + 1),
+                                          nextMsg->nodeName,
+                                          nextMsg->content,
+                                          previousMessagePage + 2);
+
+                    displayTimeAndMessage(display, x, y, 8,
+                                          history.getSecondsSince(previousMessagePage + 2),
+                                          thirdMsg->nodeName,
+                                          thirdMsg->content,
+                                          previousMessagePage + 3);
+
+                    // Adjust flags as needed
+                    // cannedMessageModule->isOnLastPreviousMsgsPage = ...
+                }
+                // ----------------------------------------------------------------
+                else if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 &&
+                         (previousMessagePage + 1 < historyMessageCount))
+                {
+                    // Display two short messages
+                    displayTimeAndMessage(display, x, y, 0,
+                                          history.getSecondsSince(previousMessagePage),
+                                          currentMsg->nodeName,
+                                          currentMsg->content,
+                                          previousMessagePage + 1);
+
+                    displayTimeAndMessage(display, x, y, 4,
+                                          history.getSecondsSince(previousMessagePage + 1),
+                                          nextMsg->nodeName,
+                                          nextMsg->content,
+                                          previousMessagePage + 2);
+                }
+                else {
+                    // Display only the single message
+                    displayTimeAndMessage(display, x, y, 0,
+                                          history.getSecondsSince(previousMessagePage),
+                                          currentMsg->nodeName,
+                                          currentMsg->content,
+                                          previousMessagePage + 1);
+                }
+            }
+        }
+    }
 }
+/// Draw the last text message we received
+// static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
+// {
+//     // the max length of this buffer is much longer than we can possibly print
+//     // static char tempBuf[237];
+//
+//     const meshtastic_MeshPacket &mp = devicestate.rx_text_message;
+//     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(getFrom(&mp));
+//     // uint32_t currentMessageTime = sinceReceived(&mp);
+// 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode(getFrom(&mp))->longName.c_str());
+//
+// 		// LOG_DEBUG("drawTextMessageFrame: %s\n", nodeDB->getMeshNode('!da656e60'));
+//     // LOG_DEBUG("drawing text message from 0x%x: %s\n", mp.from,
+//     // mp.decoded.variant.data.decoded.bytes);
+//
+//     // Demo for drawStringMaxWidth:
+//     // with the third parameter you can define the width after which words will
+//     // be wrapped. Currently only spaces and "-" are allowed for wrapping
+//     // display->setTextAlignment(TEXT_ALIGN_LEFT);
+//
+//     // For time delta
+// #ifdef SIMPLE_TDECK
+// 		const MessageRecord* lastMsg = history.getMessageAt(0);
+// 		const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+// 		LOG_INFO("lastMsg: %s\n", lastMsg->content);
+// 		LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
+// 		historyMessageCount = history.getTotalMessageCount();
+// 		LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
+//     display->setFont(FONT_LARGE);
+// // #if !defined(SECURITY) && !defined(FOR_GUESTS)
+// 		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
+// 			LOG_INFO("In first run through messages\n");
+// 			history.setFirstMessageToIgnore(currentMsgContent);
+// 			LOG_INFO("firstMessageToIgnore: %s\n", currentMsgContent);
+// 			firstRunThroughMessages = false;
+// 		}
+// // #endif
+// 		if (strcmp(currentMsgContent, lastReceivedMessage) != 0) {
+// 			lastReceivedMessage[0] = '\0'; strcpy(lastReceivedMessage, currentMsgContent);
+// 			LOG_INFO("Received new message!\n");
+// 			receivedNewMessage = true;
+// 			previousMessagePage = 0;
+// 			// Screen::isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			cannedMessageModule->isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			// Below is for deciding when to add a message to the history
+// 			if (strcmp(history.firstMessageToIgnore, currentMsgContent) != 0) {
+// 				// Get the most recent message to check for duplicates
+// 				bool isDuplicate = lastMsg && (strcmp(lastMsg->content, currentMsgContent) == 0);
+// 				if (!isDuplicate) {
+// 					LOG_INFO("Adding message to history\n");
+// 					char currentNodeName[5] = {'\0'};
+// 					if (node && node->has_user) strncpy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+// 					else strcpy(currentNodeName, "???");
+// 					history.addMessage(currentMsgContent, currentNodeName);
+// 				} else LOG_INFO("Skipping adding message to history because it's a duplicate\n");
+// 			} else LOG_INFO("skipping adding message to history because seems like firstMessageToIgnore\n");
+// 	} else receivedNewMessage = false;
+// #endif
+//     uint32_t seconds = sinceReceived(&mp);
+//     // uint32_t minutes = seconds / 60;
+//     // uint32_t hours = minutes / 60;
+//     // uint32_t days = hours / 24;
+//
+// 		if (previousMessagePage == 0) {
+// 			cannedMessageModule->isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			// LOG_INFO("on first message page\n");
+// 			char currentNodeName[5] = {'\0'};
+// 			// Screen::setIsOnFirstPreviousMsgsPage(1);  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			// Screen::isOnFirstPreviousMsgsPage = 1;  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			if (node && node->has_user) safeStringCopy(currentNodeName, node->user.short_name, sizeof(currentNodeName));
+// 			else strcpy(currentNodeName, "???");
+//
+// 			if (historyMessageCount > 1) { //there exists a 2nd message
+// 				if (strlen(currentMsgContent) <= 65) { // first msg is short
+// 					LOG_INFO("First message is short and there exists a 2nd msg\n");
+// 					const MessageRecord* secondMsg = history.getMessageAt(1);
+// 					if (secondMsg && strlen(secondMsg->content) <= 65) { //2nd msg exists and is also short, display 2 msgs on screen
+// 						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
+// 						displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(1), secondMsg->nodeName, secondMsg->content, 2);
+// 					} else { // 2nd msg is long, don't display both at same time
+// 						// LOG_INFO("2nd msg is long, don't display both at same time\n");
+// 						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
+// 						cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
+// 					}
+// 				} else { // 1st message is long, display alone
+// 					// if ((historyMessageCount > 0) || ((historyMessageCount == 0) && (currentMsgContent[0] == '*'))) { // if received at least 1 real message. Also, if it's a prevMsgs from the server, it starts with * so that it doesn't get added to history. so historyMessageCount will still be 0
+// 					if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) {
+// 						// LOG_INFO("received at least 1 real message\n");
+// 						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
+// 					} else { // want to ignore first bootup message
+// 						LOG_INFO("Displaying no messages\n");
+// 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
+// 					}
+// 					cannedMessageModule->isOnLastPreviousMsgsPage = 0; // allows cmm to do touchscreen scroll up to freetext mode
+// 				} // end 1st message is long display alone
+// 				} else { // there is only 1 message
+// 				// LOG_INFO("historyMessageCount is not greater than 1, there is only 1 msg\n");
+// 				// HERE IS WHERE YOU HAVE TO DISPLAY THE SINGLE MESSAGE
+// 					if ((totalReceivedMessagesSinceBoot > 0) && (strcmp(currentMsgContent, "c") != 0)) {
+// 						// displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, currentMsgContent, 1);
+// 						displayTimeAndMessage(display, x, y, 0, seconds, lastMsg->nodeName, lastMsg->content, 1);
+// 					} else { // want to ignore first bootup message
+// 						// LOG_INFO("Displaying no messages\n");
+// 						displayTimeAndMessage(display, x, y, 0, seconds, currentNodeName, NO_MSGS_RECEIVED_MESSAGE, 1);
+// 					}
+// 					cannedMessageModule->isOnLastPreviousMsgsPage = 1; // allows cmm to do touchscreen scroll up to freetext mode
+// 			} // end if historyMessageCount == 1
+// 		} else { // not on first msg page, handle history display
+// 			// LOG_INFO("Not on first msg page\n");
+// 			// Screen::isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			cannedMessageModule->isOnFirstPreviousMsgsPage = 0;  // for allowing cmm to do touchscreen scroll down to freetext mode
+// 			if (previousMessagePage < historyMessageCount) {
+// 					// const MessageRecord* prevMsg = history.getMessageAt(previousMessagePage - 1);
+// 					const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
+// 					const MessageRecord* nextMsg = history.getMessageAt(previousMessagePage + 1);
+//
+// 					if (currentMsg) {
+// 						uint8_t msgLen = strlen(currentMsg->content);
+// 							// Check if current message is short and if there's a next message
+// 							if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 && previousMessagePage + 1 < historyMessageCount) {
+// 									// Display both messages
+// 									// LOG_INFO("Displaying both messages\n");
+// 									displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1);
+//
+// 									displayTimeAndMessage(display, x, y, 4, history.getSecondsSince(previousMessagePage + 1), nextMsg->nodeName, nextMsg->content, previousMessagePage + 2);
+// 									// Skip the next message in the next iteration since we displayed it
+// 									// enabling this causes to jump by 2 pags instead of "smooth" scrolling 1 at a time
+// 									// previousMessagePage++;
+// 							} else { // Display single message, but only if it's not because the next message is too long (and this one is short, so it was already displayed)
+// 								// LOG_INFO("Displaying only single message\n");
+// 								// if the length is over 180 char, then make font small
+// 								displayTimeAndMessage(display, x, y, 0, history.getSecondsSince(previousMessagePage), currentMsg->nodeName, currentMsg->content, previousMessagePage + 1); }
+// 					} // end if currentMsg
+// 					// else showedLastPreviousMessage = true; //otherwise it freezes at last screen and doesn't allow to scroll back down
+// 			}
+//     }
+// 		// showedLastPreviousMessage = true; //allows to continue scrolling pages with trackball, makes sure that no pages were skipped, not really necessary now that I improved scroll speed
+// // return;
+// #ifdef THISISDISABLED
+//     // For timestamp
+//     uint8_t timestampHours, timestampMinutes;
+//     int32_t daysAgo;
+//     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
+//
+//     // If bold, draw twice, shifting right by one pixel
+//     for (uint8_t xOff = 0; xOff <= (config.display.heading_bold ? 1 : 0); xOff++) {
+//         // Show a timestamp if received today, but longer than 15 minutes ago
+//         if (useTimestamp && minutes >= 15 && daysAgo == 0) {
+// 					if (historyMessageCount > 0) {
+// 							display->drawStringf(xOff + x, 0 + y, tempBuf, "At %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+// 					} else {
+// 							display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s", historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(), (node && node->has_user) ? node->user.short_name : "???");
+// 					}
+//         }
+//         // Timestamp yesterday (if display is wide enough)
+//         else if (useTimestamp && daysAgo == 1 && display->width() >= 200) {
+// 					if (historyMessageCount > 0) {
+//             display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) Yest %02hu:%02hu from %s", historyMessageCount, timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+// 					} else {
+// 						display->drawStringf(xOff + x, 0 + y, tempBuf, "Yest %02hu:%02hu from %s", timestampHours, timestampMinutes, (node && node->has_user) ? node->user.short_name : "???");
+// 					}
+//         }
+//         // Otherwise, show a time delta
+//         else {
+// 					if (historyMessageCount > 0) {
+//             display->drawStringf(xOff + x, 0 + y, tempBuf, "%u) %s ago from %s",
+//                                  historyMessageCount, screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+//                                  (node && node->has_user) ? node->user.short_name : "???");
+// 					} else {
+// 						display->drawStringf(xOff + x, 0 + y, tempBuf, "%s ago from %s",
+// 																 screen->drawTimeDelta(days, hours, minutes, seconds).c_str(),
+// 																 (node && node->has_user) ? node->user.short_name : "???");
+// 					}
+//         }
+//     }
+//
+//     display->setColor(WHITE);
+// #ifndef EXCLUDE_EMOJI
+//     if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44D") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height,
+//                          thumbup);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44E") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - thumbs_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - thumbs_height) / 2 + 2 + 5, thumbs_width, thumbs_height,
+//                          thumbdown);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"❓") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - question_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - question_height) / 2 + 2 + 5, question_width, question_height,
+//                          question);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"‼️") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - bang_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - bang_height) / 2 + 2 + 5,
+//                          bang_width, bang_height, bang);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F4A9") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - poo_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - poo_height) / 2 + 2 + 5,
+//                          poo_width, poo_height, poo);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), "\xf0\x9f\xa4\xa3") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - haha_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - haha_height) / 2 + 2 + 5,
+//                          haha_width, haha_height, haha);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F44B") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - wave_icon_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - wave_icon_height) / 2 + 2 + 5, wave_icon_width,
+//                          wave_icon_height, wave_icon);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F920") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - cowboy_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - cowboy_height) / 2 + 2 + 5, cowboy_width, cowboy_height,
+//                          cowboy);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\U0001F42D") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - deadmau5_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - deadmau5_height) / 2 + 2 + 5, deadmau5_width, deadmau5_height,
+//                          deadmau5);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\xE2\x98\x80\xEF\xB8\x8F") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - sun_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - sun_height) / 2 + 2 + 5,
+//                          sun_width, sun_height, sun);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\u2614") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - rain_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - rain_height) / 2 + 2 + 10,
+//                          rain_width, rain_height, rain);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"☁️") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - cloud_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - cloud_height) / 2 + 2 + 5, cloud_width, cloud_height, cloud);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"🌫️") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - fog_width) / 2, y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - fog_height) / 2 + 2 + 5,
+//                          fog_width, fog_height, fog);
+//     } else if (strcmp(reinterpret_cast<const char *>(mp.decoded.payload.bytes), u8"\xf0\x9f\x98\x88") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - devil_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - devil_height) / 2 + 2 + 5, devil_width, devil_height, devil);
+// 		} else if (strcmp(messageContent, u8"♥️") == 0 || strcmp(messageContent, u8"\U00002764") == 0 || strcmp(messageContent, u8"\U0001F9E1") == 0 || strcmp(messageContent, u8"\U00002763") == 0 || strcmp(messageContent, u8"\U0001F495") == 0 || strcmp(messageContent, u8"\U0001F493") == 0 || strcmp(messageContent, u8"\U0001F497") == 0 || strcmp(messageContent, u8"\U0001F496") == 0) {
+//         display->drawXbm(x + (SCREEN_WIDTH - heart_width) / 2,
+//                          y + (SCREEN_HEIGHT - FONT_HEIGHT_MEDIUM - heart_height) / 2 + 2 + 5, heart_width, heart_height, heart);
+//     } else {
+//         snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
+//         display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+//     }
+// #else
+//     snprintf(tempBuf, sizeof(tempBuf), "%s", mp.decoded.payload.bytes);
+//     display->drawStringMaxWidth(0 + x, 0 + y + FONT_HEIGHT_SMALL, x + display->getWidth(), tempBuf);
+// #endif
+// #endif //THISISDISABLED
+// }
 
 /// Draw a series of fields in a column, wrapping to multiple columns if needed
 void Screen::drawColumns(OLEDDisplay *display, int16_t x, int16_t y, const char **fields)
@@ -3229,7 +3479,7 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
 		// FIXME: below will run in continuous loop! Either remove (if found in other places) or fix
 		if (strcmp(currentMsgContent, "c") == 0) { // allow clr msg to clear the history
 			// LOG_INFO("Clearing the history\n");
-			if (totalReceivedMessagesSinceBoot > 0) history.clear();
+			if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) history.clear();
 			return 0;
 		}
     // char channelStr[20];
