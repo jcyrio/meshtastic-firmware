@@ -1292,15 +1292,16 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
             // --- NEW LOGIC: Check if we can show 3 short messages at once ---
             if (historyMessageCount > 2) {
+							LOG_INFO("there is a 3rd message\n");
                 // We have a 3rd message
                 const MessageRecord* thirdMsg = history.getMessageAt(2);
 								const bool firstMsgIsShort = strlen(currentMsgContent) <= 33;
 								const bool secondMsgIsShort = secondMsg && strlen(secondMsg->content) <= 33;
 								const bool thirdMsgIsShort = thirdMsg && strlen(thirdMsg->content) <= 33;
 								const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
-								const bool firstMsgIsTwoLines = strlen(currentMsgContent) <= 65;
-								const bool secondMsgIsTwoLines = secondMsg && strlen(secondMsg->content) <= 65;
-								const bool thirdMsgIsTwoLines = thirdMsg && strlen(thirdMsg->content) <= 65;
+								const bool firstMsgIsTwoLines = strlen(currentMsgContent) >= 33;
+								const bool secondMsgIsTwoLines = secondMsg && strlen(secondMsg->content) >= 33;
+								const bool thirdMsgIsTwoLines = thirdMsg && strlen(thirdMsg->content) >= 33;
 								const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
 								const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
 								const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
@@ -1308,18 +1309,22 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
                 // Are all three short enough?
 								if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
+									LOG_INFO("all three messages are short enough\n");
 									uint8_t firstLinePos = 0;
 									uint8_t secondLinePos = 2;
 									uint8_t thirdLinePos = 4;
 
 									if (onlyFirstMsgIsTwoLines) {
+										LOG_INFO("only first message is two lines\n");
 										secondLinePos = 3;
 										thirdLinePos = 5;
 									} else if (onlySecondMsgIsTwoLines) {
+										LOG_INFO("only second message is two lines\n");
 										firstLinePos = 0;
 										secondLinePos = 2;
 										thirdLinePos = 5;
 									}
+									LOG_INFO("Line positions: %d, %d, %d\n", firstLinePos, secondLinePos, thirdLinePos);
 									// 1) Show the most recent message (index 0)
 									displayTimeAndMessage(display, x, y, firstLinePos,
 																				seconds,
@@ -1414,74 +1419,92 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
             cannedMessageModule->isOnLastPreviousMsgsPage = 1;
         }
 
-    } else {
+    } else { //previousMsgPage is not 0
         // ==============================================
         //   SHOWING "PREVIOUS MESSAGES" HISTORY PAGE(S)
         // ==============================================
         cannedMessageModule->isOnFirstPreviousMsgsPage = 0;
         if (previousMessagePage < historyMessageCount) {
-            const MessageRecord* currentMsg = history.getMessageAt(previousMessagePage);
-            const MessageRecord* nextMsg    = history.getMessageAt(previousMessagePage + 1);
-            const MessageRecord* thirdMsg   = history.getMessageAt(previousMessagePage + 2);
+            const MessageRecord* firstMsg = history.getMessageAt(previousMessagePage);
+						const MessageRecord* secondMsg = history.getMessageAt(previousMessagePage + 1);
+						const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2);
 
-            if (currentMsg) {
-                uint8_t msgLen = strlen(currentMsg->content);
+						if (thirdMsg && (previousMessagePage + 2 < historyMessageCount)) { // there are 3 messages
+							LOG_INFO("there are 3 messages\n");
+							const bool firstMsgIsShort = strlen(firstMsg->content) <= 33;
+							const bool firstMsgIsTwoLines = strlen(firstMsg->content) >= 33;
+							const bool secondMsgIsShort = strlen(secondMsg->content) <= 33;
+							const bool secondMsgIsTwoLines = strlen(secondMsg->content) >= 33;
+							const bool thirdMsgIsShort = strlen(thirdMsg->content) <= 33;
+							const bool thirdMsgIsTwoLines = thirdMsg && strlen(thirdMsg->content) >= 33;
+							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
+							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
+							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
+							const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
+							const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines || onlyThirdMsgIsTwoLines;
+							// Are all three short enough?
+							if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
+								LOG_INFO("all three messages are short enough\n");
+								uint8_t firstLinePos = 0;
+								uint8_t secondLinePos = 2;
+								uint8_t thirdLinePos = 4;
 
-                // ---------- Possibly handle 3 short messages here, too ----------
-                if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 &&
-                    thirdMsg && strlen(thirdMsg->content) <= 65 &&
-                    (previousMessagePage + 2 < historyMessageCount))
-                {
-                    // Display three short messages
-                    displayTimeAndMessage(display, x, y, 0,
-                                          history.getSecondsSince(previousMessagePage),
-                                          currentMsg->nodeName,
-                                          currentMsg->content,
-                                          previousMessagePage + 1);
+								if (onlyFirstMsgIsTwoLines) {
+									LOG_INFO("only first message is two lines\n");
+									secondLinePos = 3;
+									thirdLinePos = 5;
+								} else if (onlySecondMsgIsTwoLines) {
+									LOG_INFO("only second message is two lines\n");
+									firstLinePos = 0;
+									secondLinePos = 2;
+									thirdLinePos = 5;
+								}
+								LOG_INFO("Line positions: %d, %d, %d\n", firstLinePos, secondLinePos, thirdLinePos);
+								if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
+									// Display three short messages
+									displayTimeAndMessage(display, x, y, firstLinePos,
+																				history.getSecondsSince(previousMessagePage),
+																				firstMsg->nodeName,
+																				firstMsg->content,
+																				previousMessagePage + 1);
 
-                    displayTimeAndMessage(display, x, y, 4,
-                                          history.getSecondsSince(previousMessagePage + 1),
-                                          nextMsg->nodeName,
-                                          nextMsg->content,
-                                          previousMessagePage + 2);
+									displayTimeAndMessage(display, x, y, secondLinePos,
+																				history.getSecondsSince(previousMessagePage + 1),
+																				secondMsg->nodeName,
+																				secondMsg->content,
+																				previousMessagePage + 2);
 
-                    displayTimeAndMessage(display, x, y, 8,
-                                          history.getSecondsSince(previousMessagePage + 2),
-                                          thirdMsg->nodeName,
-                                          thirdMsg->content,
-                                          previousMessagePage + 3);
-
-                    // Adjust flags as needed
-                    // cannedMessageModule->isOnLastPreviousMsgsPage = ...
-                }
-                // ----------------------------------------------------------------
-                else if (msgLen <= 65 && nextMsg && strlen(nextMsg->content) <= 65 &&
+									displayTimeAndMessage(display, x, y, thirdLinePos,
+																				history.getSecondsSince(previousMessagePage + 2),
+																				thirdMsg->nodeName,
+																				thirdMsg->content,
+																				previousMessagePage + 3);
+								}
+							}
+						} // ----------------------------------------------------------------
+						else  if (strlen(firstMsg->content) <= 65 && strlen(secondMsg->content) <= 65 &&
                          (previousMessagePage + 1 < historyMessageCount))
-                {
-                    // Display two short messages
+                { // Display two short messages
                     displayTimeAndMessage(display, x, y, 0,
                                           history.getSecondsSince(previousMessagePage),
-                                          currentMsg->nodeName,
-                                          currentMsg->content,
+                                          firstMsg->nodeName,
+                                          firstMsg->content,
                                           previousMessagePage + 1);
 
                     displayTimeAndMessage(display, x, y, 4,
                                           history.getSecondsSince(previousMessagePage + 1),
-                                          nextMsg->nodeName,
-                                          nextMsg->content,
+                                          secondMsg->nodeName,
+                                          secondMsg->content,
                                           previousMessagePage + 2);
-                }
-                else {
-                    // Display only the single message
+                } else { // Display only the single message
                     displayTimeAndMessage(display, x, y, 0,
                                           history.getSecondsSince(previousMessagePage),
-                                          currentMsg->nodeName,
-                                          currentMsg->content,
+                                          firstMsg->nodeName,
+                                          firstMsg->content,
                                           previousMessagePage + 1);
-                }
-            }
-        }
-    }
+					}
+			}
+	}
 }
 /// Draw the last text message we received
 // static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)

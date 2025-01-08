@@ -1423,7 +1423,7 @@ int32_t CannedMessageModule::runOnce()
 									// sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
 									sendText(this->dest, 3, this->freetext.c_str(), true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
 								} else {
-#if defined(FOR_GUESTS) || defined(VASILI)
+#if defined(FOR_GUESTS) || defined(VASILI) || defined(TESTING)
 									sendText(this->dest, 3, this->freetext.c_str(), true); // default to sending to StA channel for the guests/neighbors
 #else
 									sendText(this->dest, 0, this->freetext.c_str(), true);
