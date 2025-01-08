@@ -29,7 +29,7 @@
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
 #define FATHERS_NODES
-#define SECURITY
+// #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
 #define TESTING
@@ -1422,7 +1422,13 @@ int32_t CannedMessageModule::runOnce()
 									// strcat(allMessage, this->freetext.c_str());
 									// sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
 									sendText(this->dest, 3, this->freetext.c_str(), true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
-								} else sendText(this->dest, 0, this->freetext.c_str(), true);
+								} else {
+#if defined(FOR_GUESTS) || defined(VASILI)
+									sendText(this->dest, 3, this->freetext.c_str(), true); // default to sending to StA channel for the guests/neighbors
+#else
+									sendText(this->dest, 0, this->freetext.c_str(), true);
+#endif
+								}
 								LOG_DEBUG("Sending message to %x: %s\n", this->dest, this->freetext.c_str());
 								// first check to make sure this->freetext isn't in commandsForRouterOnlyExact
 								if (!sendToRouterOnlyExact) {
