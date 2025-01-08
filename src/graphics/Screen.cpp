@@ -2942,6 +2942,7 @@ void Screen::clearHistory() {
 	LOG_INFO("Clearing the history\n");
 	lastReceivedMessage[0] = '\0';
 	totalReceivedMessagesSinceBoot = 0;
+	totalSentMessagesSinceBoot = 0;
 	history.clear();
 }
 
