@@ -32,7 +32,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-#define TESTING
+// #define TESTING
 // #define VASILI
 
 #ifdef SIMPLE_TDECK
@@ -191,6 +191,7 @@ void CannedMessageModule::addToHistory() { // only happens if fully acked in rel
             // e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
             // requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
             // this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
+	this->goBackToFirstPreviousMessage = true;
 	addMessageToHistory(lastMessageSent.c_str(), lastSentNode.c_str());
 }
 
@@ -888,12 +889,14 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 									if (screen->isOnPreviousMsgsScreen) {
 										if (event->kbchar == 0x7e) { // added 1-6-25, still testing
 											LOG_INFO("Got 0x7e on previousMsgsScreen\n");
-											this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
+											if (this->isOnFirstPreviousMsgsPage) {
+												this->goToFirstSentMessage = true;  // added 1-8-25
+											} else {
+												this->goBackToFirstPreviousMessage = true; // added 12-29 trying to fix going to 2nd prv msg on exit freetext mode
+											}
 											UIFrameEvent e;
 											e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
 											this->notifyObservers(&e);
-											// requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
-											// validEvent = true;
 											return 0;
 										}
 									}

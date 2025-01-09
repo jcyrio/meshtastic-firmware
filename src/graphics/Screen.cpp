@@ -138,6 +138,17 @@ public:
 				externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
     }
 
+		size_t getLatestSentMessageIndex() const {
+				// Start from most recent message (currentIndex) and work backwards
+				for (size_t i = 0; i < MAX_MESSAGE_HISTORY; i++) {
+						const MessageRecord* message = getMessageAt(i);
+						if (message && message->content[0] == '>') {
+								return i;
+						}
+				}
+				return MAX_MESSAGE_HISTORY; // Return this if no command found
+		}
+
     void addMessage(const char* content, const char* nodeName) {
 			LOG_INFO("addMessage: %s, %s\n", content, nodeName);
         // Check if this is a message to ignore
@@ -3653,6 +3664,12 @@ int Screen::handleInputEvent(const InputEvent *event)
 				LOG_INFO("going back to first previous message2\n");
 				previousMessagePage = 0;
 				cannedMessageModule->goBackToFirstPreviousMessage = false;
+			}
+			if (cannedMessageModule->goToFirstSentMessage) {
+				LOG_INFO("going to first sent message\n");
+				cannedMessageModule->goToFirstSentMessage = false;
+				previousMessagePage = history.getLatestSentMessageIndex();
+				LOG_INFO("going to message %d\n", previousMessagePage);
 			}
 		// if (showedLastPreviousMessage) {
 					// LOG_INFO("Showed last previous message\n");
