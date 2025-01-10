@@ -89,6 +89,7 @@ int32_t TouchScreenBase::runOnce()
                 }
 #endif
             }
+#ifndef DISABLE_VERTICAL_SWIPE
             // swipe vertical
             else if (ady > adx && ady > TOUCH_THRESHOLD_Y) {
 #ifdef SIMPLE_TDECK
@@ -111,6 +112,7 @@ int32_t TouchScreenBase::runOnce()
                 }
 #endif
             }
+#endif
             // tap
             else {
 #ifdef SIMPLE_TDECK

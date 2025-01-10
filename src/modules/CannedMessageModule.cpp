@@ -32,8 +32,9 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-// #define TESTING
+#define TESTING
 // #define VASILI
+// #define DISABLE_VERTICAL_SWIPE // affects touchscreenBase.cpp
 
 #ifdef SIMPLE_TDECK
 // namespace graphics {
@@ -415,6 +416,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         }
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_CANCEL)) {
+			LOG_INFO("GOT CANCEL\n");
         UIFrameEvent e;
         e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
         this->currentMessageIndex = -1;
