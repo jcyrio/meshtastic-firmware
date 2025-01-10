@@ -416,7 +416,23 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
         }
     }
     if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_CANCEL)) {
-			LOG_INFO("GOT CANCEL\n");
+#ifdef SIMPLE_TDECK
+					if (this->previousFreetext.length() > 0 && this->freetext.length() == 0) {
+						if (this->previousDest == NODENUM_BROADCAST) this->previousDest = NODENUM_RPI5;
+						this->freetext = this->previousFreetext;
+						this->cursor = this->freetext.length();
+						this->runState = CANNED_MESSAGE_RUN_STATE_FREETEXT;
+						this->lastTouchMillis = millis();
+						screen->isOnPreviousMsgsScreen = false;
+            this->destSelect = CANNED_MESSAGE_DESTINATION_TYPE_NODE;
+						requestFocus();
+						UIFrameEvent e;
+						e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
+						this->notifyObservers(&e);
+            validEvent = true;
+					} else if (this->freetext.length() > 0) LOG_INFO("freetext isn't empty\n");
+					else showTemporaryMessage("No previous\nmessage to retype");
+#else
         UIFrameEvent e;
         e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
         this->currentMessageIndex = -1;
@@ -431,6 +447,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 
         this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE;
         this->notifyObservers(&e);
+#endif
     }
 #ifndef SIMPLE_TDECK
     if ((event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_BACK)) ||
