@@ -32,9 +32,8 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-#define TESTING
+// #define TESTING
 // #define VASILI
-// #define DISABLE_VERTICAL_SWIPE // affects touchscreenBase.cpp
 
 #ifdef SIMPLE_TDECK
 // namespace graphics {
@@ -1435,7 +1434,12 @@ int32_t CannedMessageModule::runOnce()
 								for (const auto& command : commandsForRouterOnlyExact) {
 										if (this->freetext.c_str() == command) { sendToRouterOnlyExact = true; break; }
 								}
-								if (sendToRouterOnlyStart || sendToRouterOnlyExact) this->dest = this->previousDest = NODENUM_RPI5;
+								if (sendToRouterOnlyStart || sendToRouterOnlyExact) {
+									this->dest = this->previousDest = NODENUM_RPI5;
+									LOG_INFO("Setting destination to router node\n");
+									nodeIndex = 0;
+									this->dest = MYNODES[nodeIndex].first;
+								}
 								if (this->dest == NODENUM_BROADCAST) {
 									LOG_DEBUG("WAS BROADCAST\n");
 									if (this->freetext.length() < 4) return 0;

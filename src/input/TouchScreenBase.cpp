@@ -1,4 +1,5 @@
 #include "TouchScreenBase.h"
+// #define DISABLE_VERTICAL_SWIPE
 #ifdef SIMPLE_TDECK
 #include "modules/CannedMessageModule.h"
 #endif
