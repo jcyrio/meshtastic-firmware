@@ -5,6 +5,7 @@
 #include "buzz.h"
 #include "configuration.h"
 #ifdef SIMPLE_TDECK
+#include "modules/ExternalNotificationModule.h" // for turning off LED when get broadcast that we don't want to accept
 // #include "graphics/Screen.cpp"
 // using namespace graphics;
 
@@ -42,6 +43,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			// LOG_INFO("Channel Name is LongFast\n");
 		if ((strcmp(channels.getName(mp.channel), "StA") != 0) && (mp.to == 0xffffffff)) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not StA, ignoring\n");
+			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
 		}
 #endif
@@ -49,11 +51,13 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 #if defined(SECURITY)
 		if ((strcmp(channels.getName(mp.channel), "Varangians") != 0) && (mp.to == 0xffffffff)) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not Varangians, ignoring\n");
+			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
 		}
 #elif defined(GATE_SECURITY)
 		if (((strcmp(channels.getName(mp.channel), "StA") != 0) && (strcmp(channels.getName(mp.channel), "Varangians") != 0)) && (mp.to == 0xffffffff)) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not StA or Varangians, ignoring\n");
+			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
 		}
 #endif
@@ -61,6 +65,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 #ifdef MONASTERY_FRIENDS
 		if ((strcmp(channels.getName(mp.channel), "MFA") != 0) && (mp.to == 0xffffffff)) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not MFA, ignoring\n");
+			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
 		}
 #endif
