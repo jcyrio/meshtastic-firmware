@@ -1267,7 +1267,9 @@ int32_t CannedMessageModule::runOnce()
 		else if (month == "Oct") monthNumber = 10;
 		else if (month == "Nov") monthNumber = 11;
 		else if (month == "Dec") monthNumber = 12;
-		int day = date.substring(4, 6).toInt(); // Extract day and remove leading zero
+		String dayString = date.substring(4, 6);
+		dayString.trim(); // Trim leading/trailing spaces
+		int day = dayString.toInt(); // Convert to integer
 		char startupMessage[30];
 		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
 #ifndef TESTING
