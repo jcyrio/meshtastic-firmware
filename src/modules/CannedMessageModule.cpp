@@ -820,12 +820,14 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							if (externalNotificationModule->getMute()) {
 									externalNotificationModule->setMute(false);
 									showTemporaryMessage("Buzzer\nEnabled");
+									delay(100);
 									if (screen)
 											screen->removeFunctionSymbal("M"); // remove the mute symbol from the bottom right corner
 							} else {
 									externalNotificationModule->stopNow(); // this will turn off all GPIO and sounds and idle the loop
 									externalNotificationModule->setMute(true);
 									showTemporaryMessage("Buzzer\nDisabled");
+									delay(100);
 									if (screen)
 											screen->setFunctionSymbal("M"); // add the mute symbol to the bottom right corner
 							}
@@ -2419,10 +2421,11 @@ void CannedMessageModule::drawFrame(OLEDDisplay *display, OLEDDisplayUiState *st
         if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_NONE) {
             uint16_t charsLeft =
                 meshtastic_Constants_DATA_PAYLOAD_LEN - this->freetext.length() - (moduleConfig.canned_message.send_bell ? 1 : 0);
-            snprintf(buffer, sizeof(buffer), "%d left", charsLeft);
 #ifdef SIMPLE_TDECK
-            display->drawString(x + display->getWidth() - display->getStringWidth(buffer), y + 180, buffer);
+            snprintf(buffer, sizeof(buffer), "%d", charsLeft);
+            display->drawString(x + display->getWidth() - display->getStringWidth(buffer), y + 195, buffer);
 #else
+            snprintf(buffer, sizeof(buffer), "%d left", charsLeft);
 						display->drawString(x + display->getWidth() - display->getStringWidth(buffer), y + 0, buffer);
 #endif
         }
