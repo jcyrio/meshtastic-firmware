@@ -147,6 +147,7 @@ void ReliableRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtas
 								//check if lastSentMessagee->id is empty
 								if (cannedMessageModule->getDeliveryStatus() > 0) { // this is to check to see if we were actually trying to send a message. To prevent traceroutes etc from showing (D)
 									cannedMessageModule->setDeliveryStatus(2);
+									cannedMessageModule->goBackToFirstPreviousMessage = true;
 									cannedMessageModule->addToHistory();
 								}
 								// cannedMessageModule->setDeliveryStatus(2);

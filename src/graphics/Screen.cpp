@@ -227,6 +227,7 @@ void addMessageToHistory(const char* content, const char* nodeName) {
 	LOG_INFO("addMessageToHistory: %s, %s\n", content, nodeName);
 	totalSentMessagesSinceBoot++;
 	std::string prefixedContent = ">" + std::string(content);
+	previousMessagePage = 0; //added 1-13-25
 	history.addMessage(prefixedContent.c_str(), nodeName);
 }
 #endif
