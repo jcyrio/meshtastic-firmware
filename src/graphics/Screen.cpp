@@ -1273,7 +1273,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
     const MessageRecord* lastMsg = history.getMessageAt(0);
     const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
     LOG_INFO("lastMsg: %s\n", lastMsg->content);
-    LOG_INFO("currentMsgContent: %s\n", currentMsgContent);
+    LOG_DEBUG("currentMsgContent: %s\n", currentMsgContent);
 
     historyMessageCount = history.getTotalMessageCount();
     LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
@@ -1308,6 +1308,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
                 } else {
                     strcpy(currentNodeName, "???");
                 }
+								LOG_INFO("Adding this message to history: %s\n", currentMsgContent);
                 history.addMessage(currentMsgContent, currentNodeName);
             } else {
                 LOG_INFO("Skipping adding message to history because it's a duplicate\n");
@@ -1347,9 +1348,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 								const bool secondMsgIsShort = secondMsg && !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
 								const bool thirdMsgIsShort = thirdMsg && !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
 								const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
-								const bool firstMsgIsTwoLines = isEmoji(currentMsgContent) || strlen(currentMsgContent) > 33;
-								const bool secondMsgIsTwoLines = secondMsg && (isEmoji(secondMsg->content) || strlen(secondMsg->content) > 33);
-								const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(thirdMsg->content) || strlen(thirdMsg->content) > 33);
+								const bool firstMsgIsTwoLines = isEmoji(currentMsgContent) || (strlen(currentMsgContent) > 33 && strlen(currentMsgContent) < 66);
+								const bool secondMsgIsTwoLines = secondMsg && (isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66));
+								const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(thirdMsg->content) || (strlen(thirdMsg->content) > 33 && strlen(thirdMsg->content) < 66));
 								const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
 								const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
 								const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
@@ -1476,15 +1477,26 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
             const MessageRecord* firstMsg = history.getMessageAt(previousMessagePage);
 						const MessageRecord* secondMsg = history.getMessageAt(previousMessagePage + 1);
 						const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2);
-
-						if (thirdMsg && (previousMessagePage + 2 < historyMessageCount)) { // there are 3 messages
-							LOG_INFO("there are 3 messages\n");
+						LOG_DEBUG("firstMsg->content: %s\n", firstMsg->content);
+						LOG_DEBUG("secondMsg->content: %s\n", secondMsg->content);
+						LOG_DEBUG("thirdMsg->content: %s\n", thirdMsg->content);
+						LOG_DEBUG("strlen(firstMsg->content): %d\n", strlen(firstMsg->content));
+						const bool firstMsgIsLong = strlen(firstMsg->content) > 65;
+						if (firstMsgIsLong) {
+							LOG_INFO("first message is long, displaying it alone\n");
+							displayTimeAndMessage(display, x, y, 0,
+																		history.getSecondsSince(previousMessagePage),
+																		firstMsg->nodeName,
+																		firstMsg->content,
+																		previousMessagePage + 1);
+						} else if (thirdMsg && (previousMessagePage + 2 < historyMessageCount)) { // there are 3 messages
+							LOG_INFO("first message is not long and there are 3 messages\n");
 							const bool firstMsgIsShort = !isEmoji(firstMsg->content) && strlen(firstMsg->content) <= 33;
-							const bool firstMsgIsTwoLines = isEmoji(firstMsg->content) || strlen(firstMsg->content) > 33;
+							const bool firstMsgIsTwoLines = isEmoji(firstMsg->content) || (strlen(firstMsg->content) > 33 && strlen(firstMsg->content) < 66);
 							const bool secondMsgIsShort = !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
-							const bool secondMsgIsTwoLines = isEmoji(secondMsg->content) || strlen(secondMsg->content) > 33;
-							const bool thirdMsgIsShort = thirdMsg && !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
-							const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(thirdMsg->content) || strlen(thirdMsg->content) > 33);
+							const bool secondMsgIsTwoLines = isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66);
+							const bool thirdMsgIsShort = !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
+							const bool thirdMsgIsTwoLines = isEmoji(thirdMsg->content) || (strlen(thirdMsg->content) > 33 && strlen(thirdMsg->content) < 66);
 							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
 							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
 							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
@@ -1530,31 +1542,64 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 																				previousMessagePage + 3);
 								}
 							}
-						} // ----------------------------------------------------------------
 						else  if (strlen(firstMsg->content) <= 65 && strlen(secondMsg->content) <= 65 &&
-                         (previousMessagePage + 1 < historyMessageCount))
-                { // Display two short messages
-                    displayTimeAndMessage(display, x, y, 0,
-                                          history.getSecondsSince(previousMessagePage),
-                                          firstMsg->nodeName,
-                                          firstMsg->content,
-                                          previousMessagePage + 1);
+                         (previousMessagePage + 1 < historyMessageCount)) { // Display two short messages
+							LOG_INFO("first message is not long, displaying two short messages\n");
+									displayTimeAndMessage(display, x, y, 0,
+																				history.getSecondsSince(previousMessagePage),
+																				firstMsg->nodeName,
+																				firstMsg->content,
+																				previousMessagePage + 1);
 
-                    displayTimeAndMessage(display, x, y, 4,
-                                          history.getSecondsSince(previousMessagePage + 1),
-                                          secondMsg->nodeName,
-                                          secondMsg->content,
-                                          previousMessagePage + 2);
+									displayTimeAndMessage(display, x, y, 4,
+																				history.getSecondsSince(previousMessagePage + 1),
+																				secondMsg->nodeName,
+																				secondMsg->content,
+																				previousMessagePage + 2);
                 } else { // Display only the single message
+									LOG_INFO("first message is not long, other cases not true, displaying single message\n");
+									displayTimeAndMessage(display, x, y, 0,
+																				history.getSecondsSince(previousMessagePage),
+																				firstMsg->nodeName,
+																				firstMsg->content,
+																				previousMessagePage + 1);
+					}
+				} else if (secondMsg && (previousMessagePage + 1 < historyMessageCount)) { // there are at least 2 messages
+							LOG_INFO("first message is not long and there are 2 messages\n");
+							const bool firstMsgIsShort = !isEmoji(firstMsg->content) && strlen(firstMsg->content) <= 65;
+							const bool firstMsgIsTwoLines = isEmoji(firstMsg->content) || (strlen(firstMsg->content) > 33 && strlen(firstMsg->content) < 66);
+							const bool secondMsgIsShort = !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 65;
+							const bool secondMsgIsTwoLines = isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66);
+							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort;
+							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort;
+							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort;
+							const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines;
+						  // if (strlen(firstMsg->content) <= 65 && strlen(secondMsg->content) <= 65 &&
+						  if (firstMsgIsShort && secondMsgIsShort) { // Display two short messages
+								LOG_INFO("displaying two short messages\n");
+								displayTimeAndMessage(display, x, y, 0,
+																			history.getSecondsSince(previousMessagePage),
+																			firstMsg->nodeName,
+																			firstMsg->content,
+																			previousMessagePage + 1);
+
+								displayTimeAndMessage(display, x, y, 4,
+																			history.getSecondsSince(previousMessagePage + 1),
+																			secondMsg->nodeName,
+																			secondMsg->content,
+																			previousMessagePage + 2);
+                } else { // Display only the single message
+									LOG_INFO("first message is not long, other cases not true, displaying single message\n");
                     displayTimeAndMessage(display, x, y, 0,
                                           history.getSecondsSince(previousMessagePage),
                                           firstMsg->nodeName,
                                           firstMsg->content,
                                           previousMessagePage + 1);
 					}
-			}
-	}
-}
+			} // end 2 messages
+	} // end previous messages fits in history page
+} // end not on first previous message page
+} // end draw Text Frame
 /// Draw the last text message we received
 // static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 // {
