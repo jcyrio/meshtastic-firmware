@@ -1457,7 +1457,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		LOG_DEBUG("bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines: %d, %d, %d, %d\n", bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines);
 
 		uint8_t secondLinePos = 4;
-		if (bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines) {
+		if (bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines || (firstMsgIsThreeLines && isEmoji(sc)) || (secondMsgIsThreeLines && isEmoji(fc))) {
 			LOG_INFO("B1 Both messages are short enough to fit on one screen, displaying 2 short messages\n");
 			if (onlySecondMsgIsThreeLines && firstMsgIsShort) {
 				LOG_INFO("Second message is medium long and first is short, displaying 2nd right after first\n");
@@ -1489,7 +1489,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		} else {
 		LOG_DEBUG("firstMsg: %s\n", firstMsg);
 		LOG_DEBUG("secondMsg->content: %s\n", secondMsg->content);
-		LOG_DEBUG("bothShort, both2Lines, onlyOne2Lines, onlyOne3Lines, both3lines: %d, %d, %d, %d, %d\n", bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines);
+		LOG_DEBUG("bothShort, both2Lines, onlyOne2Lines, onlyOne3Lines, both3lines: %d, %d, %d, %d, %d\n",
+						 	 bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines);
 		// LOG_DEBUG("fLen, sLen: %d, %d\n", fLen, sLen);
 			LOG_INFO("one of the 2 messages is too long, showing only the first\n");
 				if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) {
@@ -1623,7 +1624,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 								}
 					// } else if (strlen(firstMsg->content) <= 65 && strlen(secondMsg->content) <= 65 &&
      //                     (previousMessagePage + 1 < historyMessageCount)) { // Display two short messages
-					} else if ((bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines) &&
+					} else if ((bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines || (firstMsgIsThreeLines && isEmoji(sc)) || (onlySecondMsgIsThreeLines && isEmoji(fc))) &&
                          (previousMessagePage + 1 < historyMessageCount)) { // Display two short messages
 							// TODO: add extra cases here for one message being 3 lines and the other being short
 						// LOG_INFO("displaying two short enough messages\n");
