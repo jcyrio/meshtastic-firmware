@@ -1370,22 +1370,27 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 							// LOG_DEBUG("1st message: %s\n", firstMsg);
 							LOG_DEBUG("2nd message: %s\n", secondMsg->content);
 							LOG_DEBUG("3rd message: %s\n", thirdMsg->content);
-								const bool firstMsgIsShort = !isEmoji(firstMsg) && strlen(firstMsg) <= 33;
-								const bool secondMsgIsShort = secondMsg && !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
-								const bool thirdMsgIsShort = thirdMsg && !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
-								const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
-								const bool firstMsgIsTwoLines = isEmoji(firstMsg) || (strlen(firstMsg) > 33 && strlen(firstMsg) < 66);
-								const bool secondMsgIsTwoLines = secondMsg && (isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66));
-								const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(thirdMsg->content) || (strlen(thirdMsg->content) > 33 && strlen(thirdMsg->content) < 66));
-								const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
-								const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
-								const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
-								const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines || onlyThirdMsgIsTwoLines;
+							const char* fc = firstMsg;
+							const char* sc = secondMsg->content;
+							const char* tc = thirdMsg->content;
+							const size_t fLen = strlen(fc);
+							const size_t sLen = strlen(sc);
+							const size_t tLen = strlen(tc);
+							const bool firstMsgIsShort = !isEmoji(fc) && fLen <= 33;
+							const bool secondMsgIsShort = secondMsg && !isEmoji(sc) && sLen <= 33;
+							const bool thirdMsgIsShort = thirdMsg && !isEmoji(tc) && tLen <= 33;
+							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
+							const bool firstMsgIsTwoLines = isEmoji(fc) || (fLen > 33 && fLen < 66);
+							const bool secondMsgIsTwoLines = secondMsg && (isEmoji(sc) || (sLen > 33 && sLen < 66));
+							const bool thirdMsgIsTwoLines = thirdMsg && (isEmoji(tc) || (tLen > 33 && tLen < 66));
+							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
+							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
+							const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
+							const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines || onlyThirdMsgIsTwoLines;
 
                 // Are all three short enough?
 								if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
 									LOG_INFO("all three messages are short enough\n");
-									uint8_t firstLinePos = 0;
 									uint8_t secondLinePos = 2;
 									uint8_t thirdLinePos = 4;
 
@@ -1395,13 +1400,12 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 										thirdLinePos = 5;
 									} else if (onlySecondMsgIsTwoLines) {
 										LOG_INFO("only second message is two lines\n");
-										firstLinePos = 0;
 										secondLinePos = 2;
 										thirdLinePos = 5;
 									}
-									LOG_INFO("Line positions: %d, %d, %d\n", firstLinePos, secondLinePos, thirdLinePos);
+									LOG_INFO("Line positions: %d, %d\n", secondLinePos, thirdLinePos);
 									// 1) Show the most recent message (index 0)
-									displayTimeAndMessage(display, x, y, firstLinePos,
+									displayTimeAndMessage(display, x, y, 0,
 																				seconds,
 																				lastMsg->nodeName,
 																				lastMsg->content, 1);
@@ -1425,42 +1429,56 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 
 		// If we get here, either there's no 3rd message or they're not all short.
 		// Fall back to your existing "2 message" logic:
-		const bool firstMsgIsShort = !isEmoji(firstMsg) && strlen(firstMsg) <= 33;
-		const bool secondMsgIsShort = secondMsg && !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
-		const bool firstMsgIsLong = firstMsg && !isEmoji(firstMsg) && strlen(firstMsg) > 116;
-		const bool secondMsgIsLong = secondMsg && !isEmoji(secondMsg->content) && strlen(secondMsg->content) > 116;
-		const bool onlyFirstMsgIsLong = firstMsgIsLong && !secondMsgIsLong;
-		const bool onlySecondMsgIsLong = secondMsgIsLong && !firstMsgIsLong;
+		const char* fc = firstMsg;
+		const char* sc = secondMsg->content;
+		const size_t fLen = strlen(fc);
+		const size_t sLen = strlen(sc);
+		const bool firstMsgIsShort = !isEmoji(fc) && fLen <= 33;
+		const bool secondMsgIsShort = secondMsg && !isEmoji(sc) && sLen <= 33;
+		// const bool firstMsgIsLong = fc && !isEmoji(fc) && fLen > 116;
+		// const bool secondMsgIsLong = secondMsg && !isEmoji(sc) && sLen > 116;
+		// const bool onlyFirstMsgIsLong = firstMsgIsLong && !secondMsgIsLong;
+		// const bool onlySecondMsgIsLong = secondMsgIsLong && !firstMsgIsLong;
 		const bool bothMsgsAreShort = firstMsgIsShort && secondMsgIsShort;
-		const bool firstMsgIsTwoLines = isEmoji(firstMsg) || (strlen(firstMsg) > 33 && strlen(firstMsg) < 66);
-		const bool secondMsgIsTwoLines = secondMsg && (isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66));
-		const bool firstMsgIsThreeLines = isEmoji(firstMsg) || (strlen(firstMsg) > 65 && strlen(firstMsg) < 117);
-		const bool secondMsgIsThreeLines = secondMsg && (isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 65 && strlen(secondMsg->content) < 117));
+		const bool firstMsgIsTwoLines = isEmoji(fc) || (fLen > 33 && fLen < 66);
+		const bool firstMsgIsThreeLines = fLen > 65 && fLen < 117;
+		const bool secondMsgIsTwoLines = secondMsg && (isEmoji(sc) || (sLen > 33 && sLen < 66));
+		const bool secondMsgIsThreeLines = secondMsg && (sLen > 65 && sLen < 117);
 		const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort;
 		const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort;
-		const bool onlyFirstMsgIsThreeLines = firstMsgIsThreeLines && secondMsgIsShort;
-		const bool onlySecondMsgIsThreeLines = secondMsgIsThreeLines && firstMsgIsShort;
+		const bool onlyFirstMsgIsThreeLines = firstMsgIsThreeLines && (secondMsgIsShort || (secondMsgIsTwoLines && !isEmoji(sc)));
+		const bool onlySecondMsgIsThreeLines = secondMsgIsThreeLines && (firstMsgIsShort || (firstMsgIsTwoLines && !isEmoji(fc)));
 		const bool bothMsgsAreTwoLines = firstMsgIsTwoLines && secondMsgIsTwoLines;
+		const bool bothMsgsAreThreeLines = firstMsgIsThreeLines && secondMsgIsThreeLines;
 		const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines;
 		const bool onlyOneMsgIsThreeLines = onlyFirstMsgIsThreeLines || onlySecondMsgIsThreeLines;
 		LOG_DEBUG("lastMsg->content: %s\n", lastMsg->content);
 		LOG_DEBUG("secondMsg->content: %s\n", secondMsg->content);
-		LOG_DEBUG("bothMsgsAreShort: %d\n", bothMsgsAreShort);
-		LOG_DEBUG("bothMsgsAreTwoLines: %d\n", bothMsgsAreTwoLines);
-		LOG_DEBUG("onlyOneMsgIsThreeLines: %d\n", onlyOneMsgIsThreeLines);
+		LOG_DEBUG("bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines: %d, %d, %d, %d\n", bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines);
 
-		uint8_t firstLinePos = 0;
 		uint8_t secondLinePos = 4;
-		if (bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines) {
-			LOG_INFO("Both messages are short enough to fit on one screen, displaying 2 short messages\n");
-			if (onlySecondMsgIsThreeLines) {
+		if (bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines) {
+			LOG_INFO("B1 Both messages are short enough to fit on one screen, displaying 2 short messages\n");
+			if (onlySecondMsgIsThreeLines && firstMsgIsShort) {
 				LOG_INFO("Second message is medium long and first is short, displaying 2nd right after first\n");
 				secondLinePos = 2;
-			} else if (onlyFirstMsgIsThreeLines) {
-				LOG_INFO("First message is medium long and second is short, give extra space for first message\n");
-				secondLinePos = 5;
+			} else if (onlySecondMsgIsThreeLines && firstMsgIsTwoLines) {
+				LOG_INFO("Second message is medium long and first is two lines\n");
+				secondLinePos = 3;
+			} else if (onlyFirstMsgIsThreeLines && secondMsgIsTwoLines) {
+				LOG_INFO("First message is medium long and second is two lines\n");
+				secondLinePos = 4;
+			} else if (bothMsgsAreTwoLines) {
+				LOG_INFO("Both messages are 2 lines\n");
+				secondLinePos = 4;
+			} else if (bothMsgsAreThreeLines) {
+				LOG_INFO("Both messages are three lines\n");
+				secondLinePos = 4;
+			} else {
+				LOG_INFO("G1 Got here, no other cases match, just setting to middle line position\n");
+				secondLinePos = 4;
 			}
-			displayTimeAndMessage(display, x, y, firstLinePos,
+			displayTimeAndMessage(display, x, y, 0,
 														seconds,
 														lastMsg->nodeName,
 														firstMsg, 1);
@@ -1468,8 +1486,11 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 														history.getSecondsSince(1),
 														secondMsg->nodeName,
 														secondMsg->content, 2);
-		// } else if (onlySecondMsgIsLong || onlySecondMsgIsLong) { // one of the two messages is long, show only the 1st
 		} else {
+		LOG_DEBUG("firstMsg: %s\n", firstMsg);
+		LOG_DEBUG("secondMsg->content: %s\n", secondMsg->content);
+		LOG_DEBUG("bothShort, both2Lines, onlyOne2Lines, onlyOne3Lines, both3lines: %d, %d, %d, %d, %d\n", bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines);
+		// LOG_DEBUG("fLen, sLen: %d, %d\n", fLen, sLen);
 			LOG_INFO("one of the 2 messages is too long, showing only the first\n");
 				if (totalReceivedMessagesSinceBoot > 0 || totalSentMessagesSinceBoot > 0) {
 						displayTimeAndMessage(display, x, y, 0,
@@ -1537,22 +1558,29 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 																		firstMsg->content,
 																		previousMessagePage + 1);
 						} else if (thirdMsg && (previousMessagePage + 2 < historyMessageCount)) { // there are 3 messages
-							LOG_INFO("first message is not long and there are 3 messages\n");
-							const bool firstMsgIsShort = !isEmoji(firstMsg->content) && strlen(firstMsg->content) <= 33;
-							const bool firstMsgIsTwoLines = isEmoji(firstMsg->content) || (strlen(firstMsg->content) > 33 && strlen(firstMsg->content) < 66);
-							const bool firstMsgIsThreeLines = isEmoji(firstMsg->content) || (strlen(firstMsg->content) > 65 && strlen(firstMsg->content) < 117);
-							const bool secondMsgIsShort = !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 33;
-							const bool secondMsgIsTwoLines = isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66);
-							const bool secondMsgIsThreeLines = isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 65 && strlen(secondMsg->content) < 117);
-							const bool thirdMsgIsShort = !isEmoji(thirdMsg->content) && strlen(thirdMsg->content) <= 33;
-							const bool thirdMsgIsTwoLines = isEmoji(thirdMsg->content) || (strlen(thirdMsg->content) > 33 && strlen(thirdMsg->content) < 66);
+							LOG_INFO("A2 first message is not long and there are 3 messages\n");
+							const char* fc = firstMsg->content;
+							const char* sc = secondMsg->content;
+							const char* tc = thirdMsg->content;
+							const size_t fLen = strlen(fc);
+							const size_t sLen = strlen(sc);
+							const size_t tLen = strlen(tc);
+							const bool firstMsgIsShort = !isEmoji(fc) && fLen <= 33;
+							const bool firstMsgIsTwoLines = isEmoji(fc) || (fLen > 33 && fLen < 66);
+							const bool firstMsgIsThreeLines = fLen > 65 && fLen < 117;
+							const bool secondMsgIsShort = !isEmoji(sc) && sLen <= 33;
+							const bool secondMsgIsTwoLines = isEmoji(sc) || (sLen > 33 && sLen < 66);
+							const bool secondMsgIsThreeLines = sLen > 65 && sLen < 117;
+							const bool thirdMsgIsShort = !isEmoji(tc) && tLen <= 33;
+							const bool thirdMsgIsTwoLines = isEmoji(tc) || (tLen > 33 && tLen < 66);
 							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort && thirdMsgIsShort;
 							const bool bothMsgsAreShort = firstMsgIsShort && secondMsgIsShort;
 							const bool bothMsgsAreTwoLines = firstMsgIsTwoLines && secondMsgIsTwoLines;
+							const bool bothMsgsAreThreeLines = firstMsgIsThreeLines && secondMsgIsThreeLines;
 							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort && thirdMsgIsShort;
-							const bool onlyFirstMsgIsThreeLines = firstMsgIsThreeLines && secondMsgIsShort;
+							const bool onlyFirstMsgIsThreeLines = firstMsgIsThreeLines && (secondMsgIsShort || (secondMsgIsTwoLines && !isEmoji(sc)));
 							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort && thirdMsgIsShort;
-							const bool onlySecondMsgIsThreeLines = secondMsgIsThreeLines && firstMsgIsShort;
+							const bool onlySecondMsgIsThreeLines = secondMsgIsThreeLines && (firstMsgIsShort || (firstMsgIsTwoLines && !isEmoji(fc)));
 							const bool onlyOneMsgIsThreeLines = onlyFirstMsgIsThreeLines || onlySecondMsgIsThreeLines;
 							const bool onlyThirdMsgIsTwoLines = thirdMsgIsTwoLines && firstMsgIsShort && secondMsgIsShort;
 							const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines || onlyThirdMsgIsTwoLines;
@@ -1560,7 +1588,6 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 							// Are all three short enough?
 							if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
 								LOG_INFO("all three messages are short enough\n");
-								uint8_t firstLinePos = 0;
 								uint8_t secondLinePos = 2;
 								uint8_t thirdLinePos = 4;
 
@@ -1570,14 +1597,13 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 									thirdLinePos = 5;
 								} else if (onlySecondMsgIsTwoLines) {
 									LOG_INFO("only second message is two lines\n");
-									firstLinePos = 0;
 									secondLinePos = 2;
 									thirdLinePos = 5;
 								}
-								LOG_INFO("Line positions: %d, %d, %d\n", firstLinePos, secondLinePos, thirdLinePos);
+								LOG_INFO("Line positions: %d, %d\n", secondLinePos, thirdLinePos);
 								if (allMsgsAreShort || onlyOneMsgIsTwoLines) {
 									// Display three short messages
-									displayTimeAndMessage(display, x, y, firstLinePos,
+									displayTimeAndMessage(display, x, y, 0,
 																				history.getSecondsSince(previousMessagePage),
 																				firstMsg->nodeName,
 																				firstMsg->content,
@@ -1597,22 +1623,35 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 								}
 					// } else if (strlen(firstMsg->content) <= 65 && strlen(secondMsg->content) <= 65 &&
      //                     (previousMessagePage + 1 < historyMessageCount)) { // Display two short messages
-					} else if ((bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines) &&
+					} else if ((bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines) &&
                          (previousMessagePage + 1 < historyMessageCount)) { // Display two short messages
 							// TODO: add extra cases here for one message being 3 lines and the other being short
 						// LOG_INFO("displaying two short enough messages\n");
-		uint8_t firstLinePos = 0;
 		uint8_t secondLinePos = 4;
-		// if (bothMsgsAreShort || bothMsgsAreTwoLines || onlyOneMsgIsThreeLines) {
-			LOG_INFO("Both messages are short enough to fit on one screen, displaying 2 short messages\n");
-			if (onlySecondMsgIsThreeLines) {
+			LOG_INFO("C1 Both messages are short enough to fit on one screen, displaying 2 short messages\n");
+			if (onlySecondMsgIsThreeLines && firstMsgIsShort) {
 				LOG_INFO("Second message is medium long and first is short, displaying 2nd right after first\n");
 				secondLinePos = 2;
+			} else if (onlyFirstMsgIsThreeLines && secondMsgIsShort) {
+				LOG_INFO("First message is medium long and second is short, give extra space for first message\n");
+				secondLinePos = 5;
+			} else if (onlySecondMsgIsThreeLines && firstMsgIsTwoLines) {
+				LOG_INFO("Second message is medium long and first is two lines\n");
+				secondLinePos = 3;
+			} else if (onlyFirstMsgIsThreeLines && secondMsgIsTwoLines) {
+				LOG_INFO("First message is medium long and second is two lines\n");
+				secondLinePos = 4;
 			} else if (onlyFirstMsgIsThreeLines) {
 				LOG_INFO("First message is medium long and second is short, give extra space for first message\n");
 				secondLinePos = 5;
+			} else if (bothMsgsAreTwoLines) {
+				LOG_INFO("Both messages are 2 lines\n");
+				secondLinePos = 4;
+			} else if (bothMsgsAreThreeLines) {
+				LOG_INFO("Both messages are 3 lines\n");
+				secondLinePos = 4;
 			}
-									displayTimeAndMessage(display, x, y, firstLinePos,
+									displayTimeAndMessage(display, x, y, 0,
 																				history.getSecondsSince(previousMessagePage),
 																				firstMsg->nodeName,
 																				firstMsg->content,
@@ -1624,7 +1663,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 																				secondMsg->content,
 																				previousMessagePage + 2);
 					} else { // Display only the single message
-									LOG_INFO("first message is not long, other cases not true, displaying single message\n");
+		LOG_DEBUG("bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines: %d, %d, %d, %d\n", bothMsgsAreShort, bothMsgsAreTwoLines, onlyOneMsgIsTwoLines, onlyOneMsgIsThreeLines);
+									LOG_INFO("first message is not long, other cases not true2, displaying single message\n");
 									displayTimeAndMessage(display, x, y, 0,
 																				history.getSecondsSince(previousMessagePage),
 																				firstMsg->nodeName,
@@ -1632,24 +1672,54 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 																				previousMessagePage + 1);
 					}
 				} else if (secondMsg && (previousMessagePage + 1 < historyMessageCount)) { // there are at least 2 messages
-							LOG_INFO("first message is not long and there are 2 messages\n");
-							const bool firstMsgIsShort = !isEmoji(firstMsg->content) && strlen(firstMsg->content) <= 65;
-							const bool firstMsgIsTwoLines = isEmoji(firstMsg->content) || (strlen(firstMsg->content) > 33 && strlen(firstMsg->content) < 66);
-							const bool secondMsgIsShort = !isEmoji(secondMsg->content) && strlen(secondMsg->content) <= 65;
-							const bool secondMsgIsTwoLines = isEmoji(secondMsg->content) || (strlen(secondMsg->content) > 33 && strlen(secondMsg->content) < 66);
-							const bool allMsgsAreShort = firstMsgIsShort && secondMsgIsShort;
+							LOG_INFO("A1 first message is not long and there are 2 messages\n");
+							const char* fc = firstMsg->content;
+							const char* sc = secondMsg->content;
+							const size_t fLen = strlen(fc);
+							const size_t sLen = strlen(sc);
+							const bool firstMsgIsShort = !isEmoji(fc) && fLen <= 33;
+							const bool secondMsgIsShort = !isEmoji(sc) && sLen <= 33;
+							const bool bothMsgsAreShort = firstMsgIsShort && secondMsgIsShort;
+							const bool firstMsgIsTwoLines = isEmoji(fc) || (fLen > 33 && fLen < 66);
+							const bool secondMsgIsTwoLines = isEmoji(sc) || (sLen > 33 && sLen < 66);
+							const bool bothMsgsAreTwoLines = firstMsgIsTwoLines && secondMsgIsTwoLines;
+							const bool firstMsgIsThreeLines = fLen > 65 && fLen < 117;
+							const bool secondMsgIsThreeLines = sLen > 65 && sLen < 117;
+							const bool bothMsgsAreThreeLines = firstMsgIsThreeLines && secondMsgIsThreeLines;
 							const bool onlyFirstMsgIsTwoLines = firstMsgIsTwoLines && secondMsgIsShort;
 							const bool onlySecondMsgIsTwoLines = secondMsgIsTwoLines && firstMsgIsShort;
+							const bool onlyFirstMsgIsThreeLines = firstMsgIsThreeLines && (secondMsgIsShort || (secondMsgIsTwoLines && !isEmoji(sc)));
+							const bool onlySecondMsgIsThreeLines = secondMsgIsThreeLines && (firstMsgIsShort || (firstMsgIsTwoLines && !isEmoji(fc)));
 							const bool onlyOneMsgIsTwoLines = onlyFirstMsgIsTwoLines || onlySecondMsgIsTwoLines;
-						  // if (strlen(firstMsg->content) <= 65 && strlen(secondMsg->content) <= 65 &&
-						  if (firstMsgIsShort && secondMsgIsShort) { // Display two short messages
-								LOG_INFO("displaying two short messages\n");
+							const bool onlyOneMsgIsThreeLines = onlyFirstMsgIsThreeLines || onlySecondMsgIsThreeLines;
+						  if (bothMsgsAreShort || onlyOneMsgIsTwoLines || bothMsgsAreTwoLines || onlyOneMsgIsThreeLines || bothMsgsAreThreeLines) { // Display two short messages
+		uint8_t secondLinePos = 4;
+			LOG_INFO("D1 Both messages are short enough to fit on one screen, displaying 2 short messages\n");
+			if (onlySecondMsgIsThreeLines && firstMsgIsShort) {
+				LOG_INFO("Second message is medium long and first is short, displaying 2nd right after first\n");
+				secondLinePos = 2;
+			} else if (onlySecondMsgIsThreeLines && firstMsgIsTwoLines) {
+				LOG_INFO("Second message is medium long and first is two lines\n");
+				secondLinePos = 3;
+			} else if (onlyFirstMsgIsThreeLines && secondMsgIsTwoLines) {
+				LOG_INFO("First message is medium long and second is two lines\n");
+				secondLinePos = 4;
+			} else if (bothMsgsAreThreeLines) {
+				LOG_INFO("Both messages are 3 lines\n");
+				secondLinePos = 4;
+			} else if (bothMsgsAreTwoLines) {
+				LOG_INFO("Both messages are 2 lines\n");
+				secondLinePos = 4;
+			} else {
+				LOG_INFO("F1 Got here, no other cases match, just setting to middle line position\n");
+				secondLinePos = 5;
+			}
 								displayTimeAndMessage(display, x, y, 0,
 																			history.getSecondsSince(previousMessagePage),
 																			firstMsg->nodeName,
 																			firstMsg->content,
 																			previousMessagePage + 1);
-								displayTimeAndMessage(display, x, y, 4,
+								displayTimeAndMessage(display, x, y, secondLinePos,
 																			history.getSecondsSince(previousMessagePage + 1),
 																			secondMsg->nodeName,
 																			secondMsg->content,

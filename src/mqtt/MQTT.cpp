@@ -331,7 +331,7 @@ void MQTT::reconnect()
             serverAddr = server.c_str();
         }
         pubSub.setServer(serverAddr, serverPort);
-        pubSub.setBufferSize(512);
+        pubSub.setBufferSize(1024);
 
         LOG_INFO("Attempting to connect directly to MQTT server %s, port: %d, username: %s, password: %s\n", serverAddr,
                  serverPort, mqttUsername, mqttPassword);
