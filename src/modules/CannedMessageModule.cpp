@@ -32,7 +32,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-#define TESTING
+// #define TESTING
 // #define VASILI
 
 #ifdef SIMPLE_TDECK

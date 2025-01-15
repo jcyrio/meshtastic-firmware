@@ -98,13 +98,7 @@ int32_t TouchScreenBase::runOnce()
 #endif
                 if (0 > dy) { // swipe bottom to top
 #ifdef SIMPLE_TDECK
-    InputEvent e;
-#endif
-                    // e.touchEvent = static_cast<char>(TOUCH_ACTION_UP);
-    char eventUp2 = static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP);
-        // e.inputEvent = this->eventUp2;
-#ifdef SIMPLE_TDECK
-										cannedMessageModule->wasTouchEvent = false;
+				cannedMessageModule->wasTouchEvent = false;
 				InputEvent trackballEvent;
         trackballEvent.inputEvent = static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP);
         trackballEvent.source = "trackball1";
@@ -113,20 +107,13 @@ int32_t TouchScreenBase::runOnce()
 #endif
                     LOG_DEBUG("action SWIPE: bottom to top\n");
                 } else { // swipe top to bottom
-                    // e.touchEvent = static_cast<char>(TOUCH_ACTION_DOWN);
-    // char eventDown2 = static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN);
-        // e.inputEvent = this->eventDown2;
 #ifdef SIMPLE_TDECK
-										cannedMessageModule->wasTouchEvent = false;
+				cannedMessageModule->wasTouchEvent = false;
 				InputEvent trackballEvent;
         trackballEvent.inputEvent = static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOWN);
         trackballEvent.source = "trackball1";
         trackballEvent.kbchar = 0;
         inputBroker->handleInputEvent(&trackballEvent);
-        // e.source = 'trackball1';
-        // e.kbchar = 0x00;
-        // this->notifyObservers(&e);
-    // this->action = TB_ACTION_NONE;
 #endif
                     LOG_DEBUG("action SWIPE: top to bottom\n");
                 }
