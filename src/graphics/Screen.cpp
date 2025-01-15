@@ -138,16 +138,36 @@ public:
 				externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
     }
 
-		size_t getLatestSentMessageIndex() const {
-				// Start from most recent message (currentIndex) and work backwards
-				for (size_t i = 0; i < MAX_MESSAGE_HISTORY; i++) {
-						const MessageRecord* message = getMessageAt(i);
-						if (message && message->content[0] == '>') {
-								return i;
-						}
-				}
-				return MAX_MESSAGE_HISTORY; // Return this if no command found
-		}
+size_t getLatestSentMessageIndex() const {
+    size_t lastExisting = 0;
+    for (size_t i = 0; i < MAX_MESSAGE_HISTORY; i++) {
+        const MessageRecord* message = getMessageAt(i);
+        if (!message || message->content[0] == '\0') {  // Check for null or empty content
+            return lastExisting;  // Return the last existing message index
+        }
+        if (message->content[0] == '>') {
+            return i;
+        }
+        lastExisting = i;
+    }
+    return lastExisting;
+}
+	// size_t getLatestSentMessageIndex() const {
+ //    size_t lastExisting = 0;
+ //    // Start from most recent message (currentIndex) and work backwards
+ //    for (size_t i = 0; i < MAX_MESSAGE_HISTORY; i++) {
+ //        const MessageRecord* message = getMessageAt(i);
+ //        if (!message) {
+	// 				if (i > 0) lastExisting = i - 1;
+	// 				LOG_INFO("lastExisting: %d\n", lastExisting);
+ //            return lastExisting;  // Return the last existing message index
+ //        }
+ //        if (message->content[0] == '>') return i;
+	// 			if (i > 0) lastExisting = i - 1;
+ //    }
+	// 	LOG_INFO("lastExisting2: %d\n", lastExisting);
+ //    return lastExisting;  // Return the last existing message if no '>' found
+	// }
 
     void addMessage(const char* content, const char* nodeName) {
 			LOG_INFO("addMessage: %s, %s\n", content, nodeName);
@@ -1288,6 +1308,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		}
 
     historyMessageCount = history.getTotalMessageCount();
+		LOG_INFO("Previous message page: %d\n", previousMessagePage);
     LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
 
     display->setFont(FONT_LARGE);
