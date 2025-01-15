@@ -53,4 +53,8 @@ class TouchScreenBase : public Observable<const InputEvent *>, public concurrenc
     bool _tapped;              // for DOUBLE_TAP
 
     const char *_originName;
+#ifdef SIMPLE_TDECK
+		char eventUp2;
+		char eventDown2;
+#endif
 };

@@ -3,6 +3,7 @@
 
 #define ANYKEY 0xFF
 #define MATRIXKEY 0xFE
+#define SIMPLE_TDECK2
 
 typedef struct _InputEvent {
     const char *source;
@@ -19,9 +20,14 @@ class InputBroker : public Observable<const InputEvent *>
   public:
     InputBroker();
     void registerSource(Observable<const InputEvent *> *source);
+#ifdef SIMPLE_TDECK2
+    int handleInputEvent(const InputEvent *event);
+#endif
 
+#ifndef SIMPLE_TDECK2
   protected:
     int handleInputEvent(const InputEvent *event);
+#endif
 };
 
 extern InputBroker *inputBroker;

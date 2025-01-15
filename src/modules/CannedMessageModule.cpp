@@ -110,7 +110,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		{669969380, "Fr Silouanos"},
     {2579251804, "Fr Alexios"},
     {667570636, "Fr Theoktist"},
-    {205167532, "Dcn Michael"},
+    // {205167532, "Dcn Michael"},
 #endif
     // {2864386355, "Kitchen"}, // was old virtual node
 		///REMOVE LATER!!!!
@@ -278,6 +278,7 @@ CannedMessageModule::CannedMessageModule()
 		);
 		// screen->removeFunctionSymbal("ACK");
 		this->dest = NODENUM_RPI5;
+		nodeIndex = 0;
 
 		if (config.bluetooth.enabled) screen->setFunctionSymbal("BT");
 		if (config.power.is_power_saving) screen->setFunctionSymbal("PS");
@@ -1451,7 +1452,7 @@ int32_t CannedMessageModule::runOnce()
 									// strcpy(allMessage, "ALL: ");
 									// strcat(allMessage, this->freetext.c_str());
 									// sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
-									sendText(this->dest, 3, this->freetext.c_str(), true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
+									sendText(this->dest, 3, this->freetext.c_str(), false); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks. Must be false at end for don't want ack, otherwise messes things up. There's not really a true ack for broadcasts
 								} else {
 #if defined(FOR_GUESTS) || defined(VASILI) || defined(TESTING)
 									sendText(this->dest, 3, this->freetext.c_str(), true); // default to sending to StA channel for the guests/neighbors
@@ -1710,9 +1711,7 @@ int32_t CannedMessageModule::runOnce()
                     }
                 }
                 if (this->dest == nodeDB->getNodeNum()) {
-                    // this->dest = NODENUM_BROADCAST;
-									//new test
-										this->dest = NODENUM_RPI5;
+                    this->dest = NODENUM_BROADCAST;
                 }
             } else if (this->destSelect == CANNED_MESSAGE_DESTINATION_TYPE_CHANNEL) {
                 for (unsigned int i = 0; i < channels.getNumChannels(); i++) {
@@ -1740,7 +1739,6 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 								// scrollLeft();
-							nodeIndex = this->scrollLeft();
 							// nodeIndex = (nodeIndex + 1) % MYNODES.size();
 
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
@@ -1750,6 +1748,7 @@ int32_t CannedMessageModule::runOnce()
 							// 		nodeName = cannedMessageModule->getNodeName(nodeDB->getMeshNodeByIndex(nextNode)->num);
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							nodeIndex = this->scrollLeft();
 							this->dest = MYNODES[nodeIndex].first;
 							// LOG_INFO("Dest: %d\n", this->dest);
 							// LOG_INFO("nodeNameeee: %d\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
@@ -1819,11 +1818,11 @@ int32_t CannedMessageModule::runOnce()
 							// 	LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
 							// } while (std::string(cannedMessageModule->getNodeName(MYNODES[nodeIndex].first)) == "Unknown");
 								// scrollRight();
-							nodeIndex = this->scrollRight();
 							// nodeIndex = (nodeIndex - 1 + MYNODES.size()) % MYNODES.size(); // Decrement nodeIndex and wrap around
 
 							// LOG_INFO("NodeIndex: %d\n", nodeIndex);
 							// LOG_INFO("NodeName: %s\n", getNodeNameByIndex(MYNODES, nodeIndex).c_str());
+							nodeIndex = this->scrollRight();
 							this->dest = MYNODES[nodeIndex].first;
 							LOG_INFO("Dest: %d\n", this->dest);
 						} else {

@@ -41,7 +41,12 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 		// Ignore all broadcasts or DMs from LongFast
 		// if (strcmp(channels.getName(mp.channel), "LongFast") == 0) {
 			// LOG_INFO("Channel Name is LongFast\n");
-		if ((strcmp(channels.getName(mp.channel), "StA") != 0) && (mp.to == 0xffffffff)) {
+		LOG_INFO("Channel Name: %s\n", channels.getName(mp.channel));
+		LOG_INFO("mp.to: %d\n", mp.to);
+		LOG_INFO("NODENUM_BROADCAST: %d\n", NODENUM_BROADCAST);
+		bool isNotStAchannel = strcmp(channels.getName(mp.channel), "StA") != 0;
+		bool isNotT1channel = strcmp(channels.getName(mp.channel), "T1") != 0;
+		if (isNotStAchannel && isNotT1channel && mp.to == NODENUM_BROADCAST) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not StA, ignoring\n");
 			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
@@ -49,13 +54,18 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 #endif
 #if defined(SECURITY) || defined(GATE_SECURITY)
 #if defined(SECURITY)
-		if ((strcmp(channels.getName(mp.channel), "Varangians") != 0) && (mp.to == 0xffffffff)) {
+		bool isNotVarangiansChannel = strcmp(channels.getName(mp.channel), "Varangians") != 0;
+		bool isNotC2OPSchannel = strcmp(channels.getName(mp.channel), "C2OPS") != 0;
+		// if ((strcmp(channels.getName(mp.channel), "Varangians") != 0) && (mp.to == NODENUM_BROADCAST)) {
+		if (isNotVarangiansChannel && isNotC2OPSchannel && mp.to == NODENUM_BROADCAST) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not Varangians, ignoring\n");
 			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
 		}
 #elif defined(GATE_SECURITY)
-		if (((strcmp(channels.getName(mp.channel), "StA") != 0) && (strcmp(channels.getName(mp.channel), "Varangians") != 0)) && (mp.to == 0xffffffff)) {
+		bool isNotStAchannel = strcmp(channels.getName(mp.channel), "StA") != 0;
+		bool isNotVarangiansChannel = strcmp(channels.getName(mp.channel), "Varangians") != 0;
+		if (isNotStAchannel && isNotVarangiansChannel && mp.to == NODENUM_BROADCAST) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not StA or Varangians, ignoring\n");
 			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
@@ -63,7 +73,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 #endif
 #endif
 #ifdef MONASTERY_FRIENDS
-		if ((strcmp(channels.getName(mp.channel), "MFA") != 0) && (mp.to == 0xffffffff)) {
+		if ((strcmp(channels.getName(mp.channel), "MFA") != 0) && (mp.to == NODENUM_BROADCAST)) {
 			LOG_INFO("Was Broadcast message, but Channel Name is not MFA, ignoring\n");
 			externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
 			return ProcessMessage::STOP;
@@ -73,7 +83,8 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
     // We only store/display messages destined for us.
     // Keep a copy of the most recent text message.
 #ifdef SIMPLE_TDECK
-		if (mp.to == 0xffffffff) { // if was broadcast, add prefix to message
+		if (mp.to == NODENUM_BROADCAST) { // if was broadcast, add prefix to message
+			LOG_INFO("Was Broadcast message, adding prefix\n");
  		  meshtastic_MeshPacket modifiedPacket = mp;
 			const char* prefix = "ALL: ";
 			const pb_size_t prefixLen = strlen(prefix);
@@ -97,10 +108,6 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			// Copy prefix at the start
 			memcpy(modifiedPacket.decoded.payload.bytes, prefix, prefixLen);
 			modifiedPacket.decoded.payload.size = prefixLen + mp.decoded.payload.size;
-
-
-
-
 			// meshtastic_MeshPacket modifiedPacket = mp;
 			// const char* prefix = "ALL: ";
 			// size_t prefixLen = strlen(prefix); // Create new buffer with space for prefix + original message
@@ -110,10 +117,10 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			// memcpy(newBuffer + prefixLen, mp.decoded.payload.bytes, mp.decoded.payload.size); // Copy original message
 			// modifiedPacket.decoded.payload.bytes = newBuffer; // Update the payload
 			// modifiedPacket.decoded.payload.size = newSize;
-			// devicestate.rx_text_message = modifiedPacket;
-			// devicestate.has_rx_text_message = true;
-			// powerFSM.trigger(EVENT_RECEIVED_MSG);
-			// notifyObservers(&modifiedPacket);
+			devicestate.rx_text_message = modifiedPacket;
+			devicestate.has_rx_text_message = true;
+			powerFSM.trigger(EVENT_RECEIVED_MSG);
+			notifyObservers(&modifiedPacket);
 			// delete[] newBuffer; // Clean up
 		} else { // was not broadcast
 			devicestate.rx_text_message = mp;
