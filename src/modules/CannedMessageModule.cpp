@@ -41,7 +41,7 @@
 // }
 
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
-const char* dontSendClrMessageFromTheseNames[] = {"Jchm", "Roni", "Chip", "Mtrx", "Roni"};
+const char* dontSendClrMessageFromTheseNames[] = {"Ronin", "Chip", "Matrix"};
 const int excludedCount = sizeof(dontSendClrMessageFromTheseNames) / sizeof(dontSendClrMessageFromTheseNames[0]);
 std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "qt", "qm", "qd", "qh", "aim", "aif", "aiff", "aih", "aid", "frcs", "wa "};
 std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", "f", "w", "k", "rp", "s", "wf"};
@@ -1134,7 +1134,7 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     const char *target5 = "fff";
 		const char *emoji5 = "🙏";
     const char *target6 = " ss";
-		const char *emoji6 = ":)";
+		const char *emoji6 = " :)";
     const char *target7 = " pp";
 		const char *emoji7 = "%";
 
