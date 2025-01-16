@@ -11,11 +11,11 @@
 
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-#define FATHERS_NODES
+// #define FATHERS_NODES
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-// #define VASILI
+#define VASILI
 #endif
 
 TextMessageModule *textMessageModule;

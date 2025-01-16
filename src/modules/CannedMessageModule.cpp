@@ -28,12 +28,12 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-#define FATHERS_NODES
+// #define FATHERS_NODES
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
 // #define TESTING
-// #define VASILI
+#define VASILI
 
 #ifdef SIMPLE_TDECK
 // namespace graphics {
@@ -41,6 +41,8 @@
 // }
 
 // std::vector<std::string> skipNodes = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "Gatehouse", "Well3", "SeventyNineRak"};
+const char* dontSendClrMessageFromTheseNames[] = {"Jchm", "Roni", "Chip", "Mtrx", "Roni"};
+const int excludedCount = sizeof(dontSendClrMessageFromTheseNames) / sizeof(dontSendClrMessageFromTheseNames[0]);
 std::vector<std::string> commandsForRouterOnlyStarting = {"ai", "q ", "ait", "qt", "qm", "qd", "qh", "aim", "aif", "aiff", "aih", "aid", "frcs", "wa "};
 std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", "f", "w", "k", "rp", "s", "wf"};
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
@@ -51,7 +53,6 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {667676428, "Spare4"},
 		// {1127590756, "Fr Andre"},
 		{1127590756, "Grace"}, //same as Fr Andre's device
-    // {205167532, "Dcn Michael"},
 #endif
 #ifdef HELPERS
     {4184751652, "Kitchen"},
@@ -69,6 +70,8 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
 		{207036432, "Chip"},
 #endif
 #ifdef VASILI
+    {205167532, "Ioakim"},
+		{207089188, "Vasili"},
 #endif
 #ifdef GATE_SECURITY
     {3014898611, "Bookstore"},
@@ -230,7 +233,7 @@ uint8_t CannedMessageModule::getDeliveryStatus() { return deliveryStatus; }
 #define NODENUM_RPI5 3719082304
 #define NODENUM_SP2 3175760252
 #define NODENUM_SP4 667676428
-#define NODENUM_DCNM 205167532
+// #define NODENUM_DCNM 205167532
 #define NODENUM_FRCYRIL 3734369073
 
 extern ScanI2C::DeviceAddress cardkb_found;
@@ -1119,39 +1122,6 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
     strncpy(modifiableMessage, message, bufferSize - 1);
     modifiableMessage[bufferSize - 1] = '\0'; // Ensure null-termination
 
-// const char *target1 = "sss";
-// const char *emoji1 = "😊";
-// const char *target2 = "ttt";
-// const char *emoji2 = "👍";
-// const char *target3 = "hhh";
-// const char *emoji3 = "❤️";
-// const char *target4 = "rofl";
-// const char *emoji4 = "🤣";
-//
-// char result[bufferSize] = {0};
-// char *currentPos = modifiableMessage;
-// char *resultPos = result;
-// size_t remaining = bufferSize - 1; // Keep track of remaining space
-//
-// while (*currentPos != '\0' && remaining > 0) {
-//     if (strncmp(currentPos, target1, strlen(target1)) == 0) {
-//         size_t len = strlen(emoji1);
-//         if (len > remaining) break;
-//         memcpy(resultPos, emoji1, len);
-//         resultPos += len;
-//         remaining -= len;
-//         currentPos += strlen(target1);
-//     }
-//     // Similar blocks for target2, target3, target4
-//     else {
-//         *resultPos++ = *currentPos++;
-//         remaining--;
-//     }
-// }
-//
-// *resultPos = '\0';
-
-		
     // Replace "sss" with the smiley emoji (😊) and "ttt" with thumbs-up emoji (👍)
     const char *target1 = "sss";
     const char *emoji1 = "😊";
@@ -1163,6 +1133,10 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
 		const char *emoji4 = "🤣";
     const char *target5 = "fff";
 		const char *emoji5 = "🙏";
+    const char *target6 = " ss";
+		const char *emoji6 = ":)";
+    const char *target7 = " pp";
+		const char *emoji7 = "%";
 
     char result[bufferSize] = {0}; // Buffer to hold the final message
     char *currentPos = modifiableMessage;
@@ -1194,6 +1168,16 @@ void CannedMessageModule::sendText(NodeNum dest, ChannelIndex channel, const cha
             strncat(resultPos, emoji5, bufferSize - strlen(result) - 1);
             resultPos += strlen(emoji5);
             currentPos += strlen(target5);
+				}
+        else if (strncmp(currentPos, target6, strlen(target6)) == 0) {
+            strncat(resultPos, emoji6, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji6);
+            currentPos += strlen(target6);
+				}
+        else if (strncmp(currentPos, target7, strlen(target7)) == 0) {
+            strncat(resultPos, emoji7, bufferSize - strlen(result) - 1);
+            resultPos += strlen(emoji7);
+            currentPos += strlen(target7);
 				}
         // Copy the current character
         else *resultPos++ = *currentPos++;
@@ -1274,7 +1258,9 @@ int32_t CannedMessageModule::runOnce()
 		dayString.trim(); // Trim leading/trailing spaces
 		int day = dayString.toInt(); // Convert to integer
 		char startupMessage[30];
-		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
+		const char* myShortNodeName = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", myShortNodeName, monthNumber, day);
+		// snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
 #ifndef TESTING
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
 #endif
@@ -1399,11 +1385,32 @@ int32_t CannedMessageModule::runOnce()
 									screen->clearHistory();
 									showTemporaryMessage("Cleared all\nprevious messages");
 									// externalNotificationModule->setExternalOff(0); // this will turn off all GPIO and sounds and idle the loop
-									char clrMessage[20];
-									delay(500);
-									snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
-									sendText(NODENUM_RPI5, 0, clrMessage, false);
-									alreadySentFirstMessage = 1; //screen.cpp can't do this
+									const char* myNodeName = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
+									LOG_INFO("myNodeName: %s\n", myNodeName);
+									LOG_INFO("myNodeName: %s\n", myNodeName);
+									// LOG_INFO("myShortNodeName: %s\n", myShortNodeName);
+									bool isExcluded = false;
+									for (int i = 0; i < excludedCount; ++i) {
+											if (strcmp(myNodeName, dontSendClrMessageFromTheseNames[i]) == 0) {
+												LOG_INFO("isExcluded\n");
+												LOG_INFO("isExcluded\n");
+												LOG_INFO("isExcluded\n");
+												LOG_INFO("isExcluded\n");
+												LOG_INFO("isExcluded\n");
+													isExcluded = true;
+													break;
+											}
+									}
+									if (!isExcluded) {
+										LOG_INFO("not excluded\n");
+										LOG_INFO("not excluded\n");
+										LOG_INFO("not excluded\n");
+										delay(500);
+										char clrMessage[20];
+										snprintf(clrMessage, sizeof(clrMessage), "%s CLR", cannedMessageModule->getNodeName(nodeDB->getNodeNum()));
+										sendText(NODENUM_RPI5, 0, clrMessage, false);
+										alreadySentFirstMessage = 1; //screen.cpp can't do this
+									}
 							  }
 							} else if ((this->freetext == "rndb") || (this->freetext == "ndbr")) {
 								nodeDB->resetNodes();
