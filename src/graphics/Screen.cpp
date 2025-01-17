@@ -192,9 +192,8 @@ size_t getLatestSentMessageIndex() const {
     if (!isRouterMessage) {
 			currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
 			LOG_INFO("currentIndex: %d\n", currentIndex);
-      totalMessageCount++;
-			if (totalMessageCount > MAX_MESSAGE_HISTORY) {
-				totalMessageCount = MAX_MESSAGE_HISTORY;
+			if (totalMessageCount < MAX_MESSAGE_HISTORY) {
+				totalMessageCount++;
 			}
 			LOG_INFO("totalMessageCount: %d\n", totalMessageCount);
 		}
