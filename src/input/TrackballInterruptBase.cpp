@@ -1,6 +1,10 @@
 #include "TrackballInterruptBase.h"
 #include "configuration.h"
 #include "modules/CannedMessageModule.h"
+#ifdef SIMPLE_TDECK
+// #include "graphics/Screen.h"
+#include "main.h"
+#endif
 
 TrackballInterruptBase::TrackballInterruptBase(const char *name) : concurrency::OSThread(name), _originName(name) {}
 
@@ -39,6 +43,9 @@ void TrackballInterruptBase::init(uint8_t pinDown, uint8_t pinUp, uint8_t pinLef
 
 int32_t TrackballInterruptBase::runOnce()
 {
+#ifdef SIMPLE_TDECK
+		if (!screen->keyboardLockMode) {
+#endif
     InputEvent e;
     e.inputEvent = meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_NONE;
 
@@ -75,6 +82,9 @@ int32_t TrackballInterruptBase::runOnce()
 
     this->action = TB_ACTION_NONE;
 
+#ifdef SIMPLE_TDECK
+		}
+#endif
     return 100;
 }
 
