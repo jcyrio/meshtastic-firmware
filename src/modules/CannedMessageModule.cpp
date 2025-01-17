@@ -28,12 +28,12 @@
 // OPTIONAL
 // #define FOR_GUESTS
 // #define MONASTERY_FRIENDS
-// #define FATHERS_NODES
+#define FATHERS_NODES
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
 // #define TESTING
-#define VASILI
+// #define VASILI
 
 #ifdef SIMPLE_TDECK
 // namespace graphics {

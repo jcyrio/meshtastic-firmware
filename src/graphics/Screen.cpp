@@ -141,6 +141,7 @@ public:
 size_t getLatestSentMessageIndex() const {
     size_t lastExisting = 0;
     for (size_t i = 0; i < MAX_MESSAGE_HISTORY; i++) {
+			LOG_INFO("getLatestSentMessageIndex: %d\n", i);
         const MessageRecord* message = getMessageAt(i);
         if (!message || message->content[0] == '\0') {  // Check for null or empty content
             return lastExisting;  // Return the last existing message index
@@ -190,7 +191,11 @@ size_t getLatestSentMessageIndex() const {
 		LOG_INFO("isRouterMessage: %d\n", isRouterMessage);
     if (!isRouterMessage) {
 			currentIndex = (currentIndex + 1) % MAX_MESSAGE_HISTORY;
+			LOG_INFO("currentIndex: %d\n", currentIndex);
       totalMessageCount++;
+			if (totalMessageCount > MAX_MESSAGE_HISTORY) {
+				totalMessageCount = MAX_MESSAGE_HISTORY;
+			}
 			LOG_INFO("totalMessageCount: %d\n", totalMessageCount);
 		}
 
@@ -215,8 +220,11 @@ size_t getLatestSentMessageIndex() const {
 
     // Helper methods to access message history
     const MessageRecord* getMessageAt(size_t position) const {
+				LOG_INFO("position HERE: %d\n", position);
+				LOG_INFO("currentIndex HERE: %d\n", currentIndex);
         if (position >= MAX_MESSAGE_HISTORY) return nullptr;
         size_t index = (currentIndex + MAX_MESSAGE_HISTORY - position) % MAX_MESSAGE_HISTORY;
+				LOG_INFO("getMessageAtC: %d\n", index);
         return &messages[index];
     }
 
@@ -1233,7 +1241,10 @@ void displayTimeAndMessage(OLEDDisplay *display, int16_t x, int16_t y, uint8_t l
     int32_t daysAgo;
     bool useTimestamp = deltaToTimestamp(seconds, &timestampHours, &timestampMinutes, &daysAgo);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
-		if (historyMessageCount > MAX_MESSAGE_HISTORY) historyMessageCount = MAX_MESSAGE_HISTORY;
+		if (historyMessageCount > MAX_MESSAGE_HISTORY) {
+			LOG_INFO("historyMessageCount was %d, now %d", historyMessageCount, MAX_MESSAGE_HISTORY);
+			historyMessageCount = MAX_MESSAGE_HISTORY;
+		}
 
 		if ((historyMessageCount == 0) || ((historyMessageCount == 1) && (messageContent[0] == '*')) || (strcmp(messageContent, NO_MSGS_RECEIVED_MESSAGE) == 0)) {
 			uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, true); // Display local time
@@ -1308,8 +1319,8 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 		}
 
     historyMessageCount = history.getTotalMessageCount();
-		LOG_INFO("Previous message page: %d\n", previousMessagePage);
-    LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
+		LOG_INFO("Previous message pageZ: %d\n", previousMessagePage);
+    LOG_INFO("historyMessageCountZ: %d\n", historyMessageCount);
 
     display->setFont(FONT_LARGE);
 
@@ -1551,7 +1562,9 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
         //   SHOWING "PREVIOUS MESSAGES" HISTORY PAGE(S)
         // ==============================================
         cannedMessageModule->isOnFirstPreviousMsgsPage = 0;
+				LOG_INFO("HERE FIXING 1\n");
         if (previousMessagePage == historyMessageCount - 1) {
+					LOG_INFO("HERE FIXING 2\n");
 					LOG_INFO("previousMessagePage == historyMessageCount\n");
 					// is on last page, just display the last message
 					const MessageRecord* lastMsg = history.getMessageAt(previousMessagePage);
@@ -1569,7 +1582,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 						const MessageRecord* thirdMsg = history.getMessageAt(previousMessagePage + 2);
 						LOG_DEBUG("firstMsg->content: %s\n", firstMsg->content);
 						LOG_DEBUG("secondMsg->content: %s\n", secondMsg->content);
-						LOG_DEBUG("thirdMsg->content: %s\n", thirdMsg->content);
+						if (thirdMsg) LOG_DEBUG("thirdMsg->content: %s\n", thirdMsg->content);
 						LOG_DEBUG("strlen(firstMsg->content): %d\n", strlen(firstMsg->content));
 						const bool firstMsgIsLong = strlen(firstMsg->content) > 116;
 						if (firstMsgIsLong) {
@@ -3878,6 +3891,9 @@ int Screen::handleInputEvent(const InputEvent *event)
 					// LOG_INFO("Showed last previous message\n");
 			if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_UP)) {
 				if ((previousMessagePage < MAX_MESSAGE_HISTORY) && (previousMessagePage < historyMessageCount - 1)) {
+					LOG_INFO("previousMessagePageC %d\n", previousMessagePage);
+					LOG_INFO("historyMessageCountC %d\n", historyMessageCount);
+					LOG_INFO("HEREC\n");
 					// if (cannedMessageModule->goBackToFirstPreviousMessage) { // this is for when scrolling through previous messages, when the 0 key is pressed, it goes back to the newest message
 					// if (cannedMessageModule->exitingFreetextMode) {
 					if (cannedMessageModule->exitingFreetextMode && cannedMessageModule->wasTouchEvent) {
@@ -3902,8 +3918,8 @@ int Screen::handleInputEvent(const InputEvent *event)
 					// 	LOG_INFO("going up\n");
 					// 	previousMessagePage++;
 					// }
-					LOG_INFO("Previous message page: %d\n", previousMessagePage);
-					LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
+					LOG_INFO("Previous message pageA: %d\n", previousMessagePage);
+					LOG_INFO("historyMessageCountA: %d\n", historyMessageCount);
 					// setCPUFastest();
 					setCPUFast(true);
 					screen->forceDisplay();
