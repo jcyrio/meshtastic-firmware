@@ -9,7 +9,7 @@
 // #include "graphics/Screen.cpp"
 // using namespace graphics;
 
-// #define FOR_GUESTS
+// #define FOR_H
 // #define MONASTERY_FRIENDS
 #define FATHERS_NODES
 // #define SECURITY
@@ -34,7 +34,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 		// }
 // #endif
 // #ifdef FATHERS_NODES
-#if defined(FATHERS_NODES) || defined(FOR_GUESTS) || defined(VASILI)
+#if defined(FATHERS_NODES) || defined(FOR_H) || defined(VASILI)
 		// char channelName[20];
 		// snprintf(channelName, sizeof(channelName), "%s", channels.getName(mp.channel));
 		// LOG_DEBUG("Channel Name: %s\n", channelName);

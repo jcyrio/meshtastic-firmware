@@ -1799,7 +1799,7 @@ static void drawTextMessageFrame(OLEDDisplay *display, OLEDDisplayUiState *state
 // 		historyMessageCount = history.getTotalMessageCount();
 // 		LOG_INFO("historyMessageCount: %d\n", historyMessageCount);
 //     display->setFont(FONT_LARGE);
-// // #if !defined(SECURITY) && !defined(FOR_GUESTS)
+// // #if !defined(SECURITY) && !defined(FOR_H)
 // 		if (firstRunThroughMessages) { // for ignoring the first (old) / bootup message
 // 			LOG_INFO("In first run through messages\n");
 // 			history.setFirstMessageToIgnore(currentMsgContent);

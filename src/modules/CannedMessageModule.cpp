@@ -26,7 +26,7 @@
 #endif
 
 // OPTIONAL
-// #define FOR_GUESTS
+// #define FOR_H
 // #define MONASTERY_FRIENDS
 #define FATHERS_NODES
 // #define SECURITY
@@ -48,7 +48,7 @@ std::vector<std::string> commandsForRouterOnlyExact = {"i", "sgo", "ygo", "go", 
 std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {3719082304, "Router"},
     {3734369073, "Fr Cyril"},
-#ifdef FOR_GUESTS
+#ifdef FOR_H
     {3175760252, "Spare2"},
     {667676428, "Spare4"},
 		// {1127590756, "Fr Andre"},
@@ -64,6 +64,7 @@ std::vector<std::pair<unsigned int, std::string>> MYNODES = {
     {NODENUM_BROADCAST, "BROADCAST Varangians"},
 		{207139432, "Matrix"},
 		{207216020, "Ronin"},
+		{3771733216, "DryHeat-AZ"},
 		{3771733328, "Athos"}, //Pete
 		{3771735168, "Rambo"}, //Perry
 		{3771734404, "Chopani"}, //Niko
@@ -345,10 +346,10 @@ int CannedMessageModule::splitConfiguredMessages()
 int CannedMessageModule::handleInputEvent(const InputEvent *event)
 {
 				// below added temp frc trying make lock mode work
-				// FIXME: maybe don't want to check for 0x22 here, might be irrelevant
+				// FIXME: maybe don't want to check for keyboardLockCode here, might be irrelevant
 				// I think this helped, but not positive
 #ifdef SIMPLE_TDECK
-		if ((screen->keyboardLockMode) && (event->kbchar != 0x22)) return 0;
+		if ((screen->keyboardLockMode) && (event->kbchar != this->keyboardLockCode)) return 0;
 #endif
     if ((strlen(moduleConfig.canned_message.allow_input_source) > 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, event->source) != 0) &&
@@ -850,7 +851,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 						// want to display value of skipNextFreetextMode
 						// LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
 						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
-						// if ((screen->keyboardLockMode == false) && (event->kbchar != 0x22)) {
+						// if ((screen->keyboardLockMode == false) && (event->kbchar != keyboardLockCode)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
             LOG_INFO("Canned message ANYKEY (%x)\n", event->kbchar);
 					// 	if (event->kbchar == 0x60) {
@@ -1003,7 +1004,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 #ifdef SIMPLE_TDECK
 							}
 						}
-						else if ((screen->keyboardLockMode) && (event->kbchar == 0x22)) {
+						else if ((screen->keyboardLockMode) && (event->kbchar == this->keyboardLockCode)) {
 							screen->keyboardLockMode = false;
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 							screen->removeFunctionSymbal("KL");
@@ -1261,6 +1262,11 @@ int32_t CannedMessageModule::runOnce()
 		const char* myShortNodeName = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
 		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", myShortNodeName, monthNumber, day);
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
+		this->keyboardLockCode = 0x22; // short hold L
+		if (strcmp(myShortNodeName, "Spare2") == 0 || strcmp(myShortNodeName, "Spare4") == 0) {
+			LOG_INFO("Was Spare2 or Spare4 node\n");
+			this->keyboardLockCode = 0x3a; // long hold H
+		}
 #ifndef TESTING
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
 #endif
@@ -1461,7 +1467,7 @@ int32_t CannedMessageModule::runOnce()
 									// sendText(this->dest, 3, allMessage, true); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks
 									sendText(this->dest, 3, this->freetext.c_str(), false); //goes to StA channel for the fathers, and MFS channel for MONASTERY_FRIENDS (must have the channels in correct order), or Varangians for SECURITY tdecks. Must be false at end for don't want ack, otherwise messes things up. There's not really a true ack for broadcasts
 								} else {
-#if defined(FOR_GUESTS) || defined(VASILI) || defined(TESTING)
+#if defined(FOR_H) || defined(VASILI) || defined(TESTING)
 									sendText(this->dest, 3, this->freetext.c_str(), true); // default to sending to StA channel for the guests/neighbors
 #else
 									sendText(this->dest, 0, this->freetext.c_str(), true);
@@ -1646,7 +1652,14 @@ int32_t CannedMessageModule::runOnce()
 						this->skipNextFreetextMode = true;
 					}
 					break;
+				case 0x3a: // : , toggle new keyboard lock mode for Special Nodes
 				case 0x22: // " , toggle new keyboard lock mode
+					LOG_INFO("this->keyboardLockCode: %x\n", this->keyboardLockCode);
+					LOG_INFO("this->payload: %x\n", this->payload);
+					if (this->keyboardLockCode != this->payload) {
+						LOG_INFO("THEY ARE NOT THE SAME\n");
+						break;
+					}
 					if (this->freetext.length() > 0) break;
 					LOG_INFO("Got \", Toggle Keyboard Lock Mode\n");
 					if (!screen->keyboardLockMode) {

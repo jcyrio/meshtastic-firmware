@@ -90,6 +90,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
         }
     }
 #ifdef SIMPLE_TDECK // public
+		int keyboardLockCode;
 		void setDeliveryStatus(uint8_t status);
 		void addToHistory();
 		bool isOnFirstPreviousMsgsPage = false;
