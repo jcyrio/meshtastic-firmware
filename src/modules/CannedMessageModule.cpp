@@ -32,7 +32,7 @@
 // #define SECURITY
 // #define HELPERS
 // #define GATE_SECURITY
-// #define TESTING
+#define TESTING
 // #define VASILI
 
 #ifdef SIMPLE_TDECK
@@ -197,6 +197,11 @@ void CannedMessageModule::addToHistory() { // only happens if fully acked in rel
             // this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
 	this->goBackToFirstPreviousMessage = true;
 	addMessageToHistory(lastMessageSent.c_str(), lastSentNode.c_str());
+}
+
+void CannedMessageModule::addToHistoryWithArgs(const char *message, const char *node) {
+	LOG_INFO("addToHistoryWithArgs: %s, %s\n", message, node);
+	addMessageToHistory(message, node);
 }
 
 void CannedMessageModule::setDeliveryStatus(uint8_t status) {

@@ -2533,23 +2533,13 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 
     if (on != screenOn) {
         if (on) {
-						// if (screen->keyboardLockMode == true) return;
             LOG_INFO("Turning on screen\n");
-#ifdef SIMPLE_TDECK
-					// setCPUFast(true);
-					// if just woke from light sleep and led was on, turn off LED
-					// if (externalNotificationModule->getExternal(0) == 1) gpio_hold_dis((gpio_num_t)43);
-					// 
-					// FIXME: might not be good here. might want to check first if just woke from sleep. might test moving to initDeepSleep in sleep.cpp
-					// digitalWrite(KB_POWERON, HIGH);
-					// pinMode(GPIO_NUM_43, OUTPUT);
-					// digitalWrite((gpio_num_t)43, LOW);
-#endif
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3
             PMU->enablePowerOutput(XPOWERS_ALDO2);
 #endif
 #if !ARCH_PORTDUINO
+						// if (!screen->keyboardLockMode) { // note that these are a way to show a pure black screen on updates, if ever needed
             dispdev->displayOn();
 #endif
 
@@ -2558,17 +2548,21 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             static_cast<TFTDisplay *>(dispdev)->setDisplayBrightness(brightness);
 #endif
 
+						// if (screen->keyboardLockMode != true) { // note that these are a way to show a pure black screen on updates, if ever needed
             dispdev->displayOn();
+						// }
 #ifdef USE_ST7789
             pinMode(VTFT_CTRL, OUTPUT);
             digitalWrite(VTFT_CTRL, LOW);
             ui->init();
 #ifdef ESP_PLATFORM
-#ifdef SIMPLE_TDECK
-            analogWrite(VTFT_LEDA, 254);
-#else
+// #ifdef SIMPLE_TDECK  // removed 1-21-25, not sure why here
+//             analogWrite(VTFT_LEDA, 254);
+// #else
+						// if (screen->keyboardLockMode != true) {
             analogWrite(VTFT_LEDA, BRIGHTNESS_DEFAULT);
-#endif
+						// }
+// #endif
 #else
             pinMode(VTFT_LEDA, OUTPUT);
             digitalWrite(VTFT_LEDA, TFT_BACKLIGHT_ON);

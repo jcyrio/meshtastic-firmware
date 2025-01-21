@@ -93,6 +93,7 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 		int keyboardLockCode;
 		void setDeliveryStatus(uint8_t status);
 		void addToHistory();
+		void addToHistoryWithArgs(const char *message, const char *node);
 		bool isOnFirstPreviousMsgsPage = false;
 		bool goBackToFirstPreviousMessage = false;
 		bool goToFirstSentMessage = false;

@@ -6,6 +6,7 @@
 #include "configuration.h"
 #ifdef SIMPLE_TDECK
 #include "modules/ExternalNotificationModule.h" // for turning off LED when get broadcast that we don't want to accept
+#include "modules/CannedMessageModule.h" // for turning off LED when get broadcast that we don't want to accept
 // #include "graphics/Screen.cpp"
 // using namespace graphics;
 
@@ -126,7 +127,9 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			devicestate.rx_text_message = mp;
 			devicestate.has_rx_text_message = true;
 
-			powerFSM.trigger(EVENT_RECEIVED_MSG);
+			// powerFSM.trigger(EVENT_RECEIVED_MSG);
+			const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+			cannedMessageModule->addToHistoryWithArgs(currentMsgContent, "test");
 			notifyObservers(&mp);
 		}
 #else
