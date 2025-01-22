@@ -2538,13 +2538,15 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 
     if (on != screenOn) {
         if (on) {
+// #ifdef SIMPLE_TDECK
+// 	if (keyboardLockMode) return;
+// #endif
             LOG_INFO("Turning on screen\n");
             powerMon->setState(meshtastic_PowerMon_State_Screen_On);
 #ifdef T_WATCH_S3
             PMU->enablePowerOutput(XPOWERS_ALDO2);
 #endif
 #if !ARCH_PORTDUINO
-						// if (!screen->keyboardLockMode) { // note that these are a way to show a pure black screen on updates, if ever needed
             dispdev->displayOn();
 #endif
 
@@ -2553,9 +2555,7 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
             static_cast<TFTDisplay *>(dispdev)->setDisplayBrightness(brightness);
 #endif
 
-						// if (screen->keyboardLockMode != true) { // note that these are a way to show a pure black screen on updates, if ever needed
             dispdev->displayOn();
-						// }
 #ifdef USE_ST7789
             pinMode(VTFT_CTRL, OUTPUT);
             digitalWrite(VTFT_CTRL, LOW);
@@ -2564,9 +2564,7 @@ void Screen::handleSetOn(bool on, FrameCallback einkScreensaver)
 // #ifdef SIMPLE_TDECK  // removed 1-21-25, not sure why here
 //             analogWrite(VTFT_LEDA, 254);
 // #else
-						// if (screen->keyboardLockMode != true) {
             analogWrite(VTFT_LEDA, BRIGHTNESS_DEFAULT);
-						// }
 // #endif
 #else
             pinMode(VTFT_LEDA, OUTPUT);

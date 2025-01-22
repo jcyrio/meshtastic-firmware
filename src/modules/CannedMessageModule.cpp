@@ -358,7 +358,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 				// FIXME: maybe don't want to check for keyboardLockCode here, might be irrelevant
 				// I think this helped, but not positive
 #ifdef SIMPLE_TDECK
-		if ((keyboardLockMode) && (event->kbchar != this->keyboardLockCode)) return 0;
+		if (keyboardLockMode && event->kbchar != this->keyboardLockCode) return 0;
 #endif
     if ((strlen(moduleConfig.canned_message.allow_input_source) > 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, event->source) != 0) &&
@@ -1018,6 +1018,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 							screen->removeFunctionSymbal("KL");
 							wakeOnMessage = true;
+							powerFSM.trigger(EVENT_INPUT); // added 1-22-25
 						}
 #endif
             break;
