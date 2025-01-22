@@ -3252,7 +3252,7 @@ void Screen::increaseBrightness()
 	// }
 	if (brightnessLevel == 'L') {
 		removeFunctionSymbal("Lo");
-		brightness = 254; brightnessLevel = 'H';
+		brightness = 255; brightnessLevel = 'H';
 	} else {
 		setFunctionSymbal("Lo");
 		brightness = 40; brightnessLevel = 'L';
@@ -3264,7 +3264,7 @@ void Screen::increaseBrightness()
 	// else if (brightness < 192) brightnessLevel = '3';
 	// else brightnessLevel = '4';
 #else
-	brightness = ((brightness + 62) > 254) ? brightness : (brightness + 62);
+	brightness = ((brightness + 62) > 255) ? brightness : (brightness + 62);
 #endif
 
 #if defined(ST7789_CS)
