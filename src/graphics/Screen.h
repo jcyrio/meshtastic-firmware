@@ -142,36 +142,8 @@ constexpr size_t MAX_MESSAGE_HISTORY = 40;
 constexpr size_t MAX_MESSAGE_LENGTH = 237;
 constexpr size_t MAX_NODE_NAME_LENGTH = 5;
 
-// struct MessageRecord {
-//     char content[MAX_MESSAGE_LENGTH];
-//     char nodeName[MAX_NODE_NAME_LENGTH];
-//     uint32_t timestamp;
-//     MessageRecord();
-//     void clear();
-// };
-//
-// class MessageHistory {
-// private:
-//     std::array<MessageRecord, MAX_MESSAGE_HISTORY> messages;
-//     size_t currentIndex = 0;
-//     uint32_t totalMessageCount = 0;
-//     bool firstRunThrough = true;
-//     bool lastMessageWasPreviousMsgs = false;
-//
-// public:
-//     char firstMessageToIgnore[MAX_MESSAGE_LENGTH];
-//
-//     MessageHistory();
-//     void clear();
-//     void addMessage(const char* content, const char* nodeName);
-//     const MessageRecord* getMessageAt(size_t position) const;
-//     uint32_t getSecondsSince(size_t position) const;
-//     uint32_t getTotalMessageCount() const;
-//     bool wasLastMessagePreviousMsgs() const;
-//     void setFirstMessageToIgnore(const char* msg);
-// };
-
 void addMessageToHistory(const char* content, const char* nodeName);
+void addSentMessageToHistory(const char* content, const char* nodeName);
 #endif
 
 namespace graphics
@@ -333,7 +305,7 @@ class Screen : public concurrency::OSThread
     // functions for display brightness
 #ifdef SIMPLE_TDECK
     // void showFirstBrightnessLevel();
-		bool keyboardLockMode = false;
+		// bool keyboardLockMode = false;
 		void clearHistory();
 #endif
     void increaseBrightness();
@@ -605,5 +577,8 @@ class Screen : public concurrency::OSThread
 };
 
 } // namespace graphics
+#ifdef SIMPLE_TDECK
+extern bool keyboardLockMode;
+#endif
 
 #endif

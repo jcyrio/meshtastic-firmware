@@ -56,6 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef SIMPLE_TDECK
 // std::vector<std::string> skipNodes2 = {"", "Unknown Name", "C2OPS", "Athos", "Birdman", "RAMBO", "Broadcast", "Command Post", "APFD", "Friek", "Cross", "CHIP", "St. Anthony", "Monastery", "mqtt", "MQTTclient", "Tester"};
 const char* NO_MSGS_RECEIVED_MESSAGE = "     No messages received";
+bool keyboardLockMode = false;
 #endif
 
 #if HAS_WIFI && !defined(ARCH_PORTDUINO)
@@ -247,11 +248,15 @@ size_t getLatestSentMessageIndex() const {
 };
 
 MessageHistory history;
-// void addMessageToHistory(const char* content, const char* nodeName) {
-// 		history.addMessage(content, nodeName);
-// }
 void addMessageToHistory(const char* content, const char* nodeName) {
 	LOG_INFO("addMessageToHistory: %s, %s\n", content, nodeName);
+	totalReceivedMessagesSinceBoot++;
+	previousMessagePage = 0;
+	history.addMessage(content, nodeName);
+}
+
+void addSentMessageToHistory(const char* content, const char* nodeName) {
+	LOG_INFO("addSentMessageToHistory: %s, %s\n", content, nodeName);
 	totalSentMessagesSinceBoot++;
 	std::string prefixedContent = ">" + std::string(content);
 	previousMessagePage = 0; //added 1-13-25
@@ -3868,7 +3873,7 @@ int Screen::handleInputEvent(const InputEvent *event)
 	if (this->ui->getUiState()->currentFrame == 0) {  //on previous msg screen
 		LOG_INFO("On previous msg screen\n");
 		this->isOnPreviousMsgsScreen = true;
-		if (!this->keyboardLockMode) {
+		if (!keyboardLockMode) {
 			if (cannedMessageModule->goBackToFirstPreviousMessage) { // here because otherwise when we scroll up from freetext mode to go back to previous msgs page, it registers the UP and puts it on the 2nd msg instead returning to the first
 				LOG_INFO("going back to first previous message2\n");
 				previousMessagePage = 0;
@@ -3947,7 +3952,7 @@ int Screen::handleInputEvent(const InputEvent *event)
         if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_LEFT)) {
 #ifdef SIMPLE_TDECK
 					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
-					if (!this->keyboardLockMode) {
+					if (!keyboardLockMode) {
 						if (this->ui->getUiState()->currentFrame != 0) {
 							// setCPUFastest();
 							setCPUFast(true);
@@ -3960,7 +3965,7 @@ int Screen::handleInputEvent(const InputEvent *event)
         } else if (event->inputEvent == static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_RIGHT)) {
 #ifdef SIMPLE_TDECK
 					LOG_INFO("currentFrame: %d\n", this->ui->getUiState()->currentFrame);
-					if (!this->keyboardLockMode) {
+					if (!keyboardLockMode) {
 						if (this->ui->getUiState()->currentFrame != 1) {
 							showNextFrame();  //on main screen
 							setCPUFast(false);

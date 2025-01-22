@@ -7,7 +7,10 @@
 #ifdef SIMPLE_TDECK
 #include "modules/ExternalNotificationModule.h" // for turning off LED when get broadcast that we don't want to accept
 #include "modules/CannedMessageModule.h" // for turning off LED when get broadcast that we don't want to accept
-// #include "graphics/Screen.cpp"
+#include "graphics/Screen.h"
+extern bool wakeOnMessage;
+extern bool keyboardLockMode;
+extern bool isSpecialNode;
 // using namespace graphics;
 
 // #define FOR_H
@@ -127,10 +130,21 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			devicestate.rx_text_message = mp;
 			devicestate.has_rx_text_message = true;
 
-			// powerFSM.trigger(EVENT_RECEIVED_MSG);
-			powerFSM.trigger(EVENT_DARK);
-			const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
-			cannedMessageModule->addToHistoryWithArgs(currentMsgContent, "test");
+#ifdef SIMPLE_TDECK
+			// if (screen->keyboardLockMode && wakeOnMessage) {
+			if (keyboardLockMode && isSpecialNode) {
+				powerFSM.trigger(EVENT_DARK);
+				const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
+				// const char* myNodeName = cannedMessageModule->getNodeName(mp.from);
+				auto node = nodeDB->getMeshNode(getFrom(&mp));
+				const char* sender = (node) ? node->user.short_name : "???";
+				cannedMessageModule->addToHistoryWithArgs(currentMsgContent, sender);
+			} else {
+				powerFSM.trigger(EVENT_RECEIVED_MSG);
+			}
+#else
+			powerFSM.trigger(EVENT_RECEIVED_MSG);
+#endif
 			notifyObservers(&mp);
 		}
 #else

@@ -23,7 +23,9 @@
 #endif
 #ifdef SIMPLE_TDECK
 #include "modules/AdminModule.h"
-extern bool wakeOnMessage; // Add this at the top of the file
+extern bool wakeOnMessage;
+extern bool keyboardLockMode;
+bool isSpecialNode = false;
 #endif
 
 // OPTIONAL
@@ -197,7 +199,7 @@ void CannedMessageModule::addToHistory() { // only happens if fully acked in rel
             // requestFocus(); // Tell Screen::setFrames that our module's frame should be shown, even if not "first" in the frameset
             // this->runState = CANNED_MESSAGE_RUN_STATE_ACK_NACK_RECEIVED;
 	this->goBackToFirstPreviousMessage = true;
-	addMessageToHistory(lastMessageSent.c_str(), lastSentNode.c_str());
+	addSentMessageToHistory(lastMessageSent.c_str(), lastSentNode.c_str());
 }
 
 void CannedMessageModule::addToHistoryWithArgs(const char *message, const char *node) {
@@ -356,7 +358,7 @@ int CannedMessageModule::handleInputEvent(const InputEvent *event)
 				// FIXME: maybe don't want to check for keyboardLockCode here, might be irrelevant
 				// I think this helped, but not positive
 #ifdef SIMPLE_TDECK
-		if ((screen->keyboardLockMode) && (event->kbchar != this->keyboardLockCode)) return 0;
+		if ((keyboardLockMode) && (event->kbchar != this->keyboardLockCode)) return 0;
 #endif
     if ((strlen(moduleConfig.canned_message.allow_input_source) > 0) &&
         (strcasecmp(moduleConfig.canned_message.allow_input_source, event->source) != 0) &&
@@ -858,7 +860,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 						// want to display value of skipNextFreetextMode
 						// LOG_INFO("skipNextFreetextMode: %d\n", this->skipNextFreetextMode);
 						// LOG_INFO("skipNextRletter: %d\n", this->skipNextRletter);
-						// if ((screen->keyboardLockMode == false) && (event->kbchar != keyboardLockCode)) {
+						// if ((keyboardLockMode == false) && (event->kbchar != keyboardLockCode)) {
 						// TODO: might want to reset keyCountLoopForDeliveryStatus to 0 sometime if we get a new message
             LOG_INFO("Canned message ANYKEY (%x)\n", event->kbchar);
 					// 	if (event->kbchar == 0x60) {
@@ -882,7 +884,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 								keyCountLoopForDeliveryStatus = 0;
 							}
 						}
-						if (!screen->keyboardLockMode) {
+						if (!keyboardLockMode) {
 							if (this->skipNextRletter) {
 								this->skipNextRletter = false;
 							} else {
@@ -1011,8 +1013,8 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 #ifdef SIMPLE_TDECK
 							}
 						}
-						else if ((screen->keyboardLockMode) && (event->kbchar == this->keyboardLockCode)) {
-							screen->keyboardLockMode = false;
+						else if (keyboardLockMode && event->kbchar == this->keyboardLockCode) {
+							keyboardLockMode = false;
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 							screen->removeFunctionSymbal("KL");
 							wakeOnMessage = true;
@@ -1267,13 +1269,14 @@ int32_t CannedMessageModule::runOnce()
 		dayString.trim(); // Trim leading/trailing spaces
 		int day = dayString.toInt(); // Convert to integer
 		char startupMessage[30];
-		const char* myShortNodeName = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
-		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", myShortNodeName, monthNumber, day);
+		const char* myNodeName = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
+		snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", myNodeName, monthNumber, day);
 		// snprintf(startupMessage, sizeof(startupMessage), "%s ON %d-%d", cannedMessageModule->getNodeName(nodeDB->getNodeNum()), monthNumber, day);
 		this->keyboardLockCode = 0x22; // short hold L
-		if (strcmp(myShortNodeName, "Spare2") == 0 || strcmp(myShortNodeName, "Spare4") == 0) {
+		if (strcmp(myNodeName, "Spare2") == 0 || strcmp(myNodeName, "Spare4") == 0) {
 			LOG_INFO("Was Spare2 or Spare4 node\n");
 			this->keyboardLockCode = 0x3a; // long hold H
+			isSpecialNode = true;
 		}
 #ifndef TESTING
 		sendText(NODENUM_RPI5, 0, startupMessage, false);
@@ -1402,7 +1405,7 @@ int32_t CannedMessageModule::runOnce()
 									const char* myNodeName = cannedMessageModule->getNodeName(nodeDB->getNodeNum());
 									LOG_INFO("myNodeName: %s\n", myNodeName);
 									LOG_INFO("myNodeName: %s\n", myNodeName);
-									// LOG_INFO("myShortNodeName: %s\n", myShortNodeName);
+									// LOG_INFO("myNodeName: %s\n", myNodeName);
 									bool isExcluded = false;
 									for (int i = 0; i < excludedCount; ++i) {
 											if (strcmp(myNodeName, dontSendClrMessageFromTheseNames[i]) == 0) {
@@ -1670,9 +1673,9 @@ int32_t CannedMessageModule::runOnce()
 					}
 					if (this->freetext.length() > 0) break;
 					LOG_INFO("Got \", Toggle Keyboard Lock Mode\n");
-					if (!screen->keyboardLockMode) {
+					if (!keyboardLockMode) {
 						LOG_INFO("Keyboard Lock Mode on\n");
-						screen->keyboardLockMode = true;
+						keyboardLockMode = true;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->setFunctionSymbal("KL");
@@ -1682,7 +1685,7 @@ int32_t CannedMessageModule::runOnce()
 						this->notifyObservers(&e);
 					} else {
 						LOG_INFO("Keyboard Lock Mode off\n");
-						screen->keyboardLockMode = false;
+						keyboardLockMode = false;
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->removeFunctionSymbal("KL");
@@ -1721,7 +1724,7 @@ int32_t CannedMessageModule::runOnce()
 					break;
 #endif
         case 0xb4: // left
-			    if (screen->keyboardLockMode) break;
+			    if (keyboardLockMode) break;
 #ifdef SIMPLE_TDECK
 // this always allows to change the destination with scrolling
           if (1 == 1) {
@@ -1804,7 +1807,7 @@ int32_t CannedMessageModule::runOnce()
             break;
         case 0xb7: // right
 #ifdef SIMPLE_TDECK
-			    if (screen->keyboardLockMode) break;
+			    if (keyboardLockMode) break;
           if (1 == 1) {
 // this always allows to change the destination with scrolling
 #else

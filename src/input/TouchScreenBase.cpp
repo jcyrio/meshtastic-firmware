@@ -2,6 +2,8 @@
 // #define DISABLE_VERTICAL_SWIPE
 #ifdef SIMPLE_TDECK
 #include "modules/CannedMessageModule.h"
+// #include "graphics/Screen.h"
+extern bool keyboardLockMode;
 #endif
 #include "main.h"
 
@@ -71,7 +73,7 @@ int32_t TouchScreenBase::runOnce()
             // swipe horizontal
             if (adx > ady && adx > TOUCH_THRESHOLD_X) {
 #ifdef SIMPLE_TDECK
-							if (!screen->keyboardLockMode) {
+							if (!keyboardLockMode) {
 #endif
                 if (0 > dx) { // swipe right to left
                     e.touchEvent = static_cast<char>(TOUCH_ACTION_LEFT);
@@ -94,7 +96,7 @@ int32_t TouchScreenBase::runOnce()
             // swipe vertical
             else if (ady > adx && ady > TOUCH_THRESHOLD_Y) {
 #ifdef SIMPLE_TDECK
-							if (!screen->keyboardLockMode) {
+							if (!keyboardLockMode) {
 #endif
                 if (0 > dy) { // swipe bottom to top
 #ifdef SIMPLE_TDECK
@@ -125,7 +127,7 @@ int32_t TouchScreenBase::runOnce()
             // tap
             else {
 #ifdef SIMPLE_TDECK
-							if (!screen->keyboardLockMode) {
+							if (!keyboardLockMode) {
 #endif
                 if (duration > 0 && duration < TIME_LONG_PRESS) {
                     if (_tapped) {
@@ -149,7 +151,7 @@ int32_t TouchScreenBase::runOnce()
     // fire TAP event when no 2nd tap occured within time
     if (_tapped && (time_t(millis()) - _start) > TIME_LONG_PRESS - 50) {
 #ifdef SIMPLE_TDECK
-		if (!screen->keyboardLockMode) {
+		if (!keyboardLockMode) {
 #endif
         _tapped = false;
         e.touchEvent = static_cast<char>(TOUCH_ACTION_TAP);
@@ -162,7 +164,7 @@ int32_t TouchScreenBase::runOnce()
     // fire LONG_PRESS event without the need for release
     if (touched && (time_t(millis()) - _start) > TIME_LONG_PRESS) {
 #ifdef SIMPLE_TDECK
-		if (!screen->keyboardLockMode) {
+		if (!keyboardLockMode) {
 #endif
         // tricky: prevent reoccurring events and another touch event when releasing
         _start = millis() + 30000;
