@@ -21,6 +21,9 @@
 #define EVENT_FIRMWARE_UPDATE 15 // We just received a new firmware update packet from the phone
 #define EVENT_SHUTDOWN 16        // force a full shutdown now (not just sleep)
 #define EVENT_INPUT 17           // input broker wants something, we need to wake up and enable screen
+#ifdef SIMPLE_TDECK
+#define EVENT_DARK 18
+#endif
 
 #if EXCLUDE_POWER_FSM
 class FakeFsm
@@ -46,6 +49,8 @@ void PowerFSM_setup();
 #include <Fsm.h>
 extern Fsm powerFSM;
 extern State stateON, statePOWER, stateSERIAL, stateDARK;
-
+#ifdef SIMPLE_TDECK
+extern bool wakeOnMessage; // Default to true
+#endif
 void PowerFSM_setup();
 #endif

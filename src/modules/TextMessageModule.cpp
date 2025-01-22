@@ -128,6 +128,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 			devicestate.has_rx_text_message = true;
 
 			// powerFSM.trigger(EVENT_RECEIVED_MSG);
+			powerFSM.trigger(EVENT_DARK);
 			const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
 			cannedMessageModule->addToHistoryWithArgs(currentMsgContent, "test");
 			notifyObservers(&mp);

@@ -19,6 +19,15 @@
 #include "sleep.h"
 #include "target_specific.h"
 
+#ifdef SIMPLE_TDECK
+bool wakeOnMessage = true;
+void messageTransitionCallback() {
+    if (!wakeOnMessage) {
+        powerFSM.trigger(EVENT_DARK); // Force transition to dark state
+    }
+}
+#endif
+
 #ifndef SLEEP_TIME
 #define SLEEP_TIME 30
 #endif
@@ -338,10 +347,14 @@ void PowerFSM_setup()
         powerFSM.add_transition(&stateON, &stateON, EVENT_NODEDB_UPDATED, NULL, "NodeDB update");
 
         // Show the received text message
-        powerFSM.add_transition(&stateLS, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text");
-        powerFSM.add_transition(&stateNB, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text");
-        powerFSM.add_transition(&stateDARK, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text");
-        powerFSM.add_transition(&stateON, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text"); // restarts the sleep timer
+        // powerFSM.add_transition(&stateLS, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text");
+        // powerFSM.add_transition(&stateNB, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text");
+        // powerFSM.add_transition(&stateDARK, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text");
+        // powerFSM.add_transition(&stateON, &stateON, EVENT_RECEIVED_MSG, NULL, "Received text"); // restarts the sleep timer
+				powerFSM.add_transition(&stateLS, &stateON, EVENT_RECEIVED_MSG, messageTransitionCallback, "Received text");
+				powerFSM.add_transition(&stateNB, &stateON, EVENT_RECEIVED_MSG, messageTransitionCallback, "Received text");
+				powerFSM.add_transition(&stateDARK, &stateON, EVENT_RECEIVED_MSG, messageTransitionCallback, "Received text");
+				powerFSM.add_transition(&stateON, &stateON, EVENT_RECEIVED_MSG, messageTransitionCallback, "Received text");
     }
 
     // If we are not in statePOWER but get a serial connection, suppress sleep (and keep the screen on) while connected

@@ -23,6 +23,7 @@
 #endif
 #ifdef SIMPLE_TDECK
 #include "modules/AdminModule.h"
+extern bool wakeOnMessage; // Add this at the top of the file
 #endif
 
 // OPTIONAL
@@ -225,6 +226,7 @@ void CannedMessageModule::setDeliveryStatus(uint8_t status) {
 	// else deliveryStatus = 0; // to make it so that the traceroutes etc don't show as acked
 }
 uint8_t CannedMessageModule::getDeliveryStatus() { return deliveryStatus; }
+
 #endif
 
 #ifndef INPUTBROKER_MATRIX_TYPE
@@ -1013,6 +1015,7 @@ static_cast<char>(meshtastic_ModuleConfig_CannedMessageConfig_InputEventChar_DOW
 							screen->keyboardLockMode = false;
 							this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 							screen->removeFunctionSymbal("KL");
+							wakeOnMessage = true;
 						}
 #endif
             break;
@@ -1673,6 +1676,7 @@ int32_t CannedMessageModule::runOnce()
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->setFunctionSymbal("KL");
+						wakeOnMessage = false;
 						UIFrameEvent e;
 						e.action = UIFrameEvent::Action::REGENERATE_FRAMESET; // We want to change the list of frames shown on-screen
 						this->notifyObservers(&e);
@@ -1682,6 +1686,7 @@ int32_t CannedMessageModule::runOnce()
 						this->runState = CANNED_MESSAGE_RUN_STATE_INACTIVE; //prevents entering freetext mode
 						// this->skipNextFreetextMode = true;
 						screen->removeFunctionSymbal("KL");
+						wakeOnMessage = true;
 					}
 					break;
 				case 0x1f: // alt-f, toggle flashlight
