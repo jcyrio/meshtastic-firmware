@@ -17,6 +17,7 @@ int InputBroker::handleInputEvent(const InputEvent *event)
 	// if (keyboardLockMode) powerFSM.trigger(EVENT_DARK);
 	// else powerFSM.trigger(EVENT_INPUT);
 	if (!keyboardLockMode) powerFSM.trigger(EVENT_INPUT);
+	else powerFSM.trigger(EVENT_DARK);
 #else
     powerFSM.trigger(EVENT_INPUT);
 #endif

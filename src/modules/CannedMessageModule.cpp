@@ -25,7 +25,7 @@
 #include "modules/AdminModule.h"
 extern bool wakeOnMessage;
 extern bool keyboardLockMode;
-bool isSpecialNode = false;
+bool isSpecialDarkNode = false;
 #endif
 
 // OPTIONAL
@@ -1277,7 +1277,7 @@ int32_t CannedMessageModule::runOnce()
 		if (strcmp(myNodeName, "Spare2") == 0 || strcmp(myNodeName, "Spare4") == 0) {
 			LOG_INFO("Was Spare2 or Spare4 node\n");
 			this->keyboardLockCode = 0x3a; // long hold H
-			isSpecialNode = true;
+			isSpecialDarkNode = true;
 		}
 #ifndef TESTING
 		sendText(NODENUM_RPI5, 0, startupMessage, false);

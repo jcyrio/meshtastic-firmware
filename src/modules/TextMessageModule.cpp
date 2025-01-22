@@ -10,7 +10,7 @@
 #include "graphics/Screen.h"
 extern bool wakeOnMessage;
 extern bool keyboardLockMode;
-extern bool isSpecialNode;
+extern bool isSpecialDarkNode;
 // using namespace graphics;
 
 // #define FOR_H
@@ -132,7 +132,7 @@ ProcessMessage TextMessageModule::handleReceived(const meshtastic_MeshPacket &mp
 
 #ifdef SIMPLE_TDECK
 			// if (screen->keyboardLockMode && wakeOnMessage) {
-			if (keyboardLockMode && isSpecialNode) {
+			if (keyboardLockMode && isSpecialDarkNode) {
 				powerFSM.trigger(EVENT_DARK);
 				const char* currentMsgContent = reinterpret_cast<const char*>(mp.decoded.payload.bytes);
 				// const char* myNodeName = cannedMessageModule->getNodeName(mp.from);

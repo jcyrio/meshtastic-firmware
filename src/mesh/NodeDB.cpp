@@ -985,7 +985,9 @@ bool NodeDB::updateUser(uint32_t nodeId, const meshtastic_User &p, uint8_t chann
 
     if (changed) {
         updateGUIforNode = info;
-#ifndef SIMPLE_TDECK // testing, try not wake screen on nodedb changes
+#ifdef SIMPLE_TDECK // testing, try not wake screen on nodedb changes
+        powerFSM.trigger(EVENT_DARK);
+#else
         powerFSM.trigger(EVENT_NODEDB_UPDATED);
 #endif
         notifyObservers(true); // Force an update whether or not our node counts have changed

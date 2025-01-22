@@ -260,6 +260,6 @@ class CannedMessageModule : public SinglePortModule, public Observable<const UIF
 
 extern CannedMessageModule *cannedMessageModule;
 #ifdef SIMPLE_TDECK
-extern bool isSpecialNode;
+extern bool isSpecialDarkNode;
 #endif
 #endif
